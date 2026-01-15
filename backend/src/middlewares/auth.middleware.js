@@ -23,6 +23,7 @@ req.user = user;
 next();
 }catch(err){  
     console.log("JWT verification error", err);
+    throw new ApiError(401,"unauthorized request")
 }}
 );
 
