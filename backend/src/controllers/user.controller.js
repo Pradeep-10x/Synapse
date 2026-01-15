@@ -8,6 +8,7 @@ import {v2 as cloudinary} from 'cloudinary';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 dotenv.config();
+import { registerUserSchema, loginUserSchema } from '../middlewares/ZodValidator.js';
 
 
 const generateAccessAndRefereshTokens = async(userId) =>{
@@ -30,18 +31,20 @@ const generateAccessAndRefereshTokens = async(userId) =>{
 
 
 const registerUser=asyncHandler(async(req, res) => {
-    const {fullName,email,password,username,bio}=req.body;
-    
-   if (!fullName || !email || !password || !username || !bio) {
-  throw new ApiError(400, "All fields are required");
-}
+    //const {fullName,email,password,username,bio}=req.body;
+    const {data,errors}=registerUserSchema.safeParse(req.body);
+    if(errors){
+        throw new ApiError(400, errors.message);
+    }
+    const {fullName,email,password,username,bio}=data;
 
-const existedUser = await User.findOne({
-    $or: [{email}, {username}]
-})
-if(existedUser){
-    throw new ApiError(409, "User with this email or username already exists");
-}
+    const existingUser = await User.findOne({
+        $or: [{email}, {username}]
+    });
+    if(existingUser){
+        return res.status(400).json(new ApiResponse(400, null, "User with this email or username already exists"));
+    }
+
 let avatar = "";
 
 if (req.files?.avatar && req.files.avatar[0]) {
@@ -66,7 +69,12 @@ res.status(201).json(new ApiResponse(201, createdUser, "User registered successf
 })
      
 const loginUser=asyncHandler(async(req,res) => {
-const {email,username,password}=req.body;
+//const {email,username,password}=req.body;
+const {data,errors}=loginUserSchema.safeParse(req.body);
+if(errors){
+    throw new ApiError(400, errors.message);
+}
+const {email,username,password}=data;
 if(!(email||username) || !password){
     throw new ApiError(400, "Email/username and password are required");
 }
