@@ -31,12 +31,16 @@ const generateAccessAndRefereshTokens = async(userId) =>{
 
 
 const registerUser=asyncHandler(async(req, res) => {
-    //const {fullName,email,password,username,bio}=req.body;
-    const {data,errors}=registerUserSchema.safeParse(req.body);
-    if(errors){
-        throw new ApiError(400, errors.message);
+    const {fullName,email,password,username,bio}=req.body;
+    // const {data,errors}=registerUserSchema.safeParse(req.body);
+    // if(errors){
+    //     throw new ApiError(400, errors.message);
+    // }
+    // const {fullName,email,password,username,bio}=data;
+
+    if (!fullName || !email || !password || !username) {
+        throw new ApiError(400, "All required fields (fullName, email, password, username) must be provided");
     }
-    const {fullName,email,password,username,bio}=data;
 
     const existingUser = await User.findOne({
         $or: [{email}, {username}]
@@ -69,12 +73,12 @@ res.status(201).json(new ApiResponse(201, createdUser, "User registered successf
 })
      
 const loginUser=asyncHandler(async(req,res) => {
-//const {email,username,password}=req.body;
-const {data,errors}=loginUserSchema.safeParse(req.body);
-if(errors){
-    throw new ApiError(400, errors.message);
-}
-const {email,username,password}=data;
+const {email,username,password}=req.body;
+// const {data,errors}=loginUserSchema.safeParse(req.body);
+// if(errors){
+//     throw new ApiError(400, errors.message);
+// }
+// const {email,username,password}=data;
 if(!(email||username) || !password){
     throw new ApiError(400, "Email/username and password are required");
 }

@@ -14,9 +14,6 @@ import notificationRouter from"./routes/notification.routes.js"
 import messageRouter from"./routes/message.routes.js"
 import reelRouter from"./routes/reel.routes.js"
 import storyRouter from"./routes/story.routes.js"
-import xssClean from "xss-clean"
-import mongoSanitize from "express-mongo-sanitize"
-
 
 const app=express()
 
@@ -25,8 +22,7 @@ app.use(cors({
     credentials:true,
 }))
 
-app.use(xssClean());
-app.use(mongoSanitize());
+
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 app.use(express.urlencoded({extended : true, limit: '10mb'}));
