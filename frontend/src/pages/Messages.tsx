@@ -11,8 +11,10 @@ import { api } from '@/lib/axios';
 
 interface Message {
     _id: string;
-    sender: string | { _id: string };
-    content: string;
+    sender?: string | { _id: string };
+    senderId?: string | { _id?: string };
+    content?: string;
+    text?: string;
     createdAt: string;
 }
 
@@ -87,8 +89,9 @@ export default function MessagesPage() {
             console.log("New message received:", message);
             // Transform the message
             const senderId = typeof message.sender === 'string' ? message.sender : message.sender?._id;
-            const transformedMessage = {
+            const transformedMessage: Message = {
                 _id: message._id,
+                sender: senderId || message.sender,
                 senderId: senderId || message.sender,
                 text: message.content,
                 content: message.content,
@@ -388,8 +391,9 @@ export default function MessagesPage() {
             });
 
             // Transform the response message
-            const message = {
+            const message: Message = {
                 _id: data.data._id || data.data._id,
+                sender: user._id, // Current user is the sender
                 senderId: user._id, // Current user is the sender
                 text: data.data.content || messageText,
                 content: data.data.content || messageText,
@@ -533,7 +537,8 @@ export default function MessagesPage() {
                     >
                         <AnimatePresence initial={false}>
                             {messages.map((msg, index) => {
-                                const senderId = typeof msg.senderId === 'string' ? msg.senderId : (msg.senderId?._id || msg.senderId);
+                                const msgSender = msg.senderId || msg.sender;
+                                const senderId = typeof msgSender === 'string' ? msgSender : (msgSender?._id || msgSender);
                                 const isOwn = senderId === user?._id;
                                 return (
                                     <motion.div
