@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { messageAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { useSocketStore } from '@/store/socketStore';
 import { Send, Phone, Video, Loader2, Circle, Users, MessageCircle, X } from 'lucide-react';
-import { io, Socket } from 'socket.io-client';
 
 interface Message {
   _id: string;
@@ -39,6 +39,7 @@ interface CommunityChat {
 
 export default function MessagesPage() {
   const { user } = useAuthStore();
+  const { socket } = useSocketStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [communityChats, setCommunityChats] = useState<CommunityChat[]>([]);
   void setCommunityChats; // Will be used when community chats API is integrated
@@ -50,19 +51,46 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(false);
   const [activeTab, setActiveTab] = useState<'direct' | 'community'>('direct');
-  const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const selectedConversationRef = useRef<Conversation | null>(null);
+
+  // Keep ref in sync with state for socket callbacks
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
+
+  // Listen for new messages from global socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (message: Message) => {
+      const currentConversation = selectedConversationRef.current;
+      if (currentConversation?._id === message.conversation) {
+        setMessages((prev) => [...prev, message]);
+      }
+      // Update conversation list
+      updateConversationLastMessage(message.conversation, message.content);
+    };
+
+    const handleTyping = (data: { conversationId: string; isTyping: boolean }) => {
+      const currentConversation = selectedConversationRef.current;
+      if (currentConversation?._id === data.conversationId) {
+        setTyping(data.isTyping);
+      }
+    };
+
+    socket.on('message:new', handleNewMessage);
+    socket.on('typing', handleTyping);
+
+    return () => {
+      socket.off('message:new', handleNewMessage);
+      socket.off('typing', handleTyping);
+    };
+  }, [socket]);
 
   useEffect(() => {
     fetchConversations();
-    initializeSocket();
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -74,35 +102,6 @@ export default function MessagesPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const initializeSocket = () => {
-    if (!user?._id) return;
-
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
-    const socketUrl = baseURL.replace('/api/v1', '') || 'http://localhost:5000';
-    socketRef.current = io(socketUrl, {
-      query: { userId: user._id },
-      transports: ['websocket', 'polling'],
-    });
-
-    socketRef.current.on('connect', () => {
-      console.log('Socket connected');
-    });
-
-    socketRef.current.on('message:new', (message: Message) => {
-      if (selectedConversation?._id === message.conversation) {
-        setMessages((prev) => [...prev, message]);
-      }
-      // Update conversation list
-      updateConversationLastMessage(message.conversation, message.content);
-    });
-
-    socketRef.current.on('typing', (data: { conversationId: string; isTyping: boolean }) => {
-      if (selectedConversation?._id === data.conversationId) {
-        setTyping(data.isTyping);
-      }
-    });
-  };
 
   const fetchConversations = async () => {
     try {
@@ -165,9 +164,9 @@ export default function MessagesPage() {
   };
 
   const handleTyping = () => {
-    if (!selectedConversation || !socketRef.current) return;
+    if (!selectedConversation || !socket) return;
 
-    socketRef.current.emit('typing', {
+    socket.emit('typing', {
       conversationId: selectedConversation._id,
       isTyping: true,
     });
@@ -177,7 +176,7 @@ export default function MessagesPage() {
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      socketRef.current?.emit('typing', {
+      socket?.emit('typing', {
         conversationId: selectedConversation._id,
         isTyping: false,
       });

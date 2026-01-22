@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
+import { useSocketStore, Notification } from '@/store/socketStore';
 import { Play, Radio, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { storyAPI, notificationAPI } from '@/lib/api';
@@ -47,11 +48,53 @@ const formatTimeAgo = (date: Date): string => {
 
 export default function LiveOrbitPanel() {
   const { user } = useAuthStore();
+  const { socket, notifications: realtimeNotifications } = useSocketStore();
   const navigate = useNavigate();
   const [liveStories, setLiveStories] = useState<Story[]>([]);
   const [reelsNow, setReelsNow] = useState<Reel[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Listen for real-time notifications and update activities
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (notification: Notification) => {
+      // Add to activities in real-time
+      if (['like', 'comment', 'follow', 'post', 'reel', 'story'].includes(notification.type)) {
+        setActivities(prev => [{
+          _id: notification._id,
+          type: notification.type,
+          fromUser: notification.fromUser,
+          createdAt: notification.createdAt
+        }, ...prev].slice(0, 8));
+      }
+
+      // If it's a reel notification, add to reels
+      if (notification.type === 'reel' && notification.reel) {
+        setReelsNow(prev => [{
+          _id: notification.reel || notification._id,
+          user: notification.fromUser as any,
+          createdAt: notification.createdAt
+        }, ...prev].slice(0, 5));
+      }
+
+      // If it's a story notification, add to stories
+      if (notification.type === 'story' && notification.story) {
+        setLiveStories(prev => [{
+          _id: notification.story || notification._id,
+          user: notification.fromUser as any,
+          createdAt: notification.createdAt
+        }, ...prev].slice(0, 5));
+      }
+    };
+
+    socket.on('notification:new', handleNewNotification);
+
+    return () => {
+      socket.off('notification:new', handleNewNotification);
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (!user) return;

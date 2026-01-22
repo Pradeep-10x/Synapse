@@ -6,7 +6,9 @@ const initSocket = (server) => {
     cors: {
       origin: "*",
       credentials: true
-    }
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   const onlineUsers = new Map();
@@ -20,13 +22,24 @@ const initSocket = (server) => {
       onlineUsers.set(userId, socket.id);
       console.log(`User ${userId} registered with socket ${socket.id}`);
 
-      // Notify others that user is online (optional, but good for status)
+      // Notify others that user is online
       socket.broadcast.emit("user:status", { userId, status: "online" });
     }
 
     socket.on("user:online", (uid) => {
       onlineUsers.set(uid, socket.id);
       console.log(`User ${uid} explicitly registered socket ${socket.id}`);
+    });
+
+    // Handle typing indicators
+    socket.on("typing", (data) => {
+      const { conversationId, isTyping, receiverId } = data;
+      if (receiverId) {
+        const receiverSocketId = onlineUsers.get(receiverId);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("typing", { conversationId, isTyping });
+        }
+      }
     });
 
     socket.on("disconnect", () => {

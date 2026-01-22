@@ -11,6 +11,7 @@ import CommunityPage from './pages/Community';
 import SearchPage from './pages/Search';
 import ProfilePage from './pages/Profile';
 import MessagesPage from './pages/Messages';
+import NotificationsPage from './pages/Notifications';
 import SettingsPage from './pages/Settings';
 import EditProfilePage from './pages/EditProfile';
 import ProtectedRoute from './components/layout/ProtectedRoute';
@@ -30,6 +31,7 @@ function App() {
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/community" element={<CommunityPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<EditProfilePage />} />

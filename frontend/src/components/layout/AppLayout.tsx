@@ -1,14 +1,32 @@
+import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '@/components/feed/Sidebar';
 import LiveOrbitPanel from '@/components/feed/LiveOrbitPanel';
 import CommunityLiveOrbitPanel from '@/components/feed/CommunityLiveOrbitPanel';
 import RightPanel from '@/components/feed/RightPanel';
+import { useAuthStore } from '@/store/authStore';
+import { useSocketStore } from '@/store/socketStore';
 
 export default function AppLayout() {
   const location = useLocation();
+  const { user } = useAuthStore();
+  const { connect, disconnect, isConnected } = useSocketStore();
+  
   const isCommunityPage = location.pathname === '/community' || location.pathname.startsWith('/community/');
   const isFeedPage = location.pathname === '/feed';
   const showLiveOrbit = isFeedPage || isCommunityPage;
+
+  // Initialize socket connection when user is authenticated
+  useEffect(() => {
+    if (user?._id && !isConnected) {
+      connect(user._id);
+    }
+
+    return () => {
+      // Cleanup on unmount (logout)
+      disconnect();
+    };
+  }, [user?._id]);
 
   return (
     <div className="min-h-screen flex">

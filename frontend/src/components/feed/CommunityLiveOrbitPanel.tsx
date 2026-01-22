@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
+import { useSocketStore, Notification } from '@/store/socketStore';
 import { Users, MessageSquare, UserPlus, Bell, TrendingUp, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationAPI } from '@/lib/api';
@@ -48,8 +49,51 @@ const getActivityIcon = (type: CommunityActivity['type']) => {
 
 export default function CommunityLiveOrbitPanel() {
   const { user } = useAuthStore();
+  const { socket } = useSocketStore();
   const [activities, setActivities] = useState<CommunityActivity[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Listen for real-time community notifications
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (notification: Notification) => {
+      // Check if it's a community-related notification
+      // For now, we'll add all notifications as community activities for demo
+      // In production, you'd filter by notification.community
+      const activityType = notification.type === 'comment' ? 'comment' 
+        : notification.type === 'follow' ? 'new_member'
+        : notification.type === 'post' ? 'new_post'
+        : 'new_post';
+
+      const getActivityMessage = () => {
+        switch (notification.type) {
+          case 'comment': return 'commented on a post';
+          case 'follow': return 'joined the community';
+          case 'post': return 'shared a new post';
+          case 'like': return 'liked a post';
+          default: return 'new activity';
+        }
+      };
+
+      const newActivity: CommunityActivity = {
+        _id: notification._id,
+        type: activityType as CommunityActivity['type'],
+        community: { name: 'Community', id: '' },
+        user: notification.fromUser,
+        message: getActivityMessage(),
+        createdAt: notification.createdAt
+      };
+
+      setActivities(prev => [newActivity, ...prev].slice(0, 8));
+    };
+
+    socket.on('notification:new', handleNewNotification);
+
+    return () => {
+      socket.off('notification:new', handleNewNotification);
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (!user) return;
