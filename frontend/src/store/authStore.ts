@@ -41,8 +41,11 @@ export const useAuthStore = create<AuthState>((set) => ({
         try {
             set({ isLoading: true });
             const { data } = await api.post('/user/login', credentials);
-            localStorage.setItem('token', data.data?.token || '');
-            set({ user: data.data.user || data.data, isAuthenticated: true, isLoading: false });
+            // Backend returns user directly in data.data (not data.data.user)
+            const userData = data.data;
+            // Token is set via httpOnly cookie, but we can store a flag
+            localStorage.setItem('token', 'authenticated');
+            set({ user: userData, isAuthenticated: true, isLoading: false, isAuthChecked: true });
             toast.success('Logged in successfully');
         } catch (error: any) {
             set({ isLoading: false });
@@ -52,13 +55,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
     },
 
-    register: async (data) => {
+    register: async (formData) => {
         try {
             set({ isLoading: true });
-            const response = await api.post('/user/register', data);
-            localStorage.setItem('token', response.data.data?.token || '');
-            set({ user: response.data.data.user || response.data.data, isAuthenticated: true, isLoading: false });
-            toast.success('Registration successful');
+            await api.post('/user/register', formData);
+            set({ isLoading: false });
+            toast.success('Registration successful! Please login.');
+            // Don't set authenticated - user needs to login after registration
         } catch (error: any) {
             set({ isLoading: false });
             const errorMessage = error.response?.data?.message || 'Registration failed';
@@ -74,8 +77,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             toast.success('Logged out');
         } catch (error) {
             console.error('Logout failed', error);
+            localStorage.removeItem('token');
         } finally {
-            set({ user: null, isAuthenticated: false });
+            set({ user: null, isAuthenticated: false, isAuthChecked: true });
         }
     },
 

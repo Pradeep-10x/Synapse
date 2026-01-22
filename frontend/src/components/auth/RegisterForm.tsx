@@ -62,7 +62,8 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
         password: formData.password,
       });
       onSuccess?.();
-      navigate('/feed');
+      // Redirect to login page after successful registration
+      navigate('/login');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     }
