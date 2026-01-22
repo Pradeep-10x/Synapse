@@ -21,20 +21,8 @@ import communityCommentRoutes from "./routes/communityComment.routes.js";
 
 const app = express()
 
-// CORS configuration - supports multiple origins
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(origin => origin.trim()) || [];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: process.env.CORS_ORIGIN,
   credentials: true,
 }))
 

@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
-import { api } from '@/lib/axios';
 
 type Section =
   | 'account'
