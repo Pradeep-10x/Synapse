@@ -28,6 +28,17 @@ const generateAccessAndRefereshTokens = async (userId) => {
     }
 }
 
+// Helper function for consistent cookie options across all auth endpoints
+const getCookieOptions = (maxAge = 7 * 24 * 60 * 60 * 1000) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge,
+        path: '/',
+    };
+};
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -92,12 +103,8 @@ const loginUser = asyncHandler(async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
-    const options = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    };
+    const options = getCookieOptions();
+    console.log('Login - Setting cookies with options:', options, 'NODE_ENV:', process.env.NODE_ENV);
 
     return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(new ApiResponse(200, loggedInUser, "User logged in successfully"));
 
@@ -109,11 +116,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     }, {
         new: true,
     });
-    const options = {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    }
+    const options = getCookieOptions(0); // Expire immediately
 
     return res.status(200).clearCookie("accessToken", options).clearCookie("refreshToken", options).json(new ApiResponse(200, null, "User logged out successfully"))
 }
@@ -137,12 +140,7 @@ const refreshaccessToken = asyncHandler(async (req, res) => {
         if (incomingRefreshToken !== user.refreshToken) {
             throw new ApiError(401, "Refresh token mismatch")
         }
-        const options = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        }
+        const options = getCookieOptions();
         const { accessToken, refreshToken: newrefreshToken } = await generateAccessAndRefereshTokens(user._id);
         return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", newrefreshToken, options).json(new ApiResponse(200, {
             accessToken, refreshToken: newrefreshToken

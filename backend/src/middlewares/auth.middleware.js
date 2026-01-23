@@ -9,21 +9,25 @@ dotenv.config();
 const verifyJWT=asyncHandler(async(req,_ ,next)=>{
 try{
 const token = req.cookies.accessToken || req.header("Authorization")?.replace("Bearer ","")
+
+console.log('Auth middleware - Cookies received:', Object.keys(req.cookies || {}));
+console.log('Auth middleware - Token present:', !!token);
+
 if (!token){
-    throw new ApiError(401,"unauthorized request")
+    throw new ApiError(401,"unauthorized request - no token")
 }
 const decodedToken=jwt.verify(token,process.env.JWT_SECRET)
 const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
 if(!user)
 {
-    throw new ApiError(401,"not found haha")
+    throw new ApiError(401,"User not found")
 }
 
 req.user = user;
 next();
 }catch(err){  
-    console.log("JWT verification error", err);
-    throw new ApiError(401,"unauthorized request")
+    console.log("JWT verification error:", err?.message || err);
+    throw new ApiError(401,"unauthorized request - invalid token")
 }}
 );
 

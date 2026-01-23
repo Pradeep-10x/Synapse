@@ -21,10 +21,22 @@ import communityCommentRoutes from "./routes/communityComment.routes.js";
 
 const app = express()
 
-app.use(cors({
-  origin: true,
+// CORS configuration for cross-origin cookie support
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    // In production, you might want to whitelist specific origins
+    // For now, allow all origins for credentials
+    callback(null, origin);
+  },
   credentials: true,
-}))
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['set-cookie'],
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
