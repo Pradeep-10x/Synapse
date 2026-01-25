@@ -128,6 +128,8 @@ export const storyAPI = {
 export const communityAPI = {
   getAll: () => api.get('/community'),
   getJoined: () => api.get('/community/joined'),
+  getCreated: () => api.get('/community/created'),
+  search: (query: string) => api.get('/community/search', { params: { query } }),
   create: (formData: FormData) => api.post('/community', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
@@ -138,7 +140,6 @@ export const communityAPI = {
     api.post(`/community/${communityId}/approve`, { userId }),
   makeAdmin: (communityId: string, userId: string) => 
     api.post(`/community/${communityId}/make-admin`, { userId }),
-  searchCommunities: (query: string) => api.get('/community/search', { params: { query } }),
 };
 
 // ============== COMMUNITY POST API ==============
@@ -147,8 +148,11 @@ export const communityPostAPI = {
     api.post(`/community-post/${communityId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
-  getFeed: (communityId: string) => api.get(`/community-post/${communityId}`),
+  getFeed: (communityId: string, page = 1, limit = 10) => 
+    api.get(`/community-post/${communityId}`, { params: { page, limit } }),
   getJoinedFeed: (page = 1, limit = 10) => api.get('/community-post/feed/joined', { params: { page, limit } }),
+  getPublicPosts: (communityId: string, page = 1, limit = 10) => 
+    api.get(`/community-post/public/${communityId}`, { params: { page, limit } }),
   like: (postId: string) => api.post(`/community-post/like/${postId}`),
   delete: (postId: string) => api.delete(`/community-post/${postId}`),
 };
@@ -158,6 +162,7 @@ export const communityCommentAPI = {
   addComment: (postId: string, content: string) => 
     api.post(`/community-comments/${postId}`, { content }),
   getComments: (postId: string) => api.get(`/community-comments/${postId}`),
+  deleteComment: (commentId: string) => api.delete(`/community-comments/${commentId}`),
 };
 
 export default {

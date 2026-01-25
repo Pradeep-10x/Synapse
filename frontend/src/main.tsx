@@ -8,6 +8,7 @@ import AuthPage from './pages/Auth';
 import FeedPage from './pages/Feed';
 import CreatePage from './pages/Create';
 import CommunityPage from './pages/Community';
+import DiscoverCommunities from './pages/DiscoverCommunities';
 import SearchPage from './pages/Search';
 import ProfilePage from './pages/Profile';
 import MessagesPage from './pages/Messages';
@@ -31,6 +32,7 @@ function App() {
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/community" element={<CommunityPage />} />
+            <Route path="/discover-communities" element={<DiscoverCommunities />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/profile" element={<ProfilePage />} />

@@ -225,6 +225,26 @@ export const getJoinedCommunities = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, communitiesData));
 });
 
+// Get user's created communities
+export const getCreatedCommunities = asyncHandler(async (req, res) => {
+  const communities = await Community.find({
+    creator: req.user._id
+  })
+    .populate("creator", "username avatar")
+    .populate("admins", "username avatar")
+    .sort({ createdAt: -1 });
+
+  // Convert isPrivate to isPublic for frontend
+  const communitiesData = communities.map(comm => {
+    const data = comm.toObject();
+    data.isPublic = !data.isPrivate;
+    delete data.isPrivate;
+    return data;
+  });
+
+  return res.status(200).json(new ApiResponse(200, communitiesData));
+});
+
 // Search communities by name
 export const searchCommunities = asyncHandler(async (req, res) => {
   const { query } = req.query;
