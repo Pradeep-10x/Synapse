@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Bookmark, MoreHorizontal, ChevronDown, ChevronUp, Send, Loader2, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, ChevronDown, ChevronUp, Send, Loader2, Trash2, Share2, Pencil, X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { likeAPI, commentAPI } from '@/lib/api';
+import { likeAPI, commentAPI, postAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { toast } from 'react-hot-toast';
 // Simple date formatter (replacing date-fns to avoid dependency)
 const formatDistanceToNow = (date: Date): string => {
   const now = new Date();
@@ -49,13 +50,15 @@ interface Post {
 interface PostCardProps {
   post: Post;
   onLike?: (postId: string) => void;
+  onDelete?: (postId: string) => void;
 }
 
-export default function PostCard({ post, onLike }: PostCardProps) {
+export default function PostCard({ post, onLike, onDelete }: PostCardProps) {
   const { user: currentUser } = useAuthStore();
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
+  const [caption, setCaption] = useState(post.caption || '');
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -63,6 +66,91 @@ export default function PostCard({ post, onLike }: PostCardProps) {
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const [showOptions, setShowOptions] = useState(false);
+  const [isEditingCaption, setIsEditingCaption] = useState(false);
+  const [editedCaption, setEditedCaption] = useState(post.caption || '');
+  const [savingCaption, setSavingCaption] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const commentsRef = useRef<HTMLDivElement>(null);
+
+  const isOwner = currentUser?._id === post.user._id;
+
+  // Click outside to close options menu and comments
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
+        setShowOptions(false);
+      }
+      if (commentsRef.current && !commentsRef.current.contains(event.target as Node)) {
+        setShowComments(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/post/${post._id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Check out this post',
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Failed to share:', error);
+    }
+    setShowOptions(false);
+  };
+
+  const handleDeletePost = async () => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    try {
+      setIsDeleting(true);
+      await postAPI.deletePost(post._id);
+      toast.success('Post deleted successfully');
+      onDelete?.(post._id);
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      toast.error('Failed to delete post');
+    } finally {
+      setIsDeleting(false);
+      setShowOptions(false);
+    }
+  };
+
+  const handleEditCaption = () => {
+    setIsEditingCaption(true);
+    setEditedCaption(caption);
+    setShowOptions(false);
+  };
+
+  const handleSaveCaption = async () => {
+    try {
+      setSavingCaption(true);
+      await postAPI.updateCaption(post._id, editedCaption);
+      setCaption(editedCaption);
+      setIsEditingCaption(false);
+      toast.success('Caption updated');
+    } catch (error) {
+      console.error('Failed to update caption:', error);
+      toast.error('Failed to update caption');
+    } finally {
+      setSavingCaption(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingCaption(false);
+    setEditedCaption(caption);
+  };
 
   const handleLike = async () => {
     // Optimistic update
@@ -169,16 +257,94 @@ export default function PostCard({ post, onLike }: PostCardProps) {
             </span>
           </div>
         </Link>
-        <button className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors">
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
+        <div className="relative" ref={optionsRef}>
+          <button 
+            onClick={() => setShowOptions(!showOptions)}
+            className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+          
+          {/* Options Dropdown */}
+          <AnimatePresence>
+            {showOptions && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.1 }}
+                className="absolute right-0 top-8 z-50 w-40 bg-[#1a1a2e] rounded-lg shadow-xl border border-[rgba(168,85,247,0.3)] overflow-hidden"
+              >
+                <button
+                  onClick={handleShare}
+                  className="w-full px-4 py-2 text-left text-sm text-[#e5e7eb] hover:bg-[rgba(168,85,247,0.1)] flex items-center gap-2 transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={handleEditCaption}
+                      className="w-full px-4 py-2 text-left text-sm text-[#e5e7eb] hover:bg-[rgba(168,85,247,0.1)] flex items-center gap-2 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Edit Caption
+                    </button>
+                    <button
+                      onClick={handleDeletePost}
+                      disabled={isDeleting}
+                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-[rgba(168,85,247,0.1)] flex items-center gap-2 transition-colors"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      Delete Post
+                    </button>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Caption */}
-      {post.caption && (
+      {isEditingCaption ? (
+        <div className="px-4 py-3 border-b border-[rgba(168,85,247,0.1)]">
+          <textarea
+            value={editedCaption}
+            onChange={(e) => setEditedCaption(e.target.value)}
+            className="w-full bg-[rgba(168,85,247,0.05)] border border-[rgba(168,85,247,0.1)] rounded-lg px-3 py-2 text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.3)] resize-none"
+            rows={3}
+            placeholder="Write a caption..."
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <button
+              onClick={handleCancelEdit}
+              className="p-2 text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleSaveCaption}
+              disabled={savingCaption}
+              className="p-2 text-green-400 hover:text-green-300 transition-colors disabled:opacity-50"
+            >
+              {savingCaption ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Check className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        </div>
+      ) : caption && (
         <div className="px-2 py-2 text-lg text-[#e5e7eb] border-b border-[rgba(168,85,247,0.1)]">
           
-          <span>{post.caption}</span>
+          <span>{caption}</span>
         </div>
       )}
 
@@ -230,6 +396,7 @@ export default function PostCard({ post, onLike }: PostCardProps) {
         <AnimatePresence>
           {showComments && (
             <motion.div
+              ref={commentsRef}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}

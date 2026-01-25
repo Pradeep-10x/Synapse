@@ -224,3 +224,46 @@ export const getJoinedCommunities = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, communitiesData));
 });
+
+// Search communities by name
+export const searchCommunities = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+
+  if (!query || query.trim().length < 2) {
+    throw new ApiError(400, "Search query must be at least 2 characters");
+  }
+
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const communities = await Community.find({
+    name: { $regex: query.trim(), $options: 'i' }
+  })
+    .populate("creator", "username avatar")
+    .sort({ membersCount: -1, createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const totalCount = await Community.countDocuments({
+    name: { $regex: query.trim(), $options: 'i' }
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  // Convert isPrivate to isPublic for frontend
+  const communitiesData = communities.map(comm => {
+    const data = comm.toObject();
+    data.isPublic = !data.isPrivate;
+    delete data.isPrivate;
+    return data;
+  });
+
+  return res.status(200).json(new ApiResponse(200, {
+    communities: communitiesData,
+    page,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1
+  }));
+});

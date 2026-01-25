@@ -101,6 +101,11 @@ export default function FeedList() {
     );
   };
 
+  const handleDelete = (postId: string) => {
+    // Remove the post from the list
+    setPosts((prev) => prev.filter((post) => post._id !== postId));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -135,7 +140,7 @@ export default function FeedList() {
   return (
         <div className="max-w-2xl mx-auto">
       {posts.map((post) => (
-        <PostCard key={post._id} post={post} onLike={handleLike} />
+        <PostCard key={post._id} post={post} onLike={handleLike} onDelete={handleDelete} />
       ))}
 
       {/* Infinite Scroll Trigger */}

@@ -48,6 +48,8 @@ export const postAPI = {
   getUserPosts: (userId: string) => api.get(`/post/user/${userId}`),
   getSinglePost: (postId: string) => api.get(`/post/${postId}`),
   deletePost: (postId: string) => api.delete(`/post/${postId}`),
+  updateCaption: (postId: string, caption: string) => api.patch(`/post/${postId}/caption`, { caption }),
+  searchPosts: (query: string) => api.get('/post/search', { params: { query } }),
 };
 
 // ============== FEED API ==============
@@ -136,6 +138,7 @@ export const communityAPI = {
     api.post(`/community/${communityId}/approve`, { userId }),
   makeAdmin: (communityId: string, userId: string) => 
     api.post(`/community/${communityId}/make-admin`, { userId }),
+  searchCommunities: (query: string) => api.get('/community/search', { params: { query } }),
 };
 
 // ============== COMMUNITY POST API ==============

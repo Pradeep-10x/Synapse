@@ -148,7 +148,67 @@ const deletePost = asyncHandler(async (req, res) => {
   );
 });
 
+const updateCaption = asyncHandler(async (req, res) => {
+  const { postId } = req.params;
+  const { caption } = req.body;
+
+  const post = await Post.findById(postId);
+
+  if (!post || post.isDeleted) {
+    throw new ApiError(404, "Post not found");
+  }
+
+  if (post.user.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not allowed to edit this post");
+  }
+
+  post.caption = caption || '';
+  await post.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, post, "Caption updated successfully")
+  );
+});
+
+const searchPosts = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+
+  if (!query || query.trim().length < 2) {
+    throw new ApiError(400, "Search query must be at least 2 characters");
+  }
+
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const posts = await Post.find({
+    caption: { $regex: query.trim(), $options: 'i' },
+    isDeleted: false
+  })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .populate("user", "username avatar isVerified");
+
+  const totalCount = await Post.countDocuments({
+    caption: { $regex: query.trim(), $options: 'i' },
+    isDeleted: false
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      posts,
+      page,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    })
+  );
+});
 
 
 
- export { createPost, getUserPosts , getSinglePost, deletePost}; 
+
+ export { createPost, getUserPosts , getSinglePost, deletePost, updateCaption, searchPosts}; 
