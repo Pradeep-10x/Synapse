@@ -368,3 +368,62 @@ export const updateCommunity = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, communityData, "Community updated successfully"));
 });
+
+// Remove user from community (admin/owner only)
+export const removeUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    throw new ApiError(400, "User ID is required");
+  }
+
+  const community = await Community.findById(id);
+  if (!community) {
+    throw new ApiError(404, "Community not found");
+  }
+
+  // Check if requester is admin or creator
+  const isAdmin = community.admins.some(a => a.toString() === req.user._id.toString());
+  const isCreator = community.creator.toString() === req.user._id.toString();
+
+  if (!isAdmin && !isCreator) {
+    throw new ApiError(403, "Not authorized - admin or owner access required");
+  }
+
+  // Prevent removing the creator
+  if (community.creator.toString() === userId) {
+    throw new ApiError(400, "Cannot remove the community creator");
+  }
+
+  // Prevent removing yourself if you're the only admin (and not creator)
+  if (userId === req.user._id.toString() && !isCreator && community.admins.length === 1) {
+    throw new ApiError(400, "Cannot remove yourself as the only admin");
+  }
+
+  // Remove from members
+  const wasMember = community.members.some(m => m.toString() === userId);
+  if (wasMember) {
+    community.members = community.members.filter(
+      (memberId) => memberId.toString() !== userId
+    );
+    community.membersCount = Math.max(0, community.membersCount - 1);
+  }
+
+  // Remove from admins if they were an admin
+  const wasAdmin = community.admins.some(a => a.toString() === userId);
+  if (wasAdmin) {
+    community.admins = community.admins.filter(
+      (adminId) => adminId.toString() !== userId
+    );
+  }
+
+  // Remove from join requests if present
+  community.joinRequests = community.joinRequests.filter(
+    (requestId) => requestId.toString() !== userId
+  );
+
+  await community.save();
+
+  return res.status(200).json(new ApiResponse(200, null, "User removed from community"));
+});

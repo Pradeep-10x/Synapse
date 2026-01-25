@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Users, Globe, Lock, Loader2, ArrowLeft, Plus, Image as ImageIcon, X, Send, Settings } from 'lucide-react';
+import { Users, Globe, Lock, Loader2, ArrowLeft, Plus, Image as ImageIcon, X, Send, Settings, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { communityAPI, communityPostAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
@@ -61,6 +61,7 @@ export default function CommunityDetail() {
     const [joining, setJoining] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showMembersModal, setShowMembersModal] = useState(false);
+    const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
     // New Post State
     const [showCreatePost, setShowCreatePost] = useState(false);
@@ -216,6 +217,24 @@ export default function CommunityDetail() {
     const handleCommunityUpdate = (updatedData: any) => {
         setCommunity(updatedData);
         setIsJoined(true); // If they updated it, they are definitely in it
+    };
+
+    const handleRemoveUser = async (userId: string) => {
+        if (!id || !confirm('Are you sure you want to remove this user from the community?')) return;
+        
+        try {
+            setRemovingUserId(userId);
+            await communityAPI.removeUser(id, userId);
+            toast.success('User removed from community');
+            
+            // Refresh community data
+            const updated = await communityAPI.getCommunity(id);
+            setCommunity(updated.data.data);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to remove user');
+        } finally {
+            setRemovingUserId(null);
+        }
     };
 
     if (loading) {
@@ -568,12 +587,14 @@ export default function CommunityDetail() {
                                         {community.admins
                                             .filter(a => a._id !== community.creator._id)
                                             .map((admin: any) => (
-                                                <Link
+                                                <div
                                                     key={admin._id}
-                                                    to={`/profile/${admin.username}`}
                                                     className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group"
                                                 >
-                                                    <div className="flex items-center gap-3">
+                                                    <Link
+                                                        to={`/profile/${admin.username}`}
+                                                        className="flex items-center gap-3 flex-1"
+                                                    >
                                                         <div className="w-10 h-10 rounded-full border-2 border-[rgba(168,85,247,0.3)] p-0.5 overflow-hidden">
                                                             <img
                                                                 src={admin.avatar || "/default-avatar.jpg"}
@@ -584,11 +605,30 @@ export default function CommunityDetail() {
                                                         <div className="font-bold text-white group-hover:text-[#a855f7] transition-colors">
                                                             u/{admin.username}
                                                         </div>
+                                                    </Link>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">
+                                                            Admin
+                                                        </div>
+                                                        {isAdmin && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleRemoveUser(admin._id);
+                                                                }}
+                                                                disabled={removingUserId === admin._id}
+                                                                className="p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                                title="Remove from community"
+                                                            >
+                                                                {removingUserId === admin._id ? (
+                                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                )}
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                    <div className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">
-                                                        Admin
-                                                    </div>
-                                                </Link>
+                                                </div>
                                             ))
                                         }
                                     </>
@@ -599,22 +639,43 @@ export default function CommunityDetail() {
                                 {community.members
                                     ?.filter(m => m._id !== community.creator._id && !community.admins.some(a => a._id === m._id))
                                     .map((member: any) => (
-                                        <Link
+                                        <div
                                             key={member._id}
-                                            to={`/profile/${member.username}`}
-                                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors group"
+                                            className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group"
                                         >
-                                            <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden">
-                                                <img
-                                                    src={member.avatar || "/default-avatar.jpg"}
-                                                    alt={member.username}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                            <div className="font-bold text-white group-hover:text-[#a855f7] transition-colors">
-                                                u/{member.username}
-                                            </div>
-                                        </Link>
+                                            <Link
+                                                to={`/profile/${member.username}`}
+                                                className="flex items-center gap-3 flex-1"
+                                            >
+                                                <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden">
+                                                    <img
+                                                        src={member.avatar || "/default-avatar.jpg"}
+                                                        alt={member.username}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </div>
+                                                <div className="font-bold text-white group-hover:text-[#a855f7] transition-colors">
+                                                    u/{member.username}
+                                                </div>
+                                            </Link>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveUser(member._id);
+                                                    }}
+                                                    disabled={removingUserId === member._id}
+                                                    className="p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                    title="Remove from community"
+                                                >
+                                                    {removingUserId === member._id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Trash2 className="w-4 h-4" />
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
                                     ))
                                 }
                             </div>
@@ -631,3 +692,4 @@ export default function CommunityDetail() {
         </div>
     );
 }
+

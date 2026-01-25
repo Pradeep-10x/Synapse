@@ -156,8 +156,9 @@ export const deleteCommunityPost = asyncHandler(async (req, res) => {
 
   const isAuthor = post.author.toString() === req.user._id.toString();
   const isAdmin = community.admins.some(a => a.toString() === req.user._id.toString());
+  const isCreator = community.creator.toString() === req.user._id.toString();
 
-  if (!isAuthor && !isAdmin) {
+  if (!isAuthor && !isAdmin && !isCreator) {
     throw new ApiError(403, "Not authorized to delete this post");
   }
 

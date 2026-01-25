@@ -140,6 +140,8 @@ export const communityAPI = {
     api.post(`/community/${communityId}/approve`, { userId }),
   makeAdmin: (communityId: string, userId: string) =>
     api.post(`/community/${communityId}/make-admin`, { userId }),
+  removeUser: (communityId: string, userId: string) =>
+    api.post(`/community/${communityId}/remove-user`, { userId }),
   update: (communityId: string, formData: FormData) =>
     api.patch(`/community/${communityId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }

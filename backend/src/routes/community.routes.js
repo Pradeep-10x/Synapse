@@ -8,10 +8,10 @@ import {
   makeAdmin,
   getAllCommunities,
   getJoinedCommunities,
-
   getCreatedCommunities,
   searchCommunities,
-  updateCommunity
+  updateCommunity,
+  removeUser
 } from "../controllers/community.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -27,6 +27,7 @@ router.post("/:id/join", verifyJWT, joinCommunity);
 router.post("/:id/leave", verifyJWT, leaveCommunity);
 router.post("/:id/approve", verifyJWT, approveJoinRequest);
 router.post("/:id/make-admin", verifyJWT, makeAdmin);
+router.post("/:id/remove-user", verifyJWT, removeUser);
 router.get("/:id", verifyJWT, getCommunity);
 router.patch("/:id", verifyJWT, upload.fields([{ name: "avatar", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), updateCommunity);
 
