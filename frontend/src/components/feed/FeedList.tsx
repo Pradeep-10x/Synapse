@@ -138,7 +138,7 @@ export default function FeedList() {
   }
 
   return (
-        <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto">
       {posts.map((post) => (
         <PostCard key={post._id} post={post} onLike={handleLike} onDelete={handleDelete} />
       ))}

@@ -15,7 +15,11 @@ const communitySchema = new mongoose.Schema(
     },
 
     coverImage: {
-      type: String 
+      type: String
+    },
+
+    avatar: {
+      type: String
     },
 
     creator: {
@@ -38,11 +42,11 @@ const communitySchema = new mongoose.Schema(
       }
     ],
     joinRequests: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  }
-],
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
 
 
     isPrivate: {
@@ -53,7 +57,13 @@ const communitySchema = new mongoose.Schema(
     membersCount: {
       type: Number,
       default: 0
-    }
+    },
+    rules: [
+      {
+        type: String,
+        trim: true
+      }
+    ]
   },
   { timestamps: true }
 );

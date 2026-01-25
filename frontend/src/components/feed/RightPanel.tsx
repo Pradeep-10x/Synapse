@@ -17,7 +17,7 @@ interface Community {
   _id: string;
   name: string;
   description: string;
-  memberCount: number;
+  membersCount: number;
   isPublic: boolean;
   coverImage?: string;
 }
@@ -68,7 +68,7 @@ export default function RightPanel() {
   // Debounced search as user types
   useEffect(() => {
     const query = friendQuery.trim();
-    
+
     // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -148,7 +148,7 @@ export default function RightPanel() {
             to={`/profile/${user.username}`}
             className="flex items-center gap-4 mb-4 hover:opacity-80 transition-opacity"
           >
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-16 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden">
               <img src={user.avatar || "/default-avatar.jpg"} alt={user.username} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
@@ -283,7 +283,7 @@ export default function RightPanel() {
                                 className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[rgba(168,85,247,0.1)] transition-colors text-left group"
                                 whileHover={{ x: 2 }}
                               >
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden flex-shrink-0">
                                   <img
                                     src={result.avatar || "/default-avatar.jpg"}
                                     alt={result.username}
@@ -330,10 +330,21 @@ export default function RightPanel() {
             </>
           ) : (
             <div>
+              <button
+                onClick={() => navigate('/messages')}
+                className="w-full mb-6 glass-card rounded-lg p-3 hover:border-[rgba(6,182,212,0.4)] transition-all flex items-center gap-2 text-[#e5e7eb] group"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#06b6d4]/10 flex items-center justify-center group-hover:bg-[#06b6d4]/20 transition-colors">
+                  <MessageSquare className="w-4 h-4 text-[#06b6d4]" />
+                </div>
+                <span className="text-sm font-semibold uppercase tracking-wider">Community Chat</span>
+              </button>
+
               <div className="flex items-center gap-2 mb-3">
                 <Users className="w-5 h-5 text-[#9ca3af]" />
-                <h3 className="text-base font-semibold text-[#e5e7eb]">Community Suggestions</h3>
+                <h3 className="text-base font-semibold text-[#e5e7eb] uppercase tracking-wider">Suggestions</h3>
               </div>
+
               {loadingSuggestions ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-5 h-5 animate-spin text-[#a855f7]" />
@@ -357,35 +368,16 @@ export default function RightPanel() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-[#e5e7eb] font-medium truncate group-hover:text-[#a855f7] transition-colors">
-                            {community.name}
-                          </p>
-                          <p className="text-xs text-[#9ca3af]">{community.memberCount || 0} members</p>
+                          <p className="text-sm text-[#e5e7eb] font-semibold truncate group-hover:text-[#a855f7] transition-colors">o/{community.name}</p>
+                          <p className="text-[10px] text-[#9ca3af]">{(community.membersCount || 0).toLocaleString()} members</p>
                         </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#9ca3af] py-4">No community suggestions available</p>
+                <p className="text-sm text-[#9ca3af] py-4 italic">No community suggestions available</p>
               )}
-              
-              <div className="mt-4 pt-4 border-t border-[rgba(168,85,247,0.1)]">
-                <button
-                  onClick={() => navigate('/discover-communities')}
-                  className="w-full glass-card rounded-lg p-3 hover:border-[rgba(168,85,247,0.3)] transition-all flex items-center gap-2 text-[#e5e7eb]"
-                >
-                  <Search className="w-4 h-4 text-[#a855f7]" />
-                  <span className="text-sm font-medium">Discover More</span>
-                </button>
-                <button
-                  onClick={() => navigate('/messages')}
-                  className="w-full mt-2 glass-card rounded-lg p-3 hover:border-[rgba(168,85,247,0.3)] transition-all flex items-center gap-2 text-[#e5e7eb]"
-                >
-                  <MessageSquare className="w-4 h-4 text-[#06b6d4]" />
-                  <span className="text-sm font-medium">Community Chat</span>
-                </button>
-              </div>
             </div>
           )}
         </motion.div>

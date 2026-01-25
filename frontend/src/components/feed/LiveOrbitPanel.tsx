@@ -109,13 +109,13 @@ export default function LiveOrbitPanel() {
           const storiesData = storiesRes.data?.data || [];
           // Flatten grouped stories and take most recent 5
           const flatStories: Story[] = storiesData
-            .flatMap((group: any) => 
+            .flatMap((group: any) =>
               group.stories?.map((story: any) => ({
                 ...story,
                 user: group.user || story.user
               })) || []
             )
-            .sort((a: Story, b: Story) => 
+            .sort((a: Story, b: Story) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             )
             .slice(0, 5);
@@ -206,7 +206,7 @@ export default function LiveOrbitPanel() {
                       className="flex items-center gap-2.5"
                     >
                       <div className="relative shrink-0">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex items-center justify-center overflow-hidden ring-2 ring-[#a855f7] ring-offset-1 ring-offset-[#0b0c10] group-hover:ring-[#c084fc] transition-colors">
+                        <div className="w-9 h-9 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden ring-2 ring-[#a855f7] ring-offset-1 ring-offset-[#0b0c10] group-hover:ring-[#c084fc] transition-colors">
                           <img
                             src={story.user.avatar || "/default-avatar.jpg"}
                             alt={story.user.username}
@@ -254,7 +254,7 @@ export default function LiveOrbitPanel() {
                     onClick={() => navigate('/reels')}
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#06b6d4] to-[#a855f7] flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden shrink-0">
                         <img
                           src={reel.user?.avatar || "/default-avatar.jpg"}
                           alt={reel.user?.username || 'Unknown'}

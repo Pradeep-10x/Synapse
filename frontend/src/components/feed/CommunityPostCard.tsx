@@ -72,6 +72,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [showOptions, setShowOptions] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const optionsRef = useRef<HTMLDivElement>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
@@ -90,6 +91,13 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Sync state with props
+  useEffect(() => {
+    setIsLiked(post.isLiked || false);
+    setLikesCount(post.likesCount);
+    setCommentsCount(post.commentsCount);
+  }, [post.isLiked, post.likesCount, post.commentsCount]);
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/community/post/${post._id}`;
@@ -128,7 +136,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
   const handleLike = async () => {
     setIsLiked(!isLiked);
     setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
-    
+
     try {
       await communityPostAPI.like(post._id);
       onLike?.(post._id);
@@ -209,7 +217,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
             to={`/profile/${post.user.username}`}
             className="flex items-center gap-3 hover:opacity-80 transition-opacity flex-shrink-0"
           >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden">
               <img
                 src={post.user.avatar || "/default-avatar.jpg"}
                 alt={post.user.username}
@@ -228,7 +236,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
                   <>
                     <Link to={`/community/${post.community._id}`} className="text-[#a855f7] hover:underline flex items-center gap-1">
                       <Users className="w-3 h-3" />
-                      {post.community.name}
+                      o/{post.community.name}
                     </Link>
                     <span>•</span>
                   </>
@@ -240,13 +248,13 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
         </div>
         {(isOwner || isAdmin) && (
           <div className="relative" ref={optionsRef}>
-            <button 
+            <button
               onClick={() => setShowOptions(!showOptions)}
               className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
-            
+
             <AnimatePresence>
               {showOptions && (
                 <motion.div
@@ -298,7 +306,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
             <img
               src={post.mediaUrl}
               alt={post.caption || 'Post image'}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
             />
           ) : (
             <video
@@ -332,8 +340,20 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
             <MessageCircle className="w-6 h-6" />
             {showComments ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
-          <button className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors ml-auto">
-            <Bookmark className="w-6 h-6" />
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1 text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
+          >
+            <Share2 className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => {
+              setIsBookmarked(!isBookmarked);
+              toast.success(isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks');
+            }}
+            className={`transition-colors ml-auto ${isBookmarked ? 'text-[#a855f7]' : 'text-[#9ca3af] hover:text-[#e5e7eb]'}`}
+          >
+            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-current' : ''}`} />
           </button>
         </div>
 
@@ -379,7 +399,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
                     {comments.map((comment) => (
                       <div key={comment._id} className="flex gap-3">
                         <Link to={`/profile/${comment.user.username}`}>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex-shrink-0 overflow-hidden">
+                          <div className="w-8 h-8 rounded-full bg-[#a855f7] flex-shrink-0 overflow-hidden">
                             <img
                               src={comment.user.avatar || "/default-avatar.jpg"}
                               alt={comment.user.username}

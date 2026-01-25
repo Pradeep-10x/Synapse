@@ -1,19 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Users, Globe, Lock, Search, Loader2, X, ArrowLeft, Eye } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Users, Globe, Search, Loader2, ArrowLeft, Eye } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { communityAPI, communityPostAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import { useAuthStore } from '@/store/authStore';
+import { useCommunityStore } from '@/store/communityStore';
 import CommunityPostCard from '@/components/feed/CommunityPostCard';
 
 interface Community {
   _id: string;
   name: string;
   description: string;
-  memberCount: number;
+  membersCount: number;
   isPublic: boolean;
   coverImage?: string;
+  avatar?: string;
   creator?: {
     _id: string;
     username: string;
@@ -44,9 +45,8 @@ interface CommunityPost {
 }
 
 export default function DiscoverCommunities() {
-  const { user } = useAuthStore();
+  const { triggerRefresh } = useCommunityStore();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [communities, setCommunities] = useState<Community[]>([]);
   const [joinedCommunityIds, setJoinedCommunityIds] = useState<string[]>([]);
@@ -122,7 +122,7 @@ export default function DiscoverCommunities() {
       setLoadingCommunities(true);
       const response = await communityAPI.getAll();
       const allCommunities = response.data.data?.communities || [];
-      
+
       // Filter out joined communities and only show public ones
       // Use the current state of joinedCommunityIds
       const filtered = allCommunities.filter((c: Community) => {
@@ -130,7 +130,7 @@ export default function DiscoverCommunities() {
         const isNotJoined = !joinedCommunityIds.includes(c._id);
         return isPublic && isNotJoined;
       });
-      
+
       setCommunities(filtered);
     } catch (error: any) {
       console.error('Failed to fetch communities:', error);
@@ -150,14 +150,14 @@ export default function DiscoverCommunities() {
       setLoadingCommunities(true);
       const response = await communityAPI.search(query);
       const allCommunities = response.data.data?.communities || [];
-      
+
       // Filter out joined communities and only show public ones
       const filtered = allCommunities.filter((c: Community) => {
         const isPublic = c.isPublic === true || c.isPublic === undefined;
         const isNotJoined = !joinedCommunityIds.includes(c._id);
         return isPublic && isNotJoined;
       });
-      
+
       setCommunities(filtered);
     } catch (error: any) {
       console.error('Failed to search communities:', error);
@@ -199,6 +199,7 @@ export default function DiscoverCommunities() {
       setJoining(communityId);
       await communityAPI.joinCommunity(communityId);
       toast.success('Successfully joined community!');
+      triggerRefresh();
       setJoinedCommunityIds(prev => [...prev, communityId]);
       setCommunities(prev => prev.filter(c => c._id !== communityId));
       // Refresh joined communities list
@@ -284,16 +285,18 @@ export default function DiscoverCommunities() {
                   >
                     <div className="flex flex-col h-full">
                       <div className="flex items-start gap-4 mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-[#7c3aed]/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {community.coverImage ? (
-                            <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover" />
+                        <div className="w-14 h-14 rounded-xl bg-[#1a1a2e] border border-[rgba(168,85,247,0.1)] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {community.avatar ? (
+                            <img src={community.avatar} alt={community.name} className="w-full h-full object-cover" />
+                          ) : community.coverImage ? (
+                            <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover opacity-50" />
                           ) : (
                             <Users className="w-7 h-7 text-[#a855f7]" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-[#e5e7eb] text-lg">{community.name}</h3>
+                            <h3 className="font-semibold text-[#e5e7eb] text-lg">o/{community.name}</h3>
                             <Globe className="w-4 h-4 text-[#9ca3af]" />
                           </div>
                           <p className="text-[#9ca3af] text-sm line-clamp-2">{community.description}</p>
@@ -301,7 +304,7 @@ export default function DiscoverCommunities() {
                       </div>
                       <div className="flex items-center justify-between mt-auto">
                         <span className="text-sm text-[#9ca3af]">
-                          {(community.memberCount || 0).toLocaleString()} members
+                          {(community.membersCount || 0).toLocaleString()} members
                         </span>
                         <div className="flex gap-2">
                           <button
@@ -348,16 +351,18 @@ export default function DiscoverCommunities() {
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center gap-3">
-                  {selectedCommunity.coverImage ? (
-                    <img src={selectedCommunity.coverImage} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover" />
+                  {selectedCommunity.avatar ? (
+                    <img src={selectedCommunity.avatar} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover" />
+                  ) : selectedCommunity.coverImage ? (
+                    <img src={selectedCommunity.coverImage} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover opacity-50" />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-[#7c3aed]/20 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-[#1a1a2e] flex items-center justify-center">
                       <Users className="w-5 h-5 text-[#a855f7]" />
                     </div>
                   )}
                   <div>
-                    <h1 className="text-2xl font-bold text-[#e5e7eb]">{selectedCommunity.name}</h1>
-                    <p className="text-sm text-[#9ca3af]">{(selectedCommunity.memberCount || 0).toLocaleString()} members</p>
+                    <h1 className="text-2xl font-bold text-[#e5e7eb]">o/{selectedCommunity.name}</h1>
+                    <p className="text-sm text-[#9ca3af]">{(selectedCommunity.membersCount || 0).toLocaleString()} members</p>
                   </div>
                 </div>
                 {!joinedCommunityIds.includes(selectedCommunity._id) && (

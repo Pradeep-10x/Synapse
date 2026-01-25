@@ -6,7 +6,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 export const createCommunityPost = asyncHandler(async (req, res) => {
-  const { text } = req.body;
+  const { text, caption } = req.body;
+  const postText = text || caption;
   const { communityId } = req.params;
 
   const community = await Community.findById(communityId);
@@ -29,7 +30,7 @@ export const createCommunityPost = asyncHandler(async (req, res) => {
   const post = await CommunityPost.create({
     community: communityId,
     author: req.user._id,
-    text,
+    text: postText,
     mediaUrl
   });
 
@@ -37,7 +38,29 @@ export const createCommunityPost = asyncHandler(async (req, res) => {
     .populate("author", "username avatar isVerified")
     .populate("community", "name coverImage");
 
-  return res.status(201).json(new ApiResponse(201, populatedPost, "Post created successfully"));
+  const transformedPost = {
+    _id: populatedPost._id,
+    user: {
+      _id: populatedPost.author._id,
+      username: populatedPost.author.username,
+      avatar: populatedPost.author.avatar,
+      isVerified: populatedPost.author.isVerified
+    },
+    caption: populatedPost.text,
+    mediaUrl: populatedPost.mediaUrl,
+    mediaType: populatedPost.mediaUrl ? (populatedPost.mediaUrl.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image') : 'image',
+    likesCount: populatedPost.likes.length,
+    commentsCount: 0,
+    createdAt: populatedPost.createdAt,
+    isLiked: false, // Just created, unlikely to be liked yet
+    community: {
+      _id: populatedPost.community._id,
+      name: populatedPost.community.name,
+      coverImage: populatedPost.community.coverImage
+    }
+  };
+
+  return res.status(201).json(new ApiResponse(201, transformedPost, "Post created successfully"));
 });
 
 export const getCommunityFeed = asyncHandler(async (req, res) => {
@@ -74,7 +97,7 @@ export const getCommunityFeed = asyncHandler(async (req, res) => {
     mediaUrl: post.mediaUrl,
     mediaType: post.mediaUrl ? (post.mediaUrl.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image') : 'image',
     likesCount: post.likes.length,
-    commentsCount: 0,
+    commentsCount: post.commentsCount || 0,
     createdAt: post.createdAt,
     isLiked: post.likes.some(id => id.toString() === req.user._id.toString()),
     community: {
@@ -111,7 +134,7 @@ export const likeCommunityPost = asyncHandler(async (req, res) => {
   }
 
   await post.save();
-  return res.status(200).json(new ApiResponse(200, { 
+  return res.status(200).json(new ApiResponse(200, {
     likesCount: post.likes.length,
     isLiked: !isLiked
   }));
@@ -120,7 +143,7 @@ export const likeCommunityPost = asyncHandler(async (req, res) => {
 export const deleteCommunityPost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
   const post = await CommunityPost.findById(postId);
-  
+
   if (!post) {
     throw new ApiError(404, "Post not found");
   }
@@ -194,7 +217,7 @@ export const getJoinedCommunitiesFeed = asyncHandler(async (req, res) => {
     mediaUrl: post.mediaUrl,
     mediaType: post.mediaUrl ? (post.mediaUrl.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image') : 'image',
     likesCount: post.likes.length,
-    commentsCount: 0, // Will be populated if comments are added
+    commentsCount: post.commentsCount || 0, // Will be populated if comments are added
     createdAt: post.createdAt,
     isLiked: post.likes.some(id => id.toString() === req.user._id.toString()),
     community: {
@@ -258,7 +281,7 @@ export const getPublicCommunityPosts = asyncHandler(async (req, res) => {
     mediaUrl: post.mediaUrl,
     mediaType: post.mediaUrl ? (post.mediaUrl.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image') : 'image',
     likesCount: post.likes.length,
-    commentsCount: 0,
+    commentsCount: post.commentsCount || 0,
     createdAt: post.createdAt,
     isLiked: req.user ? post.likes.some(id => id.toString() === req.user._id.toString()) : false,
     community: {

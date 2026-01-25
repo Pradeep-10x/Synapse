@@ -61,7 +61,7 @@ export default function FeaturesSection() {
                   {feature.label}
                 </span>
                 {index < features.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 left-full w-8 h-0.5 bg-gradient-to-r from-[#a855f7] to-[#06b6d4] opacity-30" />
+                  <div className="hidden lg:block absolute top-1/2 left-full w-8 h-0.5 bg-[#a855f7] opacity-20" />
                 )}
               </motion.div>
             ))}

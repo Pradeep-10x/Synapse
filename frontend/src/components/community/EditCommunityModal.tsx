@@ -1,32 +1,53 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, Globe, Lock, Loader2, Camera } from 'lucide-react';
 import { communityAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useCommunityStore } from '@/store/communityStore';
 
-interface CreateCommunityModalProps {
+interface EditCommunityModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: (updatedData: any) => void;
+    community: {
+        _id: string;
+        name: string;
+        description: string;
+        isPublic: boolean;
+        coverImage?: string;
+        avatar?: string;
+        rules?: string[];
+    };
 }
 
-export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: CreateCommunityModalProps) {
+export default function EditCommunityModal({ isOpen, onClose, onSuccess, community }: EditCommunityModalProps) {
     const { triggerRefresh } = useCommunityStore();
-    const [creating, setCreating] = useState(false);
-    const [newCommunity, setNewCommunity] = useState({
-        name: '',
-        description: '',
-        isPublic: true,
-        rules: '',
+    const [updating, setUpdating] = useState(false);
+    const [formData, setFormData] = useState({
+        name: community.name,
+        description: community.description,
+        isPublic: community.isPublic,
+        rules: community.rules?.join('\n') || '',
     });
+
     const [coverImage, setCoverImage] = useState<File | null>(null);
-    const [coverPreview, setCoverPreview] = useState<string | null>(null);
+    const [coverPreview, setCoverPreview] = useState<string | null>(community.coverImage || null);
     const [avatarImage, setAvatarImage] = useState<File | null>(null);
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(community.avatar || null);
 
     const coverInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setFormData({
+            name: community.name,
+            description: community.description,
+            isPublic: community.isPublic,
+            rules: community.rules?.join('\n') || '',
+        });
+        setCoverPreview(community.coverImage || null);
+        setAvatarPreview(community.avatar || null);
+    }, [community]);
 
     const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -46,40 +67,35 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newCommunity.name.trim()) {
+        if (!formData.name.trim()) {
             toast.error('Community name is required');
             return;
         }
 
         try {
-            setCreating(true);
-            const formData = new FormData();
-            formData.append('name', newCommunity.name);
-            formData.append('description', newCommunity.description);
-            formData.append('isPublic', String(newCommunity.isPublic));
-            formData.append('rules', newCommunity.rules);
+            setUpdating(true);
+            const updateData = new FormData();
+            updateData.append('name', formData.name);
+            updateData.append('description', formData.description);
+            updateData.append('isPublic', String(formData.isPublic));
+            updateData.append('rules', formData.rules);
+
             if (coverImage) {
-                formData.append('coverImage', coverImage);
+                updateData.append('coverImage', coverImage);
             }
             if (avatarImage) {
-                formData.append('avatar', avatarImage);
+                updateData.append('avatar', avatarImage);
             }
 
-            await communityAPI.create(formData);
-            toast.success('Community created successfully!');
+            const response = await communityAPI.update(community._id, updateData);
+            toast.success('Community updated successfully!');
             triggerRefresh();
-            onSuccess();
+            onSuccess(response.data.data);
             onClose();
-            // Reset form
-            setNewCommunity({ name: '', description: '', isPublic: true, rules: '' });
-            setCoverImage(null);
-            setCoverPreview(null);
-            setAvatarImage(null);
-            setAvatarPreview(null);
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to create community');
+            toast.error(error.response?.data?.message || 'Failed to update community');
         } finally {
-            setCreating(false);
+            setUpdating(false);
         }
     };
 
@@ -94,7 +110,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                         className="bg-[#0a0a12] border border-[rgba(168,85,247,0.3)] rounded-2xl p-6 w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh] no-scrollbar"
                     >
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-[#e5e7eb]">Create Community</h2>
+                            <h2 className="text-xl font-bold text-[#e5e7eb]">Edit Community</h2>
                             <button
                                 onClick={onClose}
                                 className="text-[#9ca3af] hover:text-[#e5e7eb]"
@@ -106,7 +122,6 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Images Section */}
                             <div className="space-y-4">
-                                {/* Cover Photo */}
                                 <div className="relative">
                                     <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Cover Banner</label>
                                     <div
@@ -114,11 +129,16 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                                         className="aspect-[3/1] rounded-xl border-2 border-dashed border-[rgba(168,85,247,0.2)] flex items-center justify-center cursor-pointer hover:border-[rgba(168,85,247,0.4)] transition-all overflow-hidden bg-[rgba(168,85,247,0.02)]"
                                     >
                                         {coverPreview ? (
-                                            <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                                            <div className="relative w-full h-full group">
+                                                <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Upload className="w-6 h-6 text-white" />
+                                                </div>
+                                            </div>
                                         ) : (
                                             <div className="text-center">
                                                 <Upload className="w-6 h-6 text-[#9ca3af] mx-auto mb-1" />
-                                                <p className="text-xs text-[#6b7280]">Upload Banner</p>
+                                                <p className="text-xs text-[#6b7280]">Update Banner</p>
                                             </div>
                                         )}
                                     </div>
@@ -130,7 +150,7 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                                         className="hidden"
                                     />
 
-                                    {/* Avatar/Profile Photo Overlay */}
+                                    {/* Avatar Photo Overlay */}
                                     <div className="absolute -bottom-4 left-6">
                                         <div
                                             onClick={(e) => {
@@ -140,13 +160,15 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                                             className="w-20 h-20 rounded-2xl border-4 border-[#0a0a12] bg-[#1a1a2e] flex items-center justify-center cursor-pointer hover:bg-[#252545] transition-all shadow-xl overflow-hidden group"
                                         >
                                             {avatarPreview ? (
-                                                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                                                <div className="relative w-full h-full">
+                                                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Upload className="w-5 h-5 text-white" />
+                                                    </div>
+                                                </div>
                                             ) : (
                                                 <Camera className="w-8 h-8 text-[#9ca3af] group-hover:text-[#a855f7] transition-colors" />
                                             )}
-                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Upload className="w-5 h-5 text-white" />
-                                            </div>
                                         </div>
                                         <input
                                             ref={avatarInputRef}
@@ -160,50 +182,46 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                             </div>
 
                             <div className="pt-4 space-y-4">
-                                {/* Name */}
                                 <div>
                                     <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Community Name</label>
                                     <input
                                         type="text"
-                                        value={newCommunity.name}
-                                        onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
-                                        placeholder="Name your orbit.."
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="Orbit name..."
                                         className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] transition-all"
                                     />
                                 </div>
 
-                                {/* Description */}
                                 <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Objectives/Description</label>
+                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Description</label>
                                     <textarea
-                                        value={newCommunity.description}
-                                        onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
-                                        placeholder="Describe the mission of this orbit..."
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        placeholder="Mission briefing..."
                                         rows={3}
                                         className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] resize-none transition-all"
                                     />
                                 </div>
 
-                                {/* Rules */}
                                 <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Orbit Rules (One per line)</label>
+                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Mission Rules (One per line)</label>
                                     <textarea
-                                        value={newCommunity.rules}
-                                        onChange={(e) => setNewCommunity({ ...newCommunity, rules: e.target.value })}
-                                        placeholder="1. High signal\n2. No orbital debris..."
+                                        value={formData.rules}
+                                        onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
+                                        placeholder="Rules of Engagement..."
                                         rows={3}
                                         className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] resize-none transition-all"
                                     />
                                 </div>
 
-                                {/* Privacy Choice */}
                                 <div className="flex gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => setNewCommunity({ ...newCommunity, isPublic: true })}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${newCommunity.isPublic
+                                        onClick={() => setFormData({ ...formData, isPublic: true })}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${formData.isPublic
                                             ? 'bg-[#a855f7] text-white'
-                                            : 'glass-card text-[#9ca3af] hover:text-[#e5e7eb]'
+                                            : 'glass-card text-[#9ca3af]'
                                             }`}
                                     >
                                         <Globe className="w-4 h-4" />
@@ -211,10 +229,10 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setNewCommunity({ ...newCommunity, isPublic: false })}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${!newCommunity.isPublic
+                                        onClick={() => setFormData({ ...formData, isPublic: false })}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${!formData.isPublic
                                             ? 'bg-[#a855f7] text-white'
-                                            : 'glass-card text-[#9ca3af] hover:text-[#e5e7eb]'
+                                            : 'glass-card text-[#9ca3af]'
                                             }`}
                                     >
                                         <Lock className="w-4 h-4" />
@@ -223,19 +241,18 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                                 </div>
                             </div>
 
-                            {/* Submit */}
                             <button
                                 type="submit"
-                                disabled={creating || !newCommunity.name.trim()}
-                                className="w-full py-4 bg-[#a855f7] hover:bg-[#9333ea] rounded-xl text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                disabled={updating || !formData.name.trim()}
+                                className="w-full py-4 bg-[#a855f7] hover:bg-[#9333ea] rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                             >
-                                {creating ? (
+                                {updating ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                        Synchronizing...
+                                        Re-entering Orbit...
                                     </>
                                 ) : (
-                                    'Launch Community'
+                                    'Update Community'
                                 )}
                             </button>
                         </form>

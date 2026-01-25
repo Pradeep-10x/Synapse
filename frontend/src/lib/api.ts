@@ -11,32 +11,32 @@ export const userAPI = {
   register: (data: FormData) => api.post('/user/register', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  login: (credentials: { username?: string; email?: string; password: string }) => 
+  login: (credentials: { username?: string; email?: string; password: string }) =>
     api.post('/user/login', credentials),
   logout: () => api.post('/user/logout'),
   refreshToken: () => api.post('/user/refresh-token'),
-  
+
   // Profile
   getCurrentUser: () => api.get('/user/me'),
   getUserProfile: (username: string) => api.get(`/user/u/${username}`),
-  updateDetails: (data: { fullName?: string; bio?: string; username?: string }) => 
+  updateDetails: (data: { fullName?: string; bio?: string; username?: string }) =>
     api.put('/user/update-details', data),
   updateAvatar: (formData: FormData) => api.patch('/user/update-avatar', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  changePassword: (data: { oldPassword: string; newPassword: string }) => 
+  changePassword: (data: { oldPassword: string; newPassword: string }) =>
     api.post('/user/change-password', data),
   deleteAccount: () => api.post('/user/delete'),
   searchUsers: (query: string) => api.get('/user/search', { params: { query } }),
-  
+
   // Follow
   followUnfollow: (userId: string) => api.post(`/user/${userId}/follow`),
   getFollowers: (userId: string) => api.get(`/user/${userId}/followers`),
   getFollowing: (userId: string) => api.get(`/user/${userId}/following`),
-  
+
   // Privacy
   getPrivacy: () => api.get('/user/privacy'),
-  updatePrivacy: (data: { privateAccount?: boolean; messagePolicy?: 'everyone' | 'followers'; allowMentions?: boolean; allowTagging?: boolean }) => 
+  updatePrivacy: (data: { privateAccount?: boolean; messagePolicy?: 'everyone' | 'followers'; allowMentions?: boolean; allowTagging?: boolean }) =>
     api.patch('/user/privacy', data),
 };
 
@@ -60,15 +60,15 @@ export const feedAPI = {
 // ============== COMMENT API ==============
 export const commentAPI = {
   // Post comments
-  createPostComment: (postId: string, content: string) => 
+  createPostComment: (postId: string, content: string) =>
     api.post(`/comment/post/${postId}`, { content }),
   getPostComments: (postId: string) => api.get(`/comment/post/${postId}`),
-  
+
   // Reel comments
-  createReelComment: (reelId: string, content: string) => 
+  createReelComment: (reelId: string, content: string) =>
     api.post(`/comment/reel/${reelId}`, { content }),
   getReelComments: (reelId: string) => api.get(`/comment/reel/${reelId}`),
-  
+
   // Delete comment
   deleteComment: (commentId: string) => api.delete(`/comment/${commentId}`),
 };
@@ -78,11 +78,11 @@ export const likeAPI = {
   // Post likes
   likeUnlikePost: (postId: string) => api.post(`/like/post/${postId}`),
   getPostLikes: (postId: string) => api.get(`/like/post/${postId}`),
-  
+
   // Reel likes
   likeUnlikeReel: (reelId: string) => api.post(`/like/reel/${reelId}`),
   getReelLikes: (reelId: string) => api.get(`/like/reel/${reelId}`),
-  
+
   // Story likes
   likeUnlikeStory: (storyId: string) => api.post(`/like/story/${storyId}`),
   getStoryLikes: (storyId: string) => api.get(`/like/story/${storyId}`),
@@ -97,10 +97,10 @@ export const notificationAPI = {
 
 // ============== MESSAGE API ==============
 export const messageAPI = {
-  sendMessage: (data: { receiverId: string; content: string }) => 
+  sendMessage: (data: { receiverId: string; content: string }) =>
     api.post('/message/send', data),
   getConversations: () => api.get('/message/conversations'),
-  getMessages: (conversationId: string) => 
+  getMessages: (conversationId: string) =>
     api.get(`/message/conversation/${conversationId}/messages`),
 };
 
@@ -136,22 +136,26 @@ export const communityAPI = {
   getCommunity: (communityId: string) => api.get(`/community/${communityId}`),
   joinCommunity: (communityId: string) => api.post(`/community/${communityId}/join`),
   leaveCommunity: (communityId: string) => api.post(`/community/${communityId}/leave`),
-  approveJoinRequest: (communityId: string, userId: string) => 
+  approveJoinRequest: (communityId: string, userId: string) =>
     api.post(`/community/${communityId}/approve`, { userId }),
-  makeAdmin: (communityId: string, userId: string) => 
+  makeAdmin: (communityId: string, userId: string) =>
     api.post(`/community/${communityId}/make-admin`, { userId }),
+  update: (communityId: string, formData: FormData) =>
+    api.patch(`/community/${communityId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 };
 
 // ============== COMMUNITY POST API ==============
 export const communityPostAPI = {
-  create: (communityId: string, formData: FormData) => 
+  create: (communityId: string, formData: FormData) =>
     api.post(`/community-post/${communityId}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
-  getFeed: (communityId: string, page = 1, limit = 10) => 
+  getFeed: (communityId: string, page = 1, limit = 10) =>
     api.get(`/community-post/${communityId}`, { params: { page, limit } }),
   getJoinedFeed: (page = 1, limit = 10) => api.get('/community-post/feed/joined', { params: { page, limit } }),
-  getPublicPosts: (communityId: string, page = 1, limit = 10) => 
+  getPublicPosts: (communityId: string, page = 1, limit = 10) =>
     api.get(`/community-post/public/${communityId}`, { params: { page, limit } }),
   like: (postId: string) => api.post(`/community-post/like/${postId}`),
   delete: (postId: string) => api.delete(`/community-post/${postId}`),
@@ -159,7 +163,7 @@ export const communityPostAPI = {
 
 // ============== COMMUNITY COMMENT API ==============
 export const communityCommentAPI = {
-  addComment: (postId: string, content: string) => 
+  addComment: (postId: string, content: string) =>
     api.post(`/community-comments/${postId}`, { content }),
   getComments: (postId: string) => api.get(`/community-comments/${postId}`),
   deleteComment: (commentId: string) => api.delete(`/community-comments/${commentId}`),

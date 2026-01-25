@@ -156,7 +156,7 @@ export default function PostCard({ post, onLike, onDelete }: PostCardProps) {
     // Optimistic update
     setIsLiked(!isLiked);
     setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
-    
+
     try {
       await likeAPI.likeUnlikePost(post._id);
       onLike?.(post._id);
@@ -238,7 +238,7 @@ export default function PostCard({ post, onLike, onDelete }: PostCardProps) {
           to={`/profile/${post.user.username}`}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden">
             <img
               src={post.user.avatar || "/default-avatar.jpg"}
               alt={post.user.username}
@@ -258,13 +258,13 @@ export default function PostCard({ post, onLike, onDelete }: PostCardProps) {
           </div>
         </Link>
         <div className="relative" ref={optionsRef}>
-          <button 
+          <button
             onClick={() => setShowOptions(!showOptions)}
             className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
           >
             <MoreHorizontal className="w-5 h-5" />
           </button>
-          
+
           {/* Options Dropdown */}
           <AnimatePresence>
             {showOptions && (
@@ -343,7 +343,7 @@ export default function PostCard({ post, onLike, onDelete }: PostCardProps) {
         </div>
       ) : caption && (
         <div className="px-2 py-2 text-lg text-[#e5e7eb] border-b border-[rgba(168,85,247,0.1)]">
-          
+
           <span>{caption}</span>
         </div>
       )}
@@ -436,7 +436,7 @@ export default function PostCard({ post, onLike, onDelete }: PostCardProps) {
                     {comments.map((comment) => (
                       <div key={comment._id} className="flex gap-3">
                         <Link to={`/profile/${comment.user.username}`}>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex-shrink-0 overflow-hidden">
+                          <div className="w-8 h-8 rounded-full bg-[#a855f7] flex-shrink-0 overflow-hidden">
                             <img
                               src={comment.user.avatar || "/default-avatar.jpg"}
                               alt={comment.user.username}

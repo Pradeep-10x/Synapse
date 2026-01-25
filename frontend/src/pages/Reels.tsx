@@ -174,113 +174,113 @@ export default function ReelsPage() {
 
   return (
     <div className="min-h-screen bg-black overflow-hidden flex items-center justify-center relative">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/feed')}
-          className="absolute top-8 left-8 z-10 p-3 glass-card rounded-full hover:border-[rgba(168,85,247,0.3)] transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
+      {/* Back Button */}
+      <button
+        onClick={() => navigate('/feed')}
+        className="absolute top-8 left-8 z-10 p-3 glass-card rounded-full hover:border-[rgba(168,85,247,0.3)] transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5 text-white" />
+      </button>
 
-        {/* Reel Container */}
-        <div
-          className="w-full max-w-md h-screen flex flex-col items-center justify-center relative"
-          onWheel={handleScroll}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="relative w-full aspect-[9/16] bg-black rounded-xl overflow-hidden"
-            >
-              {/* Video */}
-              <video
-                ref={(el) => {
-                  videoRefs.current[currentIndex] = el;
-                }}
-                src={currentReel.videoUrl}
-                className="w-full h-full object-cover"
-                loop
-                muted
-                playsInline
-              />
+      {/* Reel Container */}
+      <div
+        className="w-full max-w-md h-screen flex flex-col items-center justify-center relative"
+        onWheel={handleScroll}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="relative w-full aspect-[9/16] bg-black rounded-xl overflow-hidden"
+          >
+            {/* Video */}
+            <video
+              ref={(el) => {
+                videoRefs.current[currentIndex] = el;
+              }}
+              src={currentReel.videoUrl}
+              className="w-full h-full object-cover"
+              loop
+              muted
+              playsInline
+            />
 
-              {/* Right Actions */}
-              <div className="absolute right-4 bottom-24 flex flex-col gap-6">
-                <button
-                  onClick={() => handleLike(currentReel._id)}
-                  className="flex flex-col items-center gap-1 text-white"
-                >
-                  <div className={`w-12 h-12 rounded-full glass-card flex items-center justify-center transition-colors ${isLiked ? 'bg-red-500/20' : 'hover:bg-red-500/20'
-                    }`}>
-                    <Heart className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                  </div>
-                  <span className="text-xs font-medium">{currentReel.likesCount}</span>
-                </button>
+            {/* Right Actions */}
+            <div className="absolute right-4 bottom-24 flex flex-col gap-6">
+              <button
+                onClick={() => handleLike(currentReel._id)}
+                className="flex flex-col items-center gap-1 text-white"
+              >
+                <div className={`w-12 h-12 rounded-full glass-card flex items-center justify-center transition-colors ${isLiked ? 'bg-red-500/20' : 'hover:bg-red-500/20'
+                  }`}>
+                  <Heart className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                </div>
+                <span className="text-xs font-medium">{currentReel.likesCount}</span>
+              </button>
 
-                <Link
-                  to={`/reel/${currentReel._id}/comments`}
-                  className="flex flex-col items-center gap-1 text-white"
-                >
-                  <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-[rgba(168,85,247,0.2)] transition-colors">
-                    <MessageCircle className="w-6 h-6" />
-                  </div>
-                  <span className="text-xs font-medium">{currentReel.commentsCount}</span>
-                </Link>
+              <Link
+                to={`/reel/${currentReel._id}/comments`}
+                className="flex flex-col items-center gap-1 text-white"
+              >
+                <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-[rgba(168,85,247,0.2)] transition-colors">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-medium">{currentReel.commentsCount}</span>
+              </Link>
 
-                <button className="flex flex-col items-center gap-1 text-white">
-                  <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-[rgba(168,85,247,0.2)] transition-colors">
-                    <Share2 className="w-6 h-6" />
-                  </div>
-                </button>
+              <button className="flex flex-col items-center gap-1 text-white">
+                <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-[rgba(168,85,247,0.2)] transition-colors">
+                  <Share2 className="w-6 h-6" />
+                </div>
+              </button>
 
-                <button className="flex flex-col items-center gap-1 text-white">
-                  <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-[rgba(168,85,247,0.2)] transition-colors">
-                    <MoreVertical className="w-6 h-6" />
-                  </div>
-                </button>
-              </div>
-
-              {/* Bottom Info */}
-              <div className="absolute bottom-4 left-4 right-20 text-white">
-                <Link
-                  to={`/profile/${currentReel.user.username}`}
-                  className="flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] flex items-center justify-center overflow-hidden">
-                    <img src={currentReel.user.avatar || "/default-avatar.jpg"} alt={currentReel.user.username} className="w-full h-full object-cover" />
-                  </div>
-                  <span className="font-semibold">{currentReel.user.username}</span>
-                  {currentReel.user.isVerified && (
-                    <span className="text-[#06b6d4]">✓</span>
-                  )}
-                </Link>
-                {currentReel.caption && (
-                  <p className="text-sm line-clamp-2">{currentReel.caption}</p>
-                )}
-                <p className="text-xs text-white/70 mt-1">{currentReel.viewsCount} views</p>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Scroll Indicator */}
-          {reels.length > 1 && (
-            <div className="mt-4 flex items-center gap-2">
-              {reels.map((_, index) => (
-                <div
-                  key={index}
-                  className={`h-1 rounded-full transition-all ${index === currentIndex
-                      ? 'w-8 bg-[#7c3aed]'
-                      : 'w-1 bg-white/30'
-                    }`}
-                />
-              ))}
+              <button className="flex flex-col items-center gap-1 text-white">
+                <div className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-[rgba(168,85,247,0.2)] transition-colors">
+                  <MoreVertical className="w-6 h-6" />
+                </div>
+              </button>
             </div>
-          )}
-        </div>
+
+            {/* Bottom Info */}
+            <div className="absolute bottom-4 left-4 right-20 text-white">
+              <Link
+                to={`/profile/${currentReel.user.username}`}
+                className="flex items-center gap-2 mb-2 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden">
+                  <img src={currentReel.user.avatar || "/default-avatar.jpg"} alt={currentReel.user.username} className="w-full h-full object-cover" />
+                </div>
+                <span className="font-semibold">{currentReel.user.username}</span>
+                {currentReel.user.isVerified && (
+                  <span className="text-[#06b6d4]">✓</span>
+                )}
+              </Link>
+              {currentReel.caption && (
+                <p className="text-sm line-clamp-2">{currentReel.caption}</p>
+              )}
+              <p className="text-xs text-white/70 mt-1">{currentReel.viewsCount} views</p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Scroll Indicator */}
+        {reels.length > 1 && (
+          <div className="mt-4 flex items-center gap-2">
+            {reels.map((_, index) => (
+              <div
+                key={index}
+                className={`h-1 rounded-full transition-all ${index === currentIndex
+                  ? 'w-8 bg-[#7c3aed]'
+                  : 'w-1 bg-white/30'
+                  }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

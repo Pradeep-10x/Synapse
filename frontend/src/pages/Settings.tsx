@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
-import { api } from '@/lib/axios';
 
 type Section =
   | 'account'
@@ -134,7 +133,7 @@ export default function SettingsPage() {
       setLoadingAccount(true);
       // Update user details
       await userAPI.updateDetails({ bio });
-      
+
       // Update avatar if changed
       if (avatarFileRef.current) {
         const formData = new FormData();
@@ -293,7 +292,7 @@ export default function SettingsPage() {
                 <div>
                   <label className="text-sm text-[#9ca3af]">Profile picture</label>
                   <div className="mt-2 glass-card rounded-lg p-3 flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#a855f7] to-[#06b6d4] overflow-hidden flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-[#a855f7] overflow-hidden flex items-center justify-center">
                       <img src={avatarPreview || "/default-avatar.jpg"} alt="avatar preview" className="w-full h-full object-cover" />
                     </div>
                     <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[rgba(168,85,247,0.3)] text-[#e5e7eb] cursor-pointer hover:bg-[rgba(168,85,247,0.1)]">
@@ -531,7 +530,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleNotificationsSave}
                   disabled={loadingNotifications}
-                  className="px-4 py-2 bg-gradient-to-r from-[#a855f7] to-[#06b6d4] rounded-lg text-white font-semibold hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+                  className="px-4 py-2 bg-[#a855f7] rounded-lg text-white font-semibold hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
                 >
                   {loadingNotifications ? 'Saving...' : 'Save notifications'}
                 </button>
@@ -603,43 +602,43 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-10">
-          <header className="mb-8 flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm text-[#9ca3af] uppercase tracking-[0.12em]">Orbit — Settings</p>
-              <h1 className="text-3xl font-bold text-[#e5e7eb] mt-1">System Control Center</h1>
-              <p className="text-[#9ca3af] mt-2">
-                You control your identity. Everything here maps to real backend actions.
-              </p>
-            </div>
-          </header>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[240px,1fr] gap-6 items-start">
-            <nav className="glass-card rounded-xl p-3 border border-[rgba(168,85,247,0.12)]">
-              <ul className="space-y-1">
-                {sectionNav.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-                  return (
-                    <li key={item.id}>
-                      <button
-                        onClick={() => setActiveSection(item.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all ${isActive
-                          ? 'bg-gradient-to-r from-[#a855f7]/20 to-[#06b6d4]/15 text-[#e5e7eb] border border-[rgba(168,85,247,0.3)]'
-                          : 'text-[#9ca3af] hover:bg-[rgba(168,85,247,0.08)] hover:text-[#e5e7eb]'
-                          }`}
-                      >
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-[#a855f7]' : ''}`} />
-                        <span className="font-semibold">{item.label}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-
-            <section className="space-y-6">{renderSection()}</section>
+        <header className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-[#9ca3af] uppercase tracking-[0.12em]">Orbit — Settings</p>
+            <h1 className="text-3xl font-bold text-[#e5e7eb] mt-1">System Control Center</h1>
+            <p className="text-[#9ca3af] mt-2">
+              You control your identity. Everything here maps to real backend actions.
+            </p>
           </div>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[240px,1fr] gap-6 items-start">
+          <nav className="glass-card rounded-xl p-3 border border-[rgba(168,85,247,0.12)]">
+            <ul className="space-y-1">
+              {sectionNav.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => setActiveSection(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all ${isActive
+                        ? 'bg-[#a855f7]/15 text-[#e5e7eb] border border-[rgba(168,85,247,0.3)]'
+                        : 'text-[#9ca3af] hover:bg-[rgba(168,85,247,0.08)] hover:text-[#e5e7eb]'
+                        }`}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#a855f7]' : ''}`} />
+                      <span className="font-semibold">{item.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          <section className="space-y-6">{renderSection()}</section>
         </div>
+      </div>
     </div>
   );
 }
@@ -716,7 +715,7 @@ function ToggleRow({
           checked={value}
           onChange={(e) => onChange(e.target.checked)}
         />
-        <div className="w-11 h-6 bg-[#1f2937] peer-focus:outline-none rounded-full peer peer-checked:bg-gradient-to-r peer-checked:from-[#a855f7] peer-checked:to-[#06b6d4] transition-colors" />
+        <div className="w-11 h-6 bg-[#1f2937] peer-focus:outline-none rounded-full peer peer-checked:bg-[#a855f7] transition-colors" />
         <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow" />
       </label>
     </div>
@@ -740,8 +739,8 @@ function ActionRow({
 }) {
   const color =
     tone === 'danger'
-      ? 'bg-gradient-to-r from-red-500 to-red-600'
-      : 'bg-gradient-to-r from-amber-500 to-orange-500';
+      ? 'bg-red-600 hover:bg-red-700'
+      : 'bg-amber-600 hover:bg-amber-700';
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 glass-card rounded-lg border border-[rgba(168,85,247,0.1)]">
       <div>

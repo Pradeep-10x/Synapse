@@ -50,7 +50,7 @@ export default function EditProfile() {
                     setUsernameAvailable(false);
                     return;
                 }
-                
+
                 // Check if username is available by trying to fetch the profile
                 // If it returns a user, the username is taken
                 try {
@@ -128,7 +128,7 @@ export default function EditProfile() {
                 {/* Profile Preview Section */}
                 <div className="flex flex-col items-center space-y-4">
                     <div className="relative group">
-                        <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-[#a855f7] to-[#06b6d4] p-[2px]">
+                        <div className="w-32 h-32 rounded-full overflow-hidden bg-[#a855f7] p-[2px]">
                             <div className="w-full h-full rounded-full overflow-hidden bg-[#0a0a12] relative">
                                 <img
                                     src={avatarPreview || "/default-avatar.jpg"}
