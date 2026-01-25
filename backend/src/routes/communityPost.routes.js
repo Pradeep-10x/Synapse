@@ -3,13 +3,15 @@ import {
   createCommunityPost,
   getCommunityFeed,
   likeCommunityPost,
-  deleteCommunityPost
+  deleteCommunityPost,
+  getJoinedCommunitiesFeed
 } from "../controllers/communityPost.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = express.Router();
 
+router.get("/feed/joined", verifyJWT, getJoinedCommunitiesFeed);
 router.post(
   "/:communityId",
   verifyJWT,

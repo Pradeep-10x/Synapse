@@ -148,6 +148,7 @@ export const communityPostAPI = {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
   getFeed: (communityId: string) => api.get(`/community-post/${communityId}`),
+  getJoinedFeed: (page = 1, limit = 10) => api.get('/community-post/feed/joined', { params: { page, limit } }),
   like: (postId: string) => api.post(`/community-post/like/${postId}`),
   delete: (postId: string) => api.delete(`/community-post/${postId}`),
 };

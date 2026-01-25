@@ -1,8 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
-import { Users, Search, TrendingUp, Globe, Lock, Plus, Loader2, X, Upload } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { communityAPI } from '@/lib/api';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Users, Search, TrendingUp, Globe, Lock, Plus, Loader2, X, Upload, Heart, MessageCircle, Image as ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { communityAPI, communityPostAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
+
+interface CommunityPost {
+  _id: string;
+  text?: string;
+  mediaUrl?: string;
+  author: {
+    _id: string;
+    username: string;
+    avatar?: string;
+  };
+  community: {
+    _id: string;
+    name: string;
+  };
+  likes: string[];
+  createdAt: string;
+}
 
 interface Community {
   _id: string;
@@ -14,14 +33,28 @@ interface Community {
 }
 
 export default function CommunityPage() {
+  const { user } = useAuthStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
+  const [activeTab, setActiveTab] = useState<'feed' | 'discover' | 'joined'>('feed');
   const [communities, setCommunities] = useState<Community[]>([]);
   const [joinedCommunities, setJoinedCommunities] = useState<Community[]>([]);
+  const [feedPosts, setFeedPosts] = useState<CommunityPost[]>([]);
   const [loadingCommunities, setLoadingCommunities] = useState(false);
+  const [loadingFeed, setLoadingFeed] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState<string | null>(null);
+  const [likingPost, setLikingPost] = useState<string | null>(null);
+  
+  // Check if create modal should be opened from URL
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setShowCreateModal(true);
+      searchParams.delete('create');
+      setSearchParams(searchParams);
+    }
+  }, [searchParams, setSearchParams]);
   
   // Create community form
   const [newCommunity, setNewCommunity] = useState({
@@ -33,9 +66,60 @@ export default function CommunityPage() {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const formatTimeAgo = (date: string): string => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    return `${Math.floor(diffInSeconds / 86400)}d`;
+  };
+
   useEffect(() => {
-    fetchCommunities();
+    if (activeTab === 'feed') {
+      fetchFeed();
+    } else {
+      fetchCommunities();
+    }
   }, [activeTab]);
+
+  const fetchFeed = async () => {
+    try {
+      setLoadingFeed(true);
+      const response = await communityPostAPI.getJoinedFeed();
+      setFeedPosts(response.data.data?.posts || []);
+    } catch (error: any) {
+      console.error('Failed to fetch community feed:', error);
+      toast.error('Failed to load community feed');
+    } finally {
+      setLoadingFeed(false);
+    }
+  };
+
+  const handleLikePost = async (postId: string) => {
+    if (likingPost) return;
+    try {
+      setLikingPost(postId);
+      await communityPostAPI.like(postId);
+      setFeedPosts(prev => prev.map(post => {
+        if (post._id === postId) {
+          const isLiked = post.likes.includes(user?._id || '');
+          return {
+            ...post,
+            likes: isLiked 
+              ? post.likes.filter(id => id !== user?._id)
+              : [...post.likes, user?._id || '']
+          };
+        }
+        return post;
+      }));
+    } catch (error) {
+      toast.error('Failed to like post');
+    } finally {
+      setLikingPost(null);
+    }
+  };
 
   const fetchCommunities = async () => {
     try {
@@ -124,11 +208,11 @@ export default function CommunityPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#e5e7eb] mb-2">Community</h1>
-          <p className="text-[#9ca3af]">Connect with people who share your interests</p>
+          <h1 className="text-3xl font-bold text-[#e5e7eb] mb-2"><u>Community Feed</u></h1>
+          <p className="text-[#9ca3af]">People who share your interests ;)</p>
         </div>
 
-        {/* Search */}
+        {/* Search
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9ca3af]" />
@@ -140,11 +224,21 @@ export default function CommunityPage() {
               className="w-full pl-12 pr-4 py-3 glass-card rounded-xl text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.4)]"
             />
           </div>
-        </div>
+        </div> */}
 
-        {/* Tabs */}
-        <div className="flex items-center gap-4 mb-6">
+        {/* Tabs
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
           <div className="flex gap-2 p-1 glass-card rounded-lg w-fit">
+            <button
+              onClick={() => setActiveTab('feed')}
+              className={`py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${activeTab === 'feed'
+                ? 'bg-[#7c3aed] text-white'
+                : 'text-[#9ca3af] hover:text-[#e5e7eb]'
+                }`}
+            >
+              <ImageIcon className="w-4 h-4" />
+              Feed
+            </button>
             <button
               onClick={() => setActiveTab('discover')}
               className={`py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${activeTab === 'discover'
@@ -173,16 +267,103 @@ export default function CommunityPage() {
             <Plus className="w-4 h-4" />
             Create Community
           </button>
-        </div>
+        </div> */}
 
-        {/* Communities Grid */}
+        {/* Content */}
         <div className="grid gap-4">
-          {loadingCommunities ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
-            </div>
-          ) : activeTab === 'discover' ? (
-            filteredCommunities.length > 0 ? (
+          {/* Feed Tab */}
+          {activeTab === 'feed' && (
+            loadingFeed ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
+              </div>
+            ) : feedPosts.length > 0 ? (
+              <AnimatePresence>
+                {feedPosts.map((post, index) => (
+                  <motion.div
+                    key={post._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="glass-card rounded-xl overflow-hidden"
+                  >
+                    {/* Post Header */}
+                    <div className="p-4 flex items-center gap-3">
+                      <Link to={`/profile/${post.author.username}`}>
+                        <div className="w-10 h-10 rounded-full bg-[#7c3aed]/20 overflow-hidden flex-shrink-0">
+                          {post.author.avatar ? (
+                            <img src={post.author.avatar} alt={post.author.username} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[#a855f7] font-bold">
+                              {post.author.username[0].toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <Link to={`/profile/${post.author.username}`} className="font-semibold text-[#e5e7eb] hover:text-[#a855f7] transition-colors">
+                          {post.author.username}
+                        </Link>
+                        <div className="flex items-center gap-2 text-xs text-[#9ca3af]">
+                          <span className="text-[#a855f7]">{post.community.name}</span>
+                          <span>•</span>
+                          <span>{formatTimeAgo(post.createdAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Post Media */}
+                    {post.mediaUrl && (
+                      <div className="aspect-square bg-[#1a1a2e]">
+                        <img src={post.mediaUrl} alt="Post" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    {/* Post Content */}
+                    <div className="p-4">
+                      {post.text && (
+                        <p className="text-[#e5e7eb] mb-3">{post.text}</p>
+                      )}
+                      
+                      {/* Actions */}
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => handleLikePost(post._id)}
+                          disabled={likingPost === post._id}
+                          className="flex items-center gap-2 text-[#9ca3af] hover:text-[#ef4444] transition-colors"
+                        >
+                          <Heart className={`w-5 h-5 ${post.likes.includes(user?._id || '') ? 'fill-[#ef4444] text-[#ef4444]' : ''}`} />
+                          <span className="text-sm">{post.likes.length}</span>
+                        </button>
+                        <button className="flex items-center gap-2 text-[#9ca3af] hover:text-[#a855f7] transition-colors">
+                          <MessageCircle className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            ) : (
+              <div className="text-center py-12">
+                <ImageIcon className="w-12 h-12 text-[#9ca3af] mx-auto mb-4" />
+                <p className="text-[#9ca3af] mb-4">No posts from your communities yet</p>
+                <button
+                  onClick={() => setActiveTab('discover')}
+                  className="px-6 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors"
+                >
+                  Discover Communities
+                </button>
+              </div>
+            )
+          )}
+
+          {/* Discover Tab */}
+          {activeTab === 'discover' && (
+            loadingCommunities ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
+              </div>
+            ) : filteredCommunities.length > 0 ? (
               filteredCommunities.map((community, index) => (
                 <motion.div
                   key={community._id}
@@ -236,8 +417,16 @@ export default function CommunityPage() {
                 <p className="text-sm text-[#6b7280]">Be the first to create one!</p>
               </div>
             )
-          ) : filteredJoinedCommunities.length > 0 ? (
-            filteredJoinedCommunities.map((community, index) => (
+          )}
+
+          {/* Joined Tab */}
+          {activeTab === 'joined' && (
+            loadingCommunities ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
+              </div>
+            ) : filteredJoinedCommunities.length > 0 ? (
+              filteredJoinedCommunities.map((community, index) => (
               <motion.div
                 key={community._id}
                 initial={{ opacity: 0, y: 20 }}
@@ -286,6 +475,7 @@ export default function CommunityPage() {
                 Discover Communities
               </button>
             </div>
+          )
           )}
         </div>
 

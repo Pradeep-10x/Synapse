@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore, Notification } from '@/store/socketStore';
-import { Users, MessageSquare, UserPlus, Bell, TrendingUp, Zap } from 'lucide-react';
+import { Users, MessageSquare, UserPlus, Bell, TrendingUp, Zap, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { notificationAPI } from '@/lib/api';
+import { notificationAPI, communityAPI } from '@/lib/api';
 
 interface CommunityActivity {
   _id: string;
@@ -50,7 +50,9 @@ const getActivityIcon = (type: CommunityActivity['type']) => {
 export default function CommunityLiveOrbitPanel() {
   const { user } = useAuthStore();
   const { socket } = useSocketStore();
+  const navigate = useNavigate();
   const [activities, setActivities] = useState<CommunityActivity[]>([]);
+  const [joinedCommunities, setJoinedCommunities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Listen for real-time community notifications
@@ -94,6 +96,22 @@ export default function CommunityLiveOrbitPanel() {
       socket.off('notification:new', handleNewNotification);
     };
   }, [socket]);
+
+  // Fetch joined communities
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchJoinedCommunities = async () => {
+      try {
+        const response = await communityAPI.getJoined();
+        setJoinedCommunities(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to fetch joined communities:', error);
+      }
+    };
+
+    fetchJoinedCommunities();
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -196,16 +214,40 @@ export default function CommunityLiveOrbitPanel() {
           )}
         </div>
 
-        {/* Trending Communities - will be populated from API */}
+        {/* Joined Communities */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-5 h-5 text-[#f59e0b] shrink-0" />
-            <h3 className="text-base font-semibold text-[#9ca3af] uppercase tracking-wider">TRENDING</h3>
+            <h3 className="text-base font-semibold text-[#9ca3af] uppercase tracking-wider">YOUR COMMUNITIES</h3>
           </div>
           <div className="space-y-2">
-            <div className="text-sm text-[#6b7280] py-2 px-2">
-              Join communities to see trending topics
-            </div>
+            {joinedCommunities.length > 0 ? (
+              joinedCommunities.slice(0, 5).map((community) => (
+                <Link
+                  key={community._id}
+                  to={`/community/${community._id}`}
+                  className="block glass-card rounded-md p-3 hover:border-[rgba(168,85,247,0.3)] transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#7c3aed]/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {community.coverImage ? (
+                        <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Users className="w-4 h-4 text-[#a855f7]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[#e5e7eb] font-medium truncate">{community.name}</p>
+                      <p className="text-xs text-[#6b7280]">{community.memberCount || 0} members</p>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="text-sm text-[#6b7280] py-2 px-2">
+                Join communities to see them here
+              </div>
+            )}
           </div>
         </div>
 
@@ -213,14 +255,20 @@ export default function CommunityLiveOrbitPanel() {
         <div className="space-y-3">
           <h3 className="text-base font-semibold text-[#9ca3af] uppercase tracking-wider">QUICK ACTIONS</h3>
           <div className="space-y-2">
-            <button className="w-full glass-card rounded-md p-3 hover:border-[rgba(168,85,247,0.3)] transition-all text-left flex items-center gap-3">
-              <Users className="w-5 h-5 text-[#a855f7]" />
+            <button 
+              onClick={() => navigate('/community?create=true')}
+              className="w-full glass-card rounded-md p-3 hover:border-[rgba(168,85,247,0.3)] transition-all text-left flex items-center gap-3"
+            >
+              <Plus className="w-5 h-5 text-[#a855f7]" />
               <span className="text-sm text-[#e5e7eb]">Create Community</span>
             </button>
-            <button className="w-full glass-card rounded-md p-3 hover:border-[rgba(168,85,247,0.3)] transition-all text-left flex items-center gap-3">
-              <Bell className="w-5 h-5 text-[#06b6d4]" />
-              <span className="text-sm text-[#e5e7eb]">Community Notifications</span>
-            </button>
+            <Link 
+              to="/community"
+              className="w-full glass-card rounded-md p-3 hover:border-[rgba(168,85,247,0.3)] transition-all text-left flex items-center gap-3"
+            >
+              <Users className="w-5 h-5 text-[#06b6d4]" />
+              <span className="text-sm text-[#e5e7eb]">Browse Communities</span>
+            </Link>
           </div>
         </div>
       </div>
