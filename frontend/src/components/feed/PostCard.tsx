@@ -354,7 +354,7 @@ export default function PostCard({ post, onLike, onDelete }: PostCardProps) {
           <img
             src={post.mediaUrl}
             alt={post.caption || 'Post image'}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         ) : (
           <video

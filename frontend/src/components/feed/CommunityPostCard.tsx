@@ -53,7 +53,7 @@ interface CommunityPost {
 
 interface CommunityPostCardProps {
   post: CommunityPost;
-  onLike?: (postId: string) => void;
+  onLike?: (postId: string, isLiked: boolean, likesCount: number) => void;
   onDelete?: (postId: string) => void;
   isAdmin?: boolean;
 }
@@ -73,6 +73,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
   const [showOptions, setShowOptions] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
 
   const optionsRef = useRef<HTMLDivElement>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
@@ -92,12 +93,12 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Sync state with props
+  // Sync state with props - this ensures likes persist after refresh
   useEffect(() => {
-    setIsLiked(post.isLiked || false);
-    setLikesCount(post.likesCount);
-    setCommentsCount(post.commentsCount);
-  }, [post.isLiked, post.likesCount, post.commentsCount]);
+    setIsLiked(post.isLiked ?? false);
+    setLikesCount(post.likesCount ?? 0);
+    setCommentsCount(post.commentsCount ?? 0);
+  }, [post._id, post.isLiked, post.likesCount, post.commentsCount]);
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/community/post/${post._id}`;
@@ -134,16 +135,34 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
   };
 
   const handleLike = async () => {
-    setIsLiked(!isLiked);
-    setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
+    const newIsLiked = !isLiked;
+    const newLikesCount = newIsLiked ? likesCount + 1 : likesCount - 1;
+    
+    // Optimistic update
+    setIsLiked(newIsLiked);
+    setLikesCount(newLikesCount);
+    // Notify parent immediately with optimistic state
+    onLike?.(post._id, newIsLiked, newLikesCount);
 
     try {
-      await communityPostAPI.like(post._id);
-      onLike?.(post._id);
+      const response = await communityPostAPI.like(post._id);
+      // Update with backend response to ensure consistency
+      if (response.data?.data) {
+        const backendIsLiked = response.data.data.isLiked;
+        const backendLikesCount = response.data.data.likesCount;
+        setIsLiked(backendIsLiked);
+        setLikesCount(backendLikesCount);
+        // Update parent with actual backend state
+        onLike?.(post._id, backendIsLiked, backendLikesCount);
+      }
     } catch (error) {
-      setIsLiked(isLiked);
-      setLikesCount((prev) => (!isLiked ? prev - 1 : prev + 1));
+      // Revert on error
+      setIsLiked(!newIsLiked);
+      setLikesCount(newIsLiked ? newLikesCount - 1 : newLikesCount + 1);
+      // Revert parent state
+      onLike?.(post._id, !newIsLiked, newIsLiked ? newLikesCount - 1 : newLikesCount + 1);
       console.error('Failed to like post:', error);
+      toast.error('Failed to like post');
     }
   };
 
@@ -292,13 +311,6 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
         )}
       </div>
 
-      {/* Caption */}
-      {post.caption && (
-        <div className="px-4 py-2 text-lg text-[#e5e7eb] border-b border-[rgba(168,85,247,0.1)]">
-          <span>{post.caption}</span>
-        </div>
-      )}
-
       {/* Media */}
       {post.mediaUrl && (
         <div className="relative bg-[#0a0a12] aspect-[30/17] flex items-center justify-center">
@@ -318,6 +330,30 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
               onPause={() => setIsVideoPlaying(false)}
             />
           )}
+        </div>
+      )}
+
+      {/* Caption - shown below media, expandable after 2 lines */}
+      {post.caption && (
+        <div className="px-4 py-3 border-b border-[rgba(168,85,247,0.1)]">
+          <div className="relative">
+            <p
+              className={`text-[#e5e7eb] text-sm leading-relaxed ${
+                !isCaptionExpanded ? 'line-clamp-2' : ''
+              }`}
+            >
+              
+              {post.caption}
+            </p>
+            {post.caption.length > 80 && (
+              <button
+                onClick={() => setIsCaptionExpanded(!isCaptionExpanded)}
+                className="text-[#a855f7] hover:text-[#9333ea] text-xs font-medium mt-1 transition-colors"
+              >
+                {isCaptionExpanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

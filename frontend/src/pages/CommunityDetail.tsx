@@ -69,7 +69,6 @@ export default function CommunityDetail() {
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
     const [creatingPost, setCreatingPost] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const createPostRef = useRef<HTMLDivElement>(null);
 
     const [page, setPage] = useState(1);
     const [hasNext, setHasNext] = useState(true);
@@ -102,24 +101,6 @@ export default function CommunityDetail() {
         };
     }, [hasNext, loadingPosts, page, id]);
 
-    // Handle click outside to close create post
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (createPostRef.current && !createPostRef.current.contains(event.target as Node)) {
-                setShowCreatePost(false);
-            }
-        }
-
-        if (showCreatePost) {
-            document.addEventListener('mousedown', handleClickOutside);
-        } else {
-            document.removeEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showCreatePost]);
 
     useEffect(() => {
         if (id) {
@@ -317,7 +298,7 @@ export default function CommunityDetail() {
 
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={isOwner || isJoined ? () => setShowCreatePost(!showCreatePost) : handleJoinLeave}
+                                onClick={isOwner || isJoined ? () => setShowCreatePost(true) : handleJoinLeave}
                                 disabled={joining}
                                 className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isOwner || isJoined
                                     ? 'bg-[#7c3aed] text-white'
@@ -357,97 +338,6 @@ export default function CommunityDetail() {
 
                 {/* Main Content Area */}
                 <div className="space-y-6">
-                    {/* Create Post Area */}
-                    {isJoined && (
-                        <div ref={createPostRef} className="glass-card rounded-2xl p-4 sm:p-5 border-[rgba(168,85,247,0.15)]">
-                            {!showCreatePost ? (
-                                <div
-                                    onClick={() => setShowCreatePost(true)}
-                                    className="flex items-center gap-4 cursor-pointer group"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-[#a855f7] p-[2px]">
-                                        <div className="w-full h-full rounded-full bg-[#0a0a12] flex items-center justify-center overflow-hidden">
-                                            <img src={currentUser?.avatar || "/default-avatar.jpg"} alt="You" className="w-full h-full object-cover" />
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 bg-[rgba(168,85,247,0.05)] border border-[rgba(168,85,247,0.1)] rounded-xl px-4 py-2.5 text-[#9ca3af] group-hover:border-[rgba(168,85,247,0.3)] transition-all">
-                                        Share something with the community...
-                                    </div>
-                                </div>
-                            ) : (
-                                <motion.form
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    onSubmit={handleCreatePost}
-                                    className="space-y-4"
-                                >
-                                    {mediaPreview && (
-                                        <div className="relative rounded-xl overflow-hidden bg-[#0a0a12] aspect-video mb-4">
-                                            <img src={mediaPreview} alt="Preview" className="w-full h-full object-contain" />
-                                            <button
-                                                type="button"
-                                                onClick={() => { setPostMedia(null); setMediaPreview(null); }}
-                                                className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white hover:bg-black/80"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 mt-1">
-                                            <img src={currentUser?.avatar || "/default-avatar.jpg"} alt="You" className="w-full h-full object-cover" />
-                                        </div>
-                                        <textarea
-                                            value={postCaption}
-                                            onChange={(e) => setPostCaption(e.target.value)}
-                                            placeholder="What's on your mind?"
-                                            className="flex-1 bg-transparent border-none focus:ring-0 text-[#e5e7eb] placeholder-[#6b7280] resize-none min-h-[100px] text-lg"
-                                            autoFocus
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-4 border-t border-[rgba(168,85,247,0.1)]">
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => fileInputRef.current?.click()}
-                                                className="p-2 text-[#9ca3af] hover:text-[#a855f7] hover:bg-[#a855f7]/10 rounded-lg transition-all flex items-center gap-2 text-sm font-medium"
-                                            >
-                                                <ImageIcon className="w-5 h-5" />
-                                                <span>Photo/Video</span>
-                                            </button>
-                                            <input
-                                                ref={fileInputRef}
-                                                type="file"
-                                                accept="image/*,video/*"
-                                                onChange={handleFileSelect}
-                                                className="hidden"
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowCreatePost(false)}
-                                                className="px-4 py-2 text-sm font-medium text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                disabled={creatingPost || (!postCaption.trim() && !postMedia)}
-                                                className="px-6 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50 flex items-center gap-2"
-                                            >
-                                                {creatingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                                Post
-                                            </button>
-                                        </div>
-                                    </div>
-                                </motion.form>
-                            )}
-                        </div>
-                    )}
-
                     {/* Posts Feed */}
                     <div className="space-y-6">
                         {loadingPosts && posts.length === 0 ? (
@@ -499,6 +389,120 @@ export default function CommunityDetail() {
                 onSuccess={handleCommunityUpdate}
                 community={community}
             />
+
+            {/* Create Post Modal */}
+            <AnimatePresence>
+                {showCreatePost && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => {
+                                setShowCreatePost(false);
+                                setPostCaption('');
+                                setPostMedia(null);
+                                setMediaPreview(null);
+                            }}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-[#0a0a12] border border-[rgba(168,85,247,0.2)] w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl relative z-10"
+                        >
+                            {/* Modal Header */}
+                            <div className="p-6 border-b border-[rgba(168,85,247,0.1)] flex items-center justify-between bg-[rgba(168,85,247,0.02)]">
+                                <h2 className="text-xl font-bold text-white">Create Post</h2>
+                                <button
+                                    onClick={() => {
+                                        setShowCreatePost(false);
+                                        setPostCaption('');
+                                        setPostMedia(null);
+                                        setMediaPreview(null);
+                                    }}
+                                    className="p-2 hover:bg-white/5 rounded-full text-[#9ca3af] hover:text-white transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Modal Content */}
+                            <form onSubmit={handleCreatePost} className="p-6 space-y-4">
+                                {mediaPreview && (
+                                    <div className="relative rounded-xl overflow-hidden bg-[#0a0a12] aspect-video mb-4">
+                                        <img src={mediaPreview} alt="Preview" className="w-full h-full object-contain" />
+                                        <button
+                                            type="button"
+                                            onClick={() => { setPostMedia(null); setMediaPreview(null); }}
+                                            className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white hover:bg-black/80"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 mt-1">
+                                        <img src={currentUser?.avatar || "/default-avatar.jpg"} alt="You" className="w-full h-full object-cover" />
+                                    </div>
+                                    <textarea
+                                        value={postCaption}
+                                        onChange={(e) => setPostCaption(e.target.value)}
+                                        placeholder="Share something with the community..."
+                                        className="flex-1 bg-transparent border-none focus:ring-0 text-[#e5e7eb] placeholder-[#6b7280] resize-none min-h-[120px] text-lg"
+                                        autoFocus
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between pt-4 border-t border-[rgba(168,85,247,0.1)]">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="p-2 text-[#9ca3af] hover:text-[#a855f7] hover:bg-[#a855f7]/10 rounded-lg transition-all flex items-center gap-2 text-sm font-medium"
+                                        >
+                                            <ImageIcon className="w-5 h-5" />
+                                            <span>Photo/Video</span>
+                                        </button>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*,video/*"
+                                            onChange={handleFileSelect}
+                                            className="hidden"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowCreatePost(false);
+                                                setPostCaption('');
+                                                setPostMedia(null);
+                                                setMediaPreview(null);
+                                            }}
+                                            className="px-4 py-2 text-sm font-medium text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={creatingPost || (!postCaption.trim() && !postMedia)}
+                                            className="px-6 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                            {creatingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                            Post
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Members Modal */}
             <AnimatePresence>

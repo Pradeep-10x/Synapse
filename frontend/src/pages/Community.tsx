@@ -97,35 +97,19 @@ export default function CommunityPage() {
     }
   };
 
-  const handleLikePost = async (postId: string) => {
+  const handleLikePost = (postId: string, isLiked: boolean, likesCount: number) => {
+    // Update parent state with the values from child component
+    // The child handles the API call, we just sync our state
     setFeedPosts(prev => prev.map(post => {
       if (post._id === postId) {
-        const newIsLiked = !post.isLiked;
         return {
           ...post,
-          isLiked: newIsLiked,
-          likesCount: newIsLiked ? post.likesCount + 1 : post.likesCount - 1
+          isLiked,
+          likesCount
         };
       }
       return post;
     }));
-
-    try {
-      await communityPostAPI.like(postId);
-    } catch (error) {
-      // Revert on error
-      setFeedPosts(prev => prev.map(post => {
-        if (post._id === postId) {
-          return {
-            ...post,
-            isLiked: !post.isLiked,
-            likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1
-          };
-        }
-        return post;
-      }));
-      toast.error('Failed to like post');
-    }
   };
 
   const handleDeletePost = (postId: string) => {
@@ -161,7 +145,7 @@ export default function CommunityPage() {
         </div>
 
         {/* Feed Content */}
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {loadingFeed ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
