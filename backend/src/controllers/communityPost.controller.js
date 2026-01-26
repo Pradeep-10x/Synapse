@@ -4,6 +4,7 @@ import { uploadonCloudinary } from "../utils/cloudinary.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { emitToCommunity } from "../utils/socketEmitters.js";
 
 export const createCommunityPost = asyncHandler(async (req, res) => {
   const { text, caption } = req.body;
@@ -59,6 +60,24 @@ export const createCommunityPost = asyncHandler(async (req, res) => {
       coverImage: populatedPost.community.coverImage
     }
   };
+
+  // Emit real-time event to all community members
+  await emitToCommunity(req, communityId, "community:post:new", {
+    post: transformedPost,
+    activity: {
+      type: 'new_post',
+      user: {
+        username: populatedPost.author.username,
+        avatar: populatedPost.author.avatar
+      },
+      community: {
+        name: populatedPost.community.name,
+        id: communityId
+      },
+      message: 'shared a new post',
+      createdAt: new Date().toISOString()
+    }
+  });
 
   return res.status(201).json(new ApiResponse(201, transformedPost, "Post created successfully"));
 });
@@ -134,7 +153,7 @@ export const getCommunityFeed = asyncHandler(async (req, res) => {
 
 export const likeCommunityPost = asyncHandler(async (req, res) => {
   const { postId } = req.params;
-  const post = await CommunityPost.findById(postId);
+  const post = await CommunityPost.findById(postId).populate('author', 'username avatar');
 
   if (!post) {
     throw new ApiError(404, "Post not found");
@@ -150,6 +169,30 @@ export const likeCommunityPost = asyncHandler(async (req, res) => {
   }
 
   await post.save();
+
+  // Emit real-time event to all community members
+  const community = await Community.findById(post.community);
+  if (community) {
+    await emitToCommunity(req, post.community.toString(), "community:post:liked", {
+      postId: post._id,
+      likesCount: post.likes.length,
+      isLiked: !isLiked,
+      activity: {
+        type: 'like',
+        user: {
+          username: req.user.username,
+          avatar: req.user.avatar
+        },
+        community: {
+          name: community.name,
+          id: post.community.toString()
+        },
+        message: !isLiked ? 'liked a post' : 'unliked a post',
+        createdAt: new Date().toISOString()
+      }
+    });
+  }
+
   return res.status(200).json(new ApiResponse(200, {
     likesCount: post.likes.length,
     isLiked: !isLiked

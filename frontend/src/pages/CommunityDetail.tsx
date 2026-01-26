@@ -6,6 +6,7 @@ import { communityAPI, communityPostAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useCommunityStore } from '@/store/communityStore';
 import { useAuthStore } from '@/store/authStore';
+import { useSocketStore } from '@/store/socketStore';
 import CommunityPostCard from '@/components/feed/CommunityPostCard';
 import EditCommunityModal from '@/components/community/EditCommunityModal';
 
@@ -52,6 +53,7 @@ export default function CommunityDetail() {
     const { id } = useParams<{ id: string }>();
     const { triggerRefresh } = useCommunityStore();
     const { user: currentUser } = useAuthStore();
+    const { socket } = useSocketStore();
     const navigate = useNavigate();
     const [community, setCommunity] = useState<Community | null>(null);
     const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -108,6 +110,56 @@ export default function CommunityDetail() {
             fetchCommunityData();
         }
     }, [id]);
+
+    // Listen for real-time community events
+    useEffect(() => {
+        if (!socket || !id) return;
+
+        // Handle new post in this community
+        const handleNewPost = (data: any) => {
+            if (data?.post && data?.post?.community?._id === id) {
+                // Add new post to the beginning of the list
+                setPosts(prev => {
+                    // Check if post already exists to avoid duplicates
+                    const exists = prev.some(p => p._id === data.post._id);
+                    if (exists) return prev;
+                    return [data.post, ...prev];
+                });
+            }
+        };
+
+        // Handle post liked
+        const handlePostLiked = (data: any) => {
+            if (data?.postId) {
+                setPosts(prev => prev.map(post => {
+                    if (post._id === data.postId) {
+                        return {
+                            ...post,
+                            likesCount: data.likesCount || post.likesCount
+                        };
+                    }
+                    return post;
+                }));
+            }
+        };
+
+        // Handle member joined - refresh community data
+        const handleMemberJoined = (data: any) => {
+            if (data?.community?._id === id) {
+                fetchCommunityData();
+            }
+        };
+
+        socket.on('community:post:new', handleNewPost);
+        socket.on('community:post:liked', handlePostLiked);
+        socket.on('community:member:joined', handleMemberJoined);
+
+        return () => {
+            socket.off('community:post:new', handleNewPost);
+            socket.off('community:post:liked', handlePostLiked);
+            socket.off('community:member:joined', handleMemberJoined);
+        };
+    }, [socket, id]);
 
     const fetchCommunityData = async () => {
         if (!id) return;

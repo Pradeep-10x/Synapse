@@ -88,10 +88,84 @@ export default function CommunityLiveOrbitPanel() {
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [makingAdminUserId, setMakingAdminUserId] = useState<string | null>(null);
 
-  // Listen for real-time community notifications
+  // Listen for real-time community events
   useEffect(() => {
     if (!socket) return;
 
+    // Handle new community post
+    const handleNewPost = (data: any) => {
+      if (data?.activity) {
+        const newActivity: CommunityActivity = {
+          _id: `post-${Date.now()}-${Math.random()}`,
+          type: 'new_post',
+          community: data.activity.community || { name: 'Community', id: '' },
+          user: data.activity.user,
+          message: data.activity.message || 'shared a new post',
+          createdAt: data.activity.createdAt || new Date().toISOString()
+        };
+        setActivities(prev => [newActivity, ...prev].slice(0, 8));
+      }
+      
+      // Refresh communities if we're on the feed page
+      if (!communityId) {
+        fetchCommunities();
+      }
+    };
+
+    // Handle post liked
+    const handlePostLiked = (data: any) => {
+      if (data?.activity) {
+        const newActivity: CommunityActivity = {
+          _id: `like-${Date.now()}-${Math.random()}`,
+          type: 'comment', // Using comment type for likes in activity feed
+          community: data.activity.community || { name: 'Community', id: '' },
+          user: data.activity.user,
+          message: data.activity.message || 'liked a post',
+          createdAt: data.activity.createdAt || new Date().toISOString()
+        };
+        setActivities(prev => [newActivity, ...prev].slice(0, 8));
+      }
+    };
+
+    // Handle member joined
+    const handleMemberJoined = (data: any) => {
+      if (data?.activity) {
+        const newActivity: CommunityActivity = {
+          _id: `join-${Date.now()}-${Math.random()}`,
+          type: 'new_member',
+          community: data.activity.community || { name: 'Community', id: '' },
+          user: data.activity.user,
+          message: data.activity.message || 'joined the community',
+          createdAt: data.activity.createdAt || new Date().toISOString()
+        };
+        setActivities(prev => [newActivity, ...prev].slice(0, 8));
+      }
+
+      // Update current community if we're viewing it
+      if (communityId && data?.community?._id === communityId) {
+        fetchSpecificCommunity();
+      }
+
+      // Refresh communities list
+      fetchCommunities();
+    };
+
+    // Handle friend joined community
+    const handleFriendJoinedCommunity = (data: any) => {
+      if (data?.activity && data?.user?._id !== user?._id) {
+        const newActivity: CommunityActivity = {
+          _id: `friend-join-${Date.now()}-${Math.random()}`,
+          type: 'new_member',
+          community: data.activity.community || { name: 'Community', id: '' },
+          user: data.activity.user,
+          message: `${data.activity.user?.username || 'Someone'} ${data.activity.message || 'joined a community'}`,
+          createdAt: data.activity.createdAt || new Date().toISOString()
+        };
+        setActivities(prev => [newActivity, ...prev].slice(0, 8));
+      }
+    };
+
+    // Handle general notifications
     const handleNewNotification = (notification: any) => {
       const activityType = notification.type === 'comment' ? 'comment'
         : notification.type === 'follow' ? 'new_member'
@@ -109,23 +183,32 @@ export default function CommunityLiveOrbitPanel() {
       };
 
       const newActivity: CommunityActivity = {
-        _id: notification._id,
+        _id: notification._id || `notif-${Date.now()}-${Math.random()}`,
         type: activityType as CommunityActivity['type'],
-        community: { name: 'Community', id: '' },
+        community: notification.community || { name: 'Community', id: '' },
         user: notification.fromUser,
         message: getActivityMessage(),
-        createdAt: notification.createdAt
+        createdAt: notification.createdAt || new Date().toISOString()
       };
 
       setActivities(prev => [newActivity, ...prev].slice(0, 8));
     };
 
+    // Register all socket listeners
+    socket.on('community:post:new', handleNewPost);
+    socket.on('community:post:liked', handlePostLiked);
+    socket.on('community:member:joined', handleMemberJoined);
+    socket.on('friend:joined:community', handleFriendJoinedCommunity);
     socket.on('notification:new', handleNewNotification);
 
     return () => {
+      socket.off('community:post:new', handleNewPost);
+      socket.off('community:post:liked', handlePostLiked);
+      socket.off('community:member:joined', handleMemberJoined);
+      socket.off('friend:joined:community', handleFriendJoinedCommunity);
       socket.off('notification:new', handleNewNotification);
     };
-  }, [socket]);
+  }, [socket, communityId, user?._id]);
 
   // Fetch joined and created communities
   const fetchCommunities = async () => {
@@ -161,23 +244,23 @@ export default function CommunityLiveOrbitPanel() {
   }, [userId, refreshSidebar]);
 
   // Fetch specific community details if communityId is present
-  useEffect(() => {
-    const fetchSpecificCommunity = async () => {
-      if (!communityId) {
-        setCurrentCommunity(null);
-        return;
-      }
-      try {
-        setLoadingSpecific(true);
-        const response = await communityAPI.getCommunity(communityId);
-        setCurrentCommunity(response.data?.data || null);
-      } catch (error) {
-        console.error('Failed to fetch specific community:', error);
-      } finally {
-        setLoadingSpecific(false);
-      }
-    };
+  const fetchSpecificCommunity = async () => {
+    if (!communityId) {
+      setCurrentCommunity(null);
+      return;
+    }
+    try {
+      setLoadingSpecific(true);
+      const response = await communityAPI.getCommunity(communityId);
+      setCurrentCommunity(response.data?.data || null);
+    } catch (error) {
+      console.error('Failed to fetch specific community:', error);
+    } finally {
+      setLoadingSpecific(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSpecificCommunity();
   }, [communityId]);
 

@@ -8,6 +8,33 @@ export const emitToUser = (req, userId, event, payload) => {
   }
 };
 
+// Emit to all followers of a user
+export const emitToFollowers = async (req, userId, event, payload) => {
+  try {
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
+    const { User } = await import("../models/user.model.js");
+
+    const user = await User.findById(userId).select("followers");
+    if (!user || !user.followers || user.followers.length === 0) {
+      return;
+    }
+
+    let emittedCount = 0;
+    user.followers.forEach(followerId => {
+      const socketId = onlineUsers.get(followerId.toString());
+      if (socketId) {
+        io.to(socketId).emit(event, payload);
+        emittedCount++;
+      }
+    });
+
+    console.log(`Emitted ${event} to ${emittedCount} online followers of user ${userId}`);
+  } catch (error) {
+    console.error('Error in emitToFollowers:', error);
+  }
+};
+
 // Emit to all members of a community
 export const emitToCommunity = async (req, communityId, event, payload) => {
   try {

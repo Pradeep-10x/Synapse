@@ -3,6 +3,7 @@ import { uploadonCloudinary } from "../utils/cloudinary.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { emitToCommunity, emitToFollowers } from "../utils/socketEmitters.js";
 
 export const createCommunity = asyncHandler(async (req, res) => {
   const { name, description, isPublic, rules } = req.body;
@@ -76,6 +77,59 @@ export const joinCommunity = asyncHandler(async (req, res) => {
   community.members.push(req.user._id);
   community.membersCount += 1;
   await community.save();
+
+  // Emit real-time event to all community members
+  await emitToCommunity(req, id, "community:member:joined", {
+    user: {
+      _id: req.user._id,
+      username: req.user.username,
+      avatar: req.user.avatar
+    },
+    community: {
+      _id: community._id,
+      name: community.name
+    },
+    membersCount: community.membersCount,
+    activity: {
+      type: 'new_member',
+      user: {
+        username: req.user.username,
+        avatar: req.user.avatar
+      },
+      community: {
+        name: community.name,
+        id: id
+      },
+      message: 'joined the community',
+      createdAt: new Date().toISOString()
+    }
+  });
+
+  // Emit to followers that their friend joined a community
+  await emitToFollowers(req, req.user._id, "friend:joined:community", {
+    user: {
+      _id: req.user._id,
+      username: req.user.username,
+      avatar: req.user.avatar
+    },
+    community: {
+      _id: community._id,
+      name: community.name
+    },
+    activity: {
+      type: 'new_member',
+      user: {
+        username: req.user.username,
+        avatar: req.user.avatar
+      },
+      community: {
+        name: community.name,
+        id: id
+      },
+      message: 'joined a community',
+      createdAt: new Date().toISOString()
+    }
+  });
 
   return res.status(200).json(new ApiResponse(200, community, "Joined community"));
 });
