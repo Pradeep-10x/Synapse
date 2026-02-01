@@ -1,81 +1,55 @@
-import { motion } from 'framer-motion';
-import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Logo from '@/components/Logo';
+import { Plus } from 'lucide-react';
 
-interface HeroSectionProps {
-  onExploreClick: () => void;
-}
-
-export default function HeroSection({ onExploreClick }: HeroSectionProps) {
+export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-32 overflow-hidden">
-      <div className="relative z-10 max-w-6xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-7xl sm:text-8xl md:text-9xl font-bold mb-8 tracking-tight"
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Background: user's bg-image.png with dark overlay for text readability */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url(/bg-image.png)' }}
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0 bg-black/40"
+        aria-hidden
+      />
+
+      <div className="relative z-10 max-w-2xl mx-auto text-center px-4 pt-20 pb-24">
+        {/* Central logo from public/logo.png */}
+        <div className="flex justify-center mb-8">
+          <img
+            src="/logo.png"
+            alt=""
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+          />
+        </div>
+
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-white tracking-tight mb-6">
+          Synapse
+        </h1>
+
+        <p className="text-lg sm:text-xl text-white/90 font-normal mb-10 max-w-lg mx-auto leading-relaxed">
+          A real-time interaction system for communities
+          <br />
+          and live activity.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            to="/register"
+            className="w-full sm:w-auto px-8 py-4 rounded-lg font-semibold text-white text-center transition-all bg-gradient-to-r from-[#2563eb] to-[#3b82f6] hover:from-[#1d4ed8] hover:to-[#2563eb] shadow-[0_0_20px_rgba(59,130,246,0.35)]"
           >
-
-
-            <div className="flex items-center justify-center">
-              <Logo className="ml-9 h-24 sm:h-32 md:h-40 w-auto"  />
-            </div>
-
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-2xl sm:text-3xl md:text-4xl  font-medium mb-6 text-[#e5e7eb] leading-tight"
+            Enter Synapse
+          </Link>
+          <a
+            href="#architecture"
+            className="w-full sm:w-auto px-8 py-4 rounded-lg font-semibold text-white/90 text-center border border-white/30 bg-transparent hover:bg-white/10 transition-colors inline-flex items-center justify-center gap-2"
           >
-            Where conversations, content, and creators
-            <br />
-            move in real time.
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-base sm:text-lg md:text-xl text-[#9ca3af] max-w-3xl mx-auto mb-12 leading-relaxed"
-          >
-            A modern social platform built for real-time interaction — posts, reels, stories,
-            live chat, video calls, and verified identities.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <Link
-              to="/register"
-              className="group px-8 py-4 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg font-semibold text-white text-lg transition-all duration-300"
-            >
-              <span className="flex items-center gap-2">
-                 Get Started
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </span>
-            </Link>
-
-            <button
-              onClick={onExploreClick}
-              className="group px-8 py-4 glass-card rounded-lg font-semibold text-[#e5e7eb] text-lg transition-all duration-300 hover:scale-105 hover:border-[rgba(168,85,247,0.3)] flex items-center gap-2"
-            >
-              Explore More
-              <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform duration-300" />
-            </button>
-          </motion.div>
-        </motion.div>
+            <Plus className="w-5 h-5" />
+            View Architecture
+          </a>
+        </div>
       </div>
     </section>
   );
