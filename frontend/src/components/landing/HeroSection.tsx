@@ -78,25 +78,38 @@ export default function HeroSection() {
             Get Started
           </Link>
 
-          <a
-            href="#overview"
-            className="
-              inline-flex items-center justify-center
-              px-8 py-4 rounded-md
-              font-semibold
-              text-white/90
-              border border-white/30
-              hover:bg-white/10
-              transition-colors duration-200
-              focus:outline-none focus-visible:ring-2
-              focus-visible:ring-white/50
-              focus-visible:ring-offset-2
-              focus-visible:ring-offset-black
-            "
-          >
-            {/* <Plus className="w-5 h-5 shrink-0" aria-hidden /> */}
-             Architecture
-          </a>
+          <button
+  onClick={() => {
+    const hero = document.getElementById("hero");
+    const overview = document.getElementById("overview");
+
+    if (!hero || !overview) return;
+
+    const heroBottom =
+      hero.getBoundingClientRect().bottom + window.scrollY;
+
+    window.scrollTo({
+      top: heroBottom,
+      behavior: "smooth",
+    });
+  }}
+  className="
+    inline-flex items-center justify-center
+    px-8 py-4 rounded-md
+    font-semibold
+    text-white/90
+    border border-white/30
+    hover:bg-white/10
+    transition-colors duration-200
+    focus:outline-none focus-visible:ring-2
+    focus-visible:ring-white/50
+    focus-visible:ring-offset-2
+    focus-visible:ring-offset-black
+  "
+>
+  Architecture
+</button>
+
         </div>
       </ScrollReveal>
     </section>

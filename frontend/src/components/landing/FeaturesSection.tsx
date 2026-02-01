@@ -27,7 +27,9 @@ const features = [
 export default function FeaturesSection() {
   return (
     <section
-      className="relative py-16 md:py-24 bg-[#08080c]"
+      id = "features"
+      className="relative py-16 mb-20 md:py-24 bg-[#08080c]  
+      scroll-mt-50"
       aria-labelledby="features-heading"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">

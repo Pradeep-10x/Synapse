@@ -45,6 +45,8 @@ export default function Header() {
            
 
             {/* Menu Button */}
+             <Link
+            to="/register"  >
             <button
   className="
     bg-[#2B2A33] text-white
@@ -55,8 +57,11 @@ export default function Header() {
     transition-colors duration-150
   "
 >
+
   Get Started
 </button>
+</Link>
+
 
           </div>
 
