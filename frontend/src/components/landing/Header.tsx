@@ -1,41 +1,67 @@
-import { Link } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Header() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-black/60 backdrop-blur-md border-b border-white/5">
-      <nav className="max-w-6xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="Synapse" className="h-8 w-8 object-contain shrink-0" />
-          <span className="text-lg font-semibold tracking-tight text-white uppercase">
-            SYNAPSE
-          </span>
-        </Link>
+    <header className="fixed top-0 inset-x-0 z-50">
+      <div className="h-16 bg-black/50 backdrop-blur-md border-b border-white/10" >
+        <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
 
-        <div className="flex items-center gap-6">
+        <Link to="/" className="flex items-center">
+  <img
+    src="/logo.png"
+    alt="Synapse Logo"
+    className="w-35 shrink-0"
+    style={{ marginRight: "-45px", marginTop: "7px" }}
+  />
+  <span className="text-white text-lg font-medium tracking-wide">
+    SYNAPSE
+  </span>
+</Link>
+
+
+
+          {/* Right: Nav */}
+          <div className="flex items-center gap-8">
           <a
-            href="#architecture"
-            className="text-sm text-white/80 hover:text-white transition-colors"
-          >
-            Architecture
-          </a>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-white/80 hover:text-white transition-colors"
-          >
-            GitHub
-          </a>
-          <button
-            type="button"
-            aria-label="Menu"
-            className="p-2 rounded-lg border border-white/20 bg-white/5 text-white/80 hover:text-white hover:border-white/30 transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+              href="#architecture"
+              className="text-md text-white/70 hover:text-white transition"
+            >
+             Features
+            </a>
+            <a
+              href="#architecture"
+              className="text-md text-white/70 hover:text-white transition"
+            >
+              Docs
+            </a>
+            <a
+              href="#architecture"
+              className="text-md text-white/70 hover:text-white transition"
+            >
+              GitHub
+            </a>
+
+           
+
+            {/* Menu Button */}
+            <button
+  className="
+    bg-[#2B2A33] text-white
+    px-[11px] py-[5px]
+    rounded-[7px]
+    border border-transparent
+    hover:border-white
+    transition-colors duration-150
+  "
+>
+  Get Started
+</button>
+
+          </div>
+
         </div>
-      </nav>
+      </div>
     </header>
   );
 }

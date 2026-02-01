@@ -8,13 +8,13 @@ export default function Footer() {
         <div className="flex items-center gap-6">
           <a
             href="#terms"
-            className="text-sm text-white/80 hover:text-white transition-colors"
+            className="text-sm text-white/80 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded"
           >
             Terms
           </a>
           <a
             href="#privacy"
-            className="text-sm text-white/80 hover:text-white transition-colors"
+            className="text-sm text-white/80 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded"
           >
             Privacy
           </a>
