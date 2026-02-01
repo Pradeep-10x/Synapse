@@ -24,7 +24,7 @@ export default function Header() {
           {/* Right: Nav */}
           <div className="flex items-center gap-8">
           <a
-              href="#architecture"
+              href="#features"
               className="text-md text-white/70 hover:text-white transition"
             >
              Features
@@ -36,7 +36,7 @@ export default function Header() {
               Docs
             </a>
             <a
-              href="#architecture"
+              href="https://github.com/Pradeep-10x/Synapse"
               className="text-md text-white/70 hover:text-white transition"
             >
               GitHub
