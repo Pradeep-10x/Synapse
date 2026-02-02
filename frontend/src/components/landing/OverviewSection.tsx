@@ -90,7 +90,7 @@ export default function OverviewSection() {
         <ScrollReveal delay={120}>
           <div className="flex justify-center lg:justify-end">
             <div className="w-full max-w-lg">
-             <img src="../public/Background.svg"></img>
+             <img src="/Background.svg"></img>
             </div>
           </div>
         </ScrollReveal>
