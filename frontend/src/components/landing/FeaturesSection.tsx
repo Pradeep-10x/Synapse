@@ -28,7 +28,7 @@ export default function FeaturesSection() {
   return (
     <section
       id = "features"
-      className="relative py-16 mb-20 md:py-24 bg-[#08080c]  
+      className="realtive py-80 bg-[#08080c]  
       scroll-mt-50"
       aria-labelledby="features-heading"
     >

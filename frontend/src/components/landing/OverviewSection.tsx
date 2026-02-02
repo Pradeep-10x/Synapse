@@ -60,9 +60,10 @@ export default function OverviewSection() {
     aria-labelledby="overview-heading"
     className="
       relative
-      bg-[#0a0a0f]
-      py-28 md:py-40
-      px-20
+      py-28 md:py-65
+      px-40
+      bg-black
+    
       
     "
   >
@@ -103,7 +104,7 @@ export default function OverviewSection() {
     const overview = document.getElementById("overview");
     const features = document.getElementById("features");
 
-    if (!hero || !features) return;
+    if (!overview || !features) return;
 
     const heroBottom =
       overview.getBoundingClientRect().bottom + window.scrollY;
