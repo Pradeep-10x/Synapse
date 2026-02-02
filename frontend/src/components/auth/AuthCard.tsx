@@ -95,7 +95,7 @@ export default function AuthCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="bg-[#27272A] border border-[rgba(17, 16, 17, 0.15)] rounded-sm w-full max-w-4xl flex overflow-hidden "
+      className="bg-[var(--synapse-surface)] shadow-2xl shadow-black/50 rounded-lg w-full max-w-4xl flex overflow-hidden"
     >
       {/* Left Side - Form */}
       <div className="w-full lg:w-1/2 px-6 sm:px-10 lg:px-12 py-8 sm:py-10 relative overflow-hidden">
@@ -105,29 +105,27 @@ export default function AuthCard() {
             {activeTab === 'login' ? 'Sign In' : 'Create Account'}
           </h2>
 
-         
 
-         
+
+
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6 p-1 glass-card rounded-sm">
+          <div className="flex gap-2 mb-6 p-1 bg-[var(--synapse-bg)] rounded-[var(--radius-md)]">
             <button
               onClick={() => handleTabChange('login')}
-              className={`flex-1 py-2.5 px-4 rounded-sm text-sm font-semibold transition-all duration-200 ${
-                activeTab === 'login'
-                  ? 'bg-[#2B2A33] text-white'
-                  : 'text-[#9ca3af] hover:text-[#e5e7eb]'
-              }`}
+              className={`flex-1 py-2.5 px-4 rounded-sm text-sm font-semibold transition-all duration-200 ${activeTab === 'login'
+                ? 'bg-[var(--synapse-surface)] text-[var(--synapse-text)] shadow-sm'
+                : 'text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)]'
+                }`}
             >
               Login
             </button>
             <button
               onClick={() => handleTabChange('register')}
-              className={`flex-1 py-2.5 px-4 rounded-md text-sm font-semibold transition-all duration-200 ${
-                activeTab === 'register'
-                  ? 'bg-[#2B2A33] text-white'
-                  : 'text-[#9ca3af] hover:text-[#e5e7eb]'
-              }`}
+              className={`flex-1 py-2.5 px-4 rounded-md text-sm font-semibold transition-all duration-200 ${activeTab === 'register'
+                ? 'bg-[var(--synapse-surface)] text-[var(--synapse-text)] shadow-sm'
+                : 'text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)]'
+                }`}
             >
               Register
             </button>
@@ -149,7 +147,7 @@ export default function AuthCard() {
       </div>
 
       {/* Right Side - Image */}
-      <div className="hidden lg:block w-1/2 relative overflow-hidden border-l border-[rgba(168,85,247,0.15)]">
+      <div className="hidden lg:block w-1/2 relative overflow-hidden border-l border-[var(--synapse-border)]">
         <img
           src="https://images.pexels.com/photos/7102037/pexels-photo-7102037.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
           alt="Auth background"

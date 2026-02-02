@@ -80,7 +80,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           type="text"
           value={formData.fullName}
           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] focus:ring-1 focus:ring-[var(--synapse-blue)] transition-all duration-200"
           placeholder="Enter your full name"
           disabled={isLoading}
         />
@@ -95,7 +95,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           type="text"
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] focus:ring-1 focus:ring-[var(--synapse-blue)] transition-all duration-200"
           placeholder="Choose a username"
           disabled={isLoading}
         />
@@ -110,7 +110,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           type="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] focus:ring-1 focus:ring-[var(--synapse-blue)] transition-all duration-200"
           placeholder="Enter your email"
           disabled={isLoading}
         />
@@ -126,7 +126,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             type={showPassword ? 'text' : 'password'}
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200 pr-12"
+            className="w-full px-4 py-3 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] focus:ring-1 focus:ring-[var(--synapse-blue)] transition-all duration-200 pr-12"
             placeholder="Create a password"
             disabled={isLoading}
           />
@@ -151,7 +151,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             type={showConfirmPassword ? 'text' : 'password'}
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200 pr-12"
+            className="w-full px-4 py-3 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] focus:ring-1 focus:ring-[var(--synapse-blue)] transition-all duration-200 pr-12"
             placeholder="Confirm your password"
             disabled={isLoading}
           />
