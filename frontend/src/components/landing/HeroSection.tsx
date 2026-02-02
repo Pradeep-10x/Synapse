@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
 import ScrollReveal from "./ScrollReveal";
 
 export default function HeroSection() {
@@ -44,7 +43,7 @@ export default function HeroSection() {
             alt="Synapse logo"
             className="block w-[350px]"
             decoding="async"
-            fetchpriority="high"
+            fetchPriority="high"
             style={{  marginBottom: "-70px",marginTop:"-35px" }}
           />
         </span>

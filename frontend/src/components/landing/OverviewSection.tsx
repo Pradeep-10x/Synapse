@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-import { Github } from "lucide-react";
 import ScrollReveal from "./ScrollReveal";
 
 /* Lightweight dashboard mock (static, GPU-safe) */
