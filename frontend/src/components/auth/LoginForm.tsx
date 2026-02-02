@@ -52,7 +52,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           type="text"
           value={formData.identifier}
           onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(9, 89, 238, 0.23)] focus:ring-2 focus:ring-[rgba(1, 4, 17, 0.2)] transition-all duration-200"
           placeholder="Enter your email or username"
           disabled={isLoading}
         />
@@ -68,7 +68,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             type={showPassword ? 'text' : 'password'}
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200 pr-12"
+            className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(9, 89, 238, 0.23)] focus:ring-2 focus:ring-[rgba(1, 4, 17, 0.2)] transition-all duration-200 pr-12"
             placeholder="Enter your password"
             disabled={isLoading}
           />
@@ -84,7 +84,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       </div>
 
       {error && (
-        <div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-3">
+        <div className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-sm px-4 py-3">
           {error}
         </div>
       )}
@@ -92,16 +92,21 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full px-6 py-3 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="group/button relative w-full inline-flex justify-center items-center overflow-hidden rounded-sm bg-[blue] px-4 py-3 font-semibold text-white transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-sm hover:shadow-[rgba(9,89,238,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
       >
-        {isLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Entering Orbit...
-          </>
-        ) : (
-          'Enter Orbit'
-        )}
+        <span className="relative z-10 flex items-center justify-center gap-2">
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Logging in
+            </>
+          ) : (
+            'Login'
+          )}
+        </span>
+        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
+          <div className="relative h-full w-10 bg-white/20" />
+        </div>
       </button>
 
       <div className="text-center">
@@ -111,6 +116,17 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           disabled={isLoading}
         >
           Forgot password?
+        </button>
+      </div>
+        <div className="text-sm text-center text-[#9ca3af]" style={{ marginTop: '-10px' }}>
+        Create an account?{' '}
+        <button
+          type="button"
+          className="text-sm text-[#3b82f6] hover:text-[#60a5fa] transition-colors font-medium"
+          onClick={() => navigate('/register')}
+          disabled={isLoading}
+        >
+          Sign up
         </button>
       </div>
     </form>
