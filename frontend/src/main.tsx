@@ -50,6 +50,7 @@ function App() {
         toastOptions={{
           style: {
             background: 'rgba(10, 10, 15, 0.9)',
+            
             color: '#fff',
             border: '1px solid rgba(168, 85, 247, 0.3)',
             backdropFilter: 'blur(10px)',

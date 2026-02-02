@@ -1,35 +1,72 @@
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import Logo from '@/components/Logo';
+import { Menu } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Header() {
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-[rgba(168,85,247,0.15)]"
-    >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center">
-          <Logo className="pt-3 h-15 w-auto" />
-        </Link>
+    <header className="fixed top-0 inset-x-0 z-50">
+      <div className="h-16 bg-black/50 backdrop-blur-md border-b border-white/10" >
+        <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
 
-        <div className="flex items-center gap-6">
-          <Link
-            to="/login"
-            className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors font-medium text-sm"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/register"
-            className="px-6 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg font-semibold text-white text-sm transition-all duration-300"
-          >
-            Get Started
-          </Link>
+        <Link to="/" className="flex items-center">
+  <img
+    src="/logo.png"
+    alt="Synapse Logo"
+    className="w-35 shrink-0"
+    style={{ marginRight: "-45px", marginTop: "7px" }}
+  />
+  <span className="text-white text-lg font-medium tracking-wide">
+    SYNAPSE
+  </span>
+</Link>
+
+
+
+          {/* Right: Nav */}
+          <div className="flex items-center gap-8">
+          <a
+              href="#features"
+              className="text-md text-white/70 hover:text-white transition"
+            >
+             Features
+            </a>
+            <a
+              href="#architecture"
+              className="text-md text-white/70 hover:text-white transition"
+            >
+              Docs
+            </a>
+            <a
+              href="https://github.com/Pradeep-10x/Synapse"
+              className="text-md text-white/70 hover:text-white transition"
+            >
+              GitHub
+            </a>
+
+           
+
+            {/* Menu Button */}
+             <Link
+            to="/register"  >
+            <button
+  className="
+    bg-[#2B2A33] text-white
+    px-[11px] py-[5px]
+    rounded-[7px]
+    border border-transparent
+    hover:border-white
+    transition-colors duration-150
+  "
+>
+
+  Get Started
+</button>
+</Link>
+
+
+          </div>
+
         </div>
-      </nav>
-    </motion.header>
+      </div>
+    </header>
   );
 }

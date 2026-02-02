@@ -1,82 +1,117 @@
-import { motion } from 'framer-motion';
-import { ArrowRight, ChevronDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import Logo from '@/components/Logo';
+import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
+import ScrollReveal from "./ScrollReveal";
 
-interface HeroSectionProps {
-  onExploreClick: () => void;
-}
-
-export default function HeroSection({ onExploreClick }: HeroSectionProps) {
+export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20 pb-32 overflow-hidden">
-      <div className="relative z-10 max-w-6xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-7xl sm:text-8xl md:text-9xl font-bold mb-8 tracking-tight"
+    <section
+      id="hero"
+      aria-label="Hero"
+      className="
+        relative min-h-dvh
+        flex items-center justify-center
+        overflow-hidden
+      "
+    >
+      {/* Background image + dark blur overlay */}
+      <div
+        aria-hidden
+        className="
+          absolute inset-0
+          bg-[url('/bg-image.png')]
+          bg-cover bg-center bg-no-repeat
+
+          after:absolute after:inset-0
+          after:bg-black/30
+          after:backdrop-blur-md
+        "
+      />
+
+      {/* Content */}
+      <ScrollReveal
+        rootMargin="0px"
+        className="
+          relative z-10
+          max-w-2xl mx-auto
+          text-center
+          px-4 pt-24 pb-28
+        "
+      >
+        {/* Logo */}
+        <span className="flex justify-center ">
+          <img
+            src="/logo.png"
+            alt="Synapse logo"
+            className="block w-[350px]"
+            decoding="async"
+            fetchpriority="high"
+            style={{  marginBottom: "-70px",marginTop:"-35px" }}
+          />
+        </span>
+
+        {/* Heading */}
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-5">
+          Synapse
+        </h1>
+
+        {/* Subheading */}
+        <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-lg mx-auto leading-relaxed">
+          A real-time interaction system for communities
+          <br />
+          and live activities..
+        </p>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link
+            to="/register"
+            className="
+              inline-flex items-center justify-center
+              px-8 py-4 rounded-md
+              font-semibold text-white
+              bg-gradient-to-b from-blue-500 to-blue-600
+              hover:from-blue-700 hover:to-blue-700
+             
+              
+            "
           >
+            Get Started
+          </Link>
 
+          <button
+  onClick={() => {
+    const hero = document.getElementById("hero");
+    const overview = document.getElementById("overview");
 
-            <div className="flex items-center justify-center">
-              <Logo className="ml-9 h-24 sm:h-32 md:h-40 w-auto"  />
-            </div>
+    if (!hero || !overview) return;
 
-          </motion.h1>
+    const heroBottom =
+      hero.getBoundingClientRect().bottom + window.scrollY;
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-2xl sm:text-3xl md:text-4xl  font-medium mb-6 text-[#e5e7eb] leading-tight"
-          >
-            Where conversations, content, and creators
-            <br />
-            move in real time.
-          </motion.p>
+    window.scrollTo({
+      top: heroBottom,
+      behavior: "smooth",
+    });
+  }}
+  className="
+    inline-flex items-center justify-center
+    px-8 py-4 rounded-md
+    font-semibold
+    text-white/90
+    border border-white/30
+    hover:bg-white/10
+    transition-colors duration-200
+    focus:outline-none focus-visible:ring-2
+    focus-visible:ring-white/50
+    focus-visible:ring-offset-2
+    focus-visible:ring-offset-black
+  "
+>
+  Architecture
+</button>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-base sm:text-lg md:text-xl text-[#9ca3af] max-w-3xl mx-auto mb-12 leading-relaxed"
-          >
-            A modern social platform built for real-time interaction — posts, reels, stories,
-            live chat, video calls, and verified identities.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <Link
-              to="/register"
-              className="group px-8 py-4 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg font-semibold text-white text-lg transition-all duration-300"
-            >
-              <span className="flex items-center gap-2">
-                 Get Started
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </span>
-            </Link>
-
-            <button
-              onClick={onExploreClick}
-              className="group px-8 py-4 glass-card rounded-lg font-semibold text-[#e5e7eb] text-lg transition-all duration-300 hover:scale-105 hover:border-[rgba(168,85,247,0.3)] flex items-center gap-2"
-            >
-              Explore More
-              <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform duration-300" />
-            </button>
-          </motion.div>
-        </motion.div>
-      </div>
+        </div>
+      </ScrollReveal>
     </section>
   );
 }

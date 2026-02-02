@@ -13,7 +13,7 @@
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-heading: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
 
-  /* ORBIT Color Palette - Deep Space Theme */
+
   --color-orbit-dark: #0a0a12;
   --color-orbit-darker: #050510;
   --color-orbit-dark-blue: #0d1117;
@@ -67,6 +67,13 @@
 
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 5rem; /* account for fixed header when scrolling to anchors */
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   body {
@@ -153,6 +160,25 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Scroll-triggered reveal (fade + slide up) */
+  .scroll-animate {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .scroll-animate.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-animate {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 

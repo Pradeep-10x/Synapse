@@ -80,7 +80,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           type="text"
           value={formData.fullName}
           onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
           placeholder="Enter your full name"
           disabled={isLoading}
         />
@@ -95,7 +95,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           type="text"
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
           placeholder="Choose a username"
           disabled={isLoading}
         />
@@ -110,7 +110,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
           type="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200"
           placeholder="Enter your email"
           disabled={isLoading}
         />
@@ -126,7 +126,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             type={showPassword ? 'text' : 'password'}
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200 pr-12"
+            className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200 pr-12"
             placeholder="Create a password"
             disabled={isLoading}
           />
@@ -151,7 +151,7 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             type={showConfirmPassword ? 'text' : 'password'}
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className="w-full px-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200 pr-12"
+            className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.5)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all duration-200 pr-12"
             placeholder="Confirm your password"
             disabled={isLoading}
           />
@@ -175,20 +175,33 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full px-6 py-3 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="group/button relative w-full inline-flex justify-center items-center overflow-hidden rounded-sm bg-[blue] px-4 py-3 font-semibold text-white transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg hover:shadow-[#a855f7]/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
       >
-        {isLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Creating Account...
-          </>
-        ) : (
-          'Create Account'
-        )}
+        <span className="relative z-10 flex items-center justify-center gap-2">
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            'Create Account'
+          )}
+        </span>
+        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-13deg)_translateX(-100%)] group-hover/button:duration-1000 group-hover/button:[transform:skew(-13deg)_translateX(100%)]">
+          <div className="relative h-full w-10 bg-white/20" />
+        </div>
       </button>
 
-      <p className="text-xs text-center text-[#9ca3af]">
-        Your identity can be verified later.
+      <p className="text-sm text-center text-[#9ca3af]">
+        Already an account?{' '}
+        <button
+          type="button"
+          className="text-sm text-[#3b82f6] hover:text-[#60a5fa] transition-colors font-medium"
+          onClick={() => navigate('/login')}
+          disabled={isLoading}
+        >
+          Log in
+        </button>
       </p>
     </form>
   );

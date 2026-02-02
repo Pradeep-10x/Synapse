@@ -1,27 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import Header from '@/components/landing/Header'; 
+import Header from '@/components/landing/Header';
 import HeroSection from '@/components/landing/HeroSection';
-
+import OverviewSection from '@/components/landing/OverviewSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
-import SystemSection from '@/components/landing/SystemSection';
-import TrustSection from '@/components/landing/TrustSection';
-import CTASection from '@/components/landing/CTASection';
+import Footer from '@/components/landing/Footer';
 import { useAuthStore } from '@/store/authStore';
+import { useInView } from '@/hooks/useInView';
 
 export default function Landing() {
-  const featuresRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, isCheckingAuth, isAuthChecked, checkAuth } = useAuthStore();
+  const [overviewRef, overviewInView] = useInView();
+  const [featuresRef, featuresInView] = useInView();
 
   useEffect(() => {
     if (!isAuthenticated && !isCheckingAuth && !isAuthChecked) {
       checkAuth();
     }
   }, [isAuthenticated, isCheckingAuth, isAuthChecked, checkAuth]);
-
-  const scrollToSection = () => {
-    featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   if (isCheckingAuth) {
     return (
@@ -36,22 +32,31 @@ export default function Landing() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ willChange: 'scroll-position' }}>
+    <div className="min-h-dvh flex flex-col bg-black">
       <Header />
-      <main className="relative z-10">
-        <HeroSection onExploreClick={scrollToSection} />
-        
-        <div ref={featuresRef} style={{ contain: 'layout style paint' }}>
-          <FeaturesSection />
+      <main className="flex-1">
+        <HeroSection />
+
+        <div
+          ref={overviewRef}
+          id="overview"
+          className="scroll-mt-16 min-h-[50vh]"
+          aria-hidden={!overviewInView}
+        >
+          {overviewInView && <OverviewSection />}
         </div>
-        <div style={{ contain: 'layout style paint' }}>
-          <SystemSection />
+
+        <div
+          ref={featuresRef}
+          id="features"
+          className="scroll-mt-16 min-h-[40vh]"
+          aria-hidden={!featuresInView}
+        >
+          {featuresInView && <FeaturesSection />}
         </div>
-        <div style={{ contain: 'layout style paint' }}>
-          <TrustSection />
-        </div>
-        <div style={{ contain: 'layout style paint' }}>
-          <CTASection />
+
+        <div id="docs" className="scroll-mt-16">
+          <Footer />
         </div>
       </main>
     </div>
