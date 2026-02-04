@@ -52,7 +52,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           type="text"
           value={formData.identifier}
           onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
-          className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(9, 89, 238, 0.23)] focus:ring-2 focus:ring-[rgba(1, 4, 17, 0.2)] transition-all duration-200"
+          className="w-full px-4 py-3 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] focus:ring-1 focus:ring-[var(--synapse-blue)] transition-all duration-200"
           placeholder="Enter your email or username"
           disabled={isLoading}
         />
@@ -68,7 +68,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             type={showPassword ? 'text' : 'password'}
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full px-4 py-3 glass-card rounded-sm text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(9, 89, 238, 0.23)] focus:ring-2 focus:ring-[rgba(1, 4, 17, 0.2)] transition-all duration-200 pr-12"
+            className="w-full px-4 py-3 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] focus:ring-1 focus:ring-[var(--synapse-blue)] transition-all duration-200 pr-12"
             placeholder="Enter your password"
             disabled={isLoading}
           />
@@ -118,7 +118,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           Forgot password?
         </button>
       </div>
-        <div className="text-sm text-center text-[#9ca3af]" style={{ marginTop: '-10px' }}>
+      <div className="text-sm text-center text-[#9ca3af]" style={{ marginTop: '-10px' }}>
         Create an account?{' '}
         <button
           type="button"

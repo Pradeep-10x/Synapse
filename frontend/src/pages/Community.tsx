@@ -1,196 +1,111 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Search, Loader2, Plus } from 'lucide-react';
-import { communityPostAPI } from '@/lib/api';
+import { Plus, Search, Layers, Loader2 } from 'lucide-react';
+import { communityAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import CommunityPostCard from '@/components/feed/CommunityPostCard';
+import { CommunityDomainCard } from '@/components/community/CommunityDomainCard';
 import CreateCommunityModal from '@/components/community/CreateCommunityModal';
 
-interface CommunityPost {
+interface Community {
   _id: string;
-  user: {
-    _id: string;
-    username: string;
-    avatar?: string;
-    isVerified?: boolean;
-  };
-  caption?: string;
-  mediaUrl?: string;
-  mediaType?: 'image' | 'video';
-  likesCount: number;
-  commentsCount: number;
-  createdAt: string;
-  isLiked?: boolean;
-  community?: {
-    _id: string;
-    name: string;
-    coverImage?: string;
-  };
+  name: string;
+  description: string;
+  membersCount: number;
+  coverImage?: string;
 }
 
 export default function CommunityPage() {
   const navigate = useNavigate();
-  const [feedPosts, setFeedPosts] = useState<CommunityPost[]>([]);
-  const [loadingFeed, setLoadingFeed] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(true);
+  const [joinedCommunities, setJoinedCommunities] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchFeed(1, false);
+    fetchJoinedCommunities();
   }, []);
 
-  // Infinite scroll for feed
-  useEffect(() => {
-    if (!hasNext || loadingMore || loadingFeed) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNext && !loadingMore) {
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchFeed(nextPage, true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
-  }, [hasNext, loadingMore, loadingFeed, page]);
-
-  const fetchFeed = async (pageNum: number, append = false) => {
+  const fetchJoinedCommunities = async () => {
     try {
-      if (append) {
-        setLoadingMore(true);
-      } else {
-        setLoadingFeed(true);
-        setPage(1);
-      }
-
-      const response = await communityPostAPI.getJoinedFeed(pageNum, 10);
-      const { posts, hasNext: hasMore } = response.data.data || { posts: [], hasNext: false };
-
-      if (append) {
-        setFeedPosts((prev) => [...prev, ...posts]);
-      } else {
-        setFeedPosts(posts);
-      }
-
-      setHasNext(hasMore);
-    } catch (error: any) {
-      console.error('Failed to fetch community feed:', error);
-      toast.error('Failed to load community feed');
+      setLoading(true);
+      const response = await communityAPI.getJoined();
+      const joined = response.data.data || [];
+      setJoinedCommunities(joined);
+    } catch (error) {
+      console.error('Failed to fetch joined communities:', error);
+      toast.error('Failed to load your domains');
     } finally {
-      setLoadingFeed(false);
-      setLoadingMore(false);
+      setLoading(false);
     }
   };
-
-  const handleLikePost = (postId: string, isLiked: boolean, likesCount: number) => {
-    // Update parent state with the values from child component
-    // The child handles the API call, we just sync our state
-    setFeedPosts(prev => prev.map(post => {
-      if (post._id === postId) {
-        return {
-          ...post,
-          isLiked,
-          likesCount
-        };
-      }
-      return post;
-    }));
-  };
-
-  const handleDeletePost = (postId: string) => {
-    setFeedPosts(prev => prev.filter(post => post._id !== postId));
-  };
-
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 py-8">
-        {/* Header */}
-        <div className="mb-6 pb-4 border-b border-[rgba(168,85,247,0.2)]">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold text-[#e5e7eb]">Community Feed</h1>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Create Community
-              </button>
-              <button
-                onClick={() => navigate('/discover-communities')}
-                className="px-4 py-2 glass-card rounded-lg text-[#e5e7eb] hover:border-[rgba(168,85,247,0.3)] transition-colors flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Discover
-              </button>
-            </div>
-          </div>
-          <p className="text-[#9ca3af]">People who share your interests ;)</p>
+    <div className="animate-in fade-in duration-500">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-[var(--synapse-border)]">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--synapse-text)] tracking-tight mb-2 uppercase">Communities</h1>
+          <p className="text-[var(--synapse-text-muted)] text-sm">
+            You are part of <span className="text-[var(--synapse-text)] font-semibold">{joinedCommunities.length}</span> active domains.
+          </p>
         </div>
 
-        {/* Feed Content */}
-        <div className="max-w-4xl mx-auto">
-          {loadingFeed ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
-            </div>
-          ) : feedPosts.length > 0 ? (
-            <>
-              {feedPosts.map((post) => (
-                <CommunityPostCard
-                  key={post._id}
-                  post={post}
-                  onLike={handleLikePost}
-                  onDelete={handleDeletePost}
-                />
-              ))}
-              {hasNext && (
-                <div ref={observerTarget} className="flex items-center justify-center py-8">
-                  {loadingMore && <Loader2 className="w-6 h-6 animate-spin text-[#a855f7]" />}
-                </div>
-              )}
-              {!hasNext && feedPosts.length > 0 && (
-                <div className="text-center py-8">
-                  <p className="text-[#9ca3af] text-sm">You're all caught up</p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-[#9ca3af] mx-auto mb-4" />
-              <p className="text-[#9ca3af] mb-4">No posts from your communities yet</p>
-              <button
-                onClick={() => navigate('/discover-communities')}
-                className="px-6 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors"
-              >
-                Discover Communities
-              </button>
-            </div>
-          )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--synapse-surface)] hover:bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] rounded-[var(--radius-md)] text-sm font-medium transition-all"
+          >
+            <Plus className="w-4 h-4 text-[var(--synapse-text-muted)]" />
+            Create Domain
+          </button>
+          <button
+            onClick={() => navigate('/discover-communities')}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--synapse-surface)] hover:bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] rounded-[var(--radius-md)] text-sm font-medium transition-all"
+          >
+            <Search className="w-4 h-4 text-[var(--synapse-text-muted)]" />
+            Discover Domains
+          </button>
         </div>
       </div>
+
+      {/* Grid Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />
+        </div>
+      ) : joinedCommunities.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+          {joinedCommunities.map((community) => (
+            <CommunityDomainCard
+              key={community._id}
+              {...community}
+              // Mocked Data for Design Aesthetics
+              activeNow={Math.floor(Math.random() * 20) + 2}
+              eventsCount={Math.floor(Math.random() * 5)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-[var(--synapse-border)] rounded-[var(--radius-lg)] bg-[var(--synapse-surface)]/30">
+          <Layers className="w-12 h-12 text-[var(--synapse-text-muted)] mb-4 opacity-50" />
+          <h3 className="text-lg font-medium text-[var(--synapse-text)] mb-2">No active domains</h3>
+          <p className="text-[var(--synapse-text-muted)] max-w-sm mb-6">
+            You haven't joined any communities yet. Discover existing domains or initialize a new one.
+          </p>
+          <button
+            onClick={() => navigate('/discover-communities')}
+            className="px-6 py-2 bg-[var(--synapse-blue)] text-white font-medium rounded-[var(--radius-md)] hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20"
+          >
+            Browse Directory
+          </button>
+        </div>
+      )}
 
       <CreateCommunityModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={() => fetchFeed(1, false)}
+        onSuccess={fetchJoinedCommunities}
       />
     </div>
   );
 }
+

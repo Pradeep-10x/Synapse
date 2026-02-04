@@ -241,7 +241,7 @@ export default function DiscoverCommunities() {
             <div className="mb-6 pb-4 border-b border-[rgba(168,85,247,0.2)]">
               <div className="flex items-center gap-4 mb-2">
                 <button
-                  onClick={() => navigate('/community')}
+                  onClick={() => navigate('/communities')}
                   className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
