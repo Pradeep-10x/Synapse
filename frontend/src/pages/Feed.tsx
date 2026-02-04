@@ -1,4 +1,5 @@
 import { ActivityItem, ActivityProps } from '@/components/feed/ActivityItem';
+import { LivePresence } from '@/components/layout/LivePresence';
 
 // Mock Data for specific design look
 const ACTIVITIES: ActivityProps[] = [
@@ -56,18 +57,26 @@ export default function FeedPage() {
         </h1>
       </div>
 
-      {/* Main Activity Card */}
-      <div className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-[var(--synapse-border)] bg-[rgba(255,255,255,0.02)]">
-          <h2 className="font-semibold text-lg text-[var(--synapse-text)]">Activity Stream</h2>
+      {/* Main Content - Activity Card + Live Presence side by side */}
+      <div className="flex gap-6 items-stretch">
+        {/* Main Activity Card */}
+        <div className="flex-1 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
+          <div className="px-6 py-5 border-b border-[var(--synapse-border)] bg-[rgba(255,255,255,0.02)]">
+            <h2 className="font-semibold text-xl text-[var(--synapse-text)]">Activity Stream</h2>
+          </div>
+
+          <div className="p-8">
+            <div className="flex flex-col">
+              {ACTIVITIES.map((activity, index) => (
+                <ActivityItem key={index} {...activity} />
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="p-6">
-          <div className="flex flex-col">
-            {ACTIVITIES.map((activity, index) => (
-              <ActivityItem key={index} {...activity} />
-            ))}
-          </div>
+        {/* Live Presence Card */}
+        <div className="w-[420px] flex-shrink-0 hidden lg:block">
+          <LivePresence />
         </div>
       </div>
     </div>
