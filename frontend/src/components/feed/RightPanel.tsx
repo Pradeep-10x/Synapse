@@ -149,7 +149,7 @@ export default function RightPanel() {
             className="flex items-center gap-4 mb-4 hover:opacity-80 transition-opacity"
           >
             <div className="w-16 h-16 rounded-full bg-[#a855f7] flex items-center justify-center overflow-hidden">
-              <img src={user.avatar || "/default-avatar.jpg"} alt={user.username} className="w-full h-full object-cover" />
+              <img src={user.avatar || "/default-avatar.jpg"} alt={user.username} className="w-full h-full object-cover scale-110" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -287,7 +287,7 @@ export default function RightPanel() {
                                   <img
                                     src={result.avatar || "/default-avatar.jpg"}
                                     alt={result.username}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover scale-110"
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">

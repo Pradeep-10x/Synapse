@@ -1,7 +1,9 @@
+
 import { Sidebar } from './Sidebar';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Bell, Mail, User, Settings, LogOut, HelpCircle, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
 
 interface DashboardLayoutProps {
     children?: React.ReactNode;
@@ -11,6 +13,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const { user, logout } = useAuthStore();
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -23,9 +26,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleLogout = () => {
-        // Add logout logic here
-        localStorage.removeItem('token');
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
 
@@ -39,27 +41,33 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 {/* Top Navbar */}
                 <header className="h-20 flex items-center justify-end gap-4 px-15 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40">
                     {/* Notification Icon */}
-                    <button className="relative p-3 rounded-lg hover:bg-[var(--synapse-surface)] transition-colors group">
+                    <button
+                        onClick={() => navigate('/notifications')}
+                        className="relative p-3 rounded-lg hover:bg-[var(--synapse-surface)] transition-colors group"
+                    >
                         <Bell className="w-7 h-7 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)]" />
                         <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
                     </button>
 
                     {/* Message Icon */}
-                    <button className="relative p-3 rounded-lg hover:bg-[var(--synapse-surface)] transition-colors group">
+                    <button
+                        onClick={() => navigate('/messages')}
+                        className="relative p-3 rounded-lg hover:bg-[var(--synapse-surface)] transition-colors group"
+                    >
                         <Mail className="w-7 h-7 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)]" />
                         <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
                     </button>
 
                     {/* Profile Dropdown */}
                     <div className="relative ml-2" ref={profileRef}>
-                        <button 
+                        <button
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                             className="flex items-center gap-2 p-1.5 rounded-sm hover:bg-[var(--synapse-surface)] transition-colors"
                         >
-                            <img 
-                                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" 
-                                alt="Profile" 
-                                className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)]" 
+                            <img
+                                src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"}
+                                alt="Profile"
+                                className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)] scale-110"
                             />
                             <ChevronDown className={`w-5 h-5 text-[var(--synapse-text-muted)] transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -69,27 +77,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-lg shadow-xl py-2 z-50">
                                 {/* User Info */}
                                 <div className="px-4 py-3 border-b border-[var(--synapse-border)]">
-                                    <p className="text-sm font-medium text-[var(--synapse-text)]">John Doe</p>
-                                    <p className="text-xs text-[var(--synapse-text-muted)]">john@example.com</p>
+                                    <p className="text-sm font-medium text-[var(--synapse-text)] truncate">{user?.fullName || user?.username || 'Guest User'}</p>
+                                    <p className="text-xs text-[var(--synapse-text-muted)] truncate">{user?.email || 'guest@example.com'}</p>
                                 </div>
 
                                 {/* Menu Items */}
                                 <div className="py-1">
-                                    <button 
+                                    <button
                                         onClick={() => { navigate('/profile'); setIsProfileOpen(false); }}
                                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <User className="w-4 h-4" />
                                         View Profile
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
                                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <Settings className="w-4 h-4" />
                                         Settings
                                     </button>
-                                    <button 
+                                    <button
                                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <HelpCircle className="w-4 h-4" />
@@ -99,7 +107,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                                 {/* Logout */}
                                 <div className="border-t border-[var(--synapse-border)] pt-1 mt-1">
-                                    <button 
+                                    <button
                                         onClick={handleLogout}
                                         className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >

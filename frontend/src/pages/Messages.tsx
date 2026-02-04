@@ -729,7 +729,7 @@ export default function MessagesPage() {
                           <img
                             src={message.sender.avatar || "/default-avatar.jpg"}
                             alt={message.sender.username}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover scale-110"
                           />
                         </div>
                       )}
@@ -958,7 +958,7 @@ export default function MessagesPage() {
                                   <img
                                     src={admin.avatar || "/default-avatar.jpg"}
                                     alt={admin.username}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover scale-110"
                                   />
                                 </div>
                                 {onlineUsers.has(admin._id) && (
@@ -1003,7 +1003,7 @@ export default function MessagesPage() {
                                   <img
                                     src={member.avatar || "/default-avatar.jpg"}
                                     alt={member.username}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover scale-110"
                                   />
                                 </div>
                                 {onlineUsers.has(member._id) && (

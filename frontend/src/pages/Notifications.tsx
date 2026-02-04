@@ -141,25 +141,24 @@ export default function NotificationsPage() {
           {notifications.map((notification) => (
             <div
               key={notification._id}
-              className={`flex items-start gap-4 p-4 rounded-xl transition-colors ${
-                notification.isRead 
-                  ? 'bg-[rgba(168,85,247,0.05)]' 
+              className={`flex items-start gap-4 p-4 rounded-xl transition-colors ${notification.isRead
+                  ? 'bg-[rgba(168,85,247,0.05)]'
                   : 'bg-[rgba(168,85,247,0.15)] border border-[rgba(168,85,247,0.3)]'
-              } hover:bg-[rgba(168,85,247,0.2)]`}
+                } hover:bg-[rgba(168,85,247,0.2)]`}
             >
               {/* User Avatar */}
               <Link to={`/profile/${notification.fromUser?.username}`}>
                 <img
                   src={notification.fromUser?.avatar || '/default-avatar.png'}
                   alt={notification.fromUser?.username}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-purple-500/30"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-purple-500/30 scale-110"
                 />
               </Link>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <p className="text-gray-200">
-                  <Link 
+                  <Link
                     to={`/profile/${notification.fromUser?.username}`}
                     className="font-semibold text-white hover:text-purple-400 transition-colors"
                   >
