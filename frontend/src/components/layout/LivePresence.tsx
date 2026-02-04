@@ -29,7 +29,7 @@ export function LivePresence() {
                                 key={i}
                                 src={src}
                                 alt="Online user"
-                                className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] object-cover"
+                                className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] object-cover scale-110"
                             />
                         ))}
                     </div>
@@ -50,7 +50,7 @@ export function LivePresence() {
                                     <img
                                         src={user.avatar}
                                         alt={user.name}
-                                        className="w-11 h-11 rounded-full object-cover"
+                                        className="w-11 h-11 rounded-full object-cover scale-110"
                                     />
                                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[var(--synapse-surface)]"></div>
                                 </div>

@@ -16,6 +16,7 @@ import MessagesPage from './pages/Messages';
 import NotificationsPage from './pages/Notifications';
 import SettingsPage from './pages/Settings';
 import EditProfilePage from './pages/EditProfile';
+import PostDetail from './pages/PostDetail';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 
@@ -42,6 +43,7 @@ function App() {
             <Route path="/profile/:username" element={<ProfilePage />} />
             <Route path="/create" element={<CreatePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/post/:postId" element={<PostDetail />} />
           </Route>
         </Route>
       </Routes>

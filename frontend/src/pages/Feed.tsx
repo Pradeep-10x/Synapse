@@ -1,59 +1,171 @@
+import { useState, useEffect, useRef } from 'react';
 import { ActivityItem, ActivityProps } from '@/components/feed/ActivityItem';
 import { LivePresence } from '@/components/layout/LivePresence';
-
-// Mock Data for specific design look
-const ACTIVITIES: ActivityProps[] = [
-  {
-    type: 'system',
-    timestamp: '12:47',
-    content: {
-      text: 'Live event stream optimized',
-    },
-  },
-  {
-    type: 'post',
-    user: { name: 'Kristen Lee', avatar: 'https://i.pravatar.cc/150?u=kristen' },
-    timestamp: '12:43',
-    content: {
-      text: 'posted a new photo',
-      mediaUrl: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&q=80',
-      highlight: 'Urban Views',
-    },
-  },
-  {
-    type: 'event',
-    timestamp: '12:39',
-    content: {
-      text: 'Community Meetup is now active',
-    },
-  },
-  {
-    type: 'join',
-    user: { name: 'Mark' },
-    timestamp: '12:35',
-    content: {
-      text: 'joined the channel',
-      highlight: 'Tech Talk',
-    },
-  },
-  {
-    type: 'create',
-    user: { name: 'Sarah Connor' },
-    timestamp: '12:20',
-    content: {
-      text: 'deployed new instance to',
-      highlight: 'Production',
-    },
-  },
-];
+import { feedAPI, notificationAPI } from '@/lib/api';
+import { useSocketStore } from '@/store/socketStore';
+import { Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function FeedPage() {
+  const [activities, setActivities] = useState<ActivityProps[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(true);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const { socket } = useSocketStore();
+
+  const mapPostToActivity = (post: any): ActivityProps => ({
+    type: 'post',
+    timestamp: format(new Date(post.createdAt), 'HH:mm'),
+    user: {
+      name: post.user.username,
+      avatar: post.user.avatar
+    },
+    content: {
+      text: 'posted a new update',
+      highlight: post.caption,
+      mediaUrl: post.mediaUrl
+    },
+    postId: post._id,
+    originalTimestamp: new Date(post.createdAt).getTime() // For sorting
+  } as any);
+
+  const mapNotificationToActivity = (notif: any): ActivityProps => {
+    let text = 'updated the system';
+    let type: any = 'system';
+
+    switch (notif.type) {
+      case 'like':
+        text = `liked your ${notif.post ? 'post' : notif.reel ? 'reel' : 'story'}`;
+        type = 'event';
+        break;
+      case 'comment':
+        text = `commented on your ${notif.post ? 'post' : 'reel'}`;
+        type = 'event';
+        break;
+      case 'follow':
+        text = 'started following you';
+        type = 'join';
+        break;
+      case 'mention':
+        text = 'mentioned you in a post';
+        type = 'event';
+        break;
+      default:
+        text = notif.message || 'New notification';
+    }
+
+    return {
+      type,
+      timestamp: format(new Date(notif.createdAt), 'HH:mm'),
+      user: {
+        name: notif.fromUser?.username || 'System',
+        avatar: notif.fromUser?.avatar
+      },
+      content: {
+        text,
+        highlight: ''
+      },
+      postId: notif.post || notif.reel || null, // Best effort to link to content
+      originalTimestamp: new Date(notif.createdAt).getTime()
+    } as any;
+  };
+
+  const fetchFeed = async (pageNum: number, append = false) => {
+    try {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+
+      // Fetch Posts
+      const postResponse = await feedAPI.getHomeFeed(pageNum, 20);
+      const { posts, hasNext: more } = postResponse.data.data;
+      let newActivities = posts.map(mapPostToActivity);
+
+      // Fetch Notifications only on first load
+      if (pageNum === 1) {
+        try {
+          const notifResponse = await notificationAPI.getNotifications();
+          const notifications = notifResponse.data.data || [];
+          const notifActivities = notifications.map(mapNotificationToActivity);
+          newActivities = [...newActivities, ...notifActivities];
+        } catch (err) {
+          console.error('Failed to load notifications', err);
+        }
+      }
+
+      // Sort by timestamp descending
+      newActivities.sort((a: any, b: any) => b.originalTimestamp - a.originalTimestamp);
+
+      if (append) {
+        setActivities(prev => {
+          const combined = [...prev, ...newActivities];
+          // Remove potential duplicates by some unique key if we had one, but strict sorting helps
+          return combined;
+        });
+      } else {
+        setActivities(newActivities);
+      }
+      setHasNext(more);
+    } catch (error) {
+      console.error('Failed to load feed:', error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFeed(1);
+  }, []);
+
+  // Infinite Scroll
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target || !hasNext || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setPage(p => p + 1);
+        fetchFeed(page + 1, true);
+      }
+    }, { threshold: 0.1 });
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasNext, loading, loadingMore, page]);
+
+  // Real-time Socket Events
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewPost = (data: any) => {
+      if (data?.post) {
+        const newActivity = mapPostToActivity(data.post);
+        setActivities(prev => [newActivity, ...prev]);
+      }
+    };
+
+    const handleNewNotification = (notif: any) => {
+      const newActivity = mapNotificationToActivity(notif);
+      setActivities(prev => [newActivity, ...prev]);
+    };
+
+    socket.on('post:new', handleNewPost);
+    socket.on('notification:new', handleNewNotification);
+
+    return () => {
+      socket.off('post:new', handleNewPost);
+      socket.off('notification:new', handleNewNotification);
+    };
+  }, [socket]);
+
   return (
     <div className="animate-in fade-in duration-500">
       {/* Page Header */}
       <div className="mb-8 pt-2">
         <h1 className="text-sm font-medium text-[var(--synapse-text-muted)] tracking-widest uppercase mb-1">
-          Live Status: <span className="text-[var(--synapse-text)]">Active</span> • 24 Events • 6 Domains
+          Live Status: <span className="text-[var(--synapse-text)]">Active</span> • Real-time Feed
         </h1>
       </div>
 
@@ -61,15 +173,36 @@ export default function FeedPage() {
       <div className="flex gap-6 items-stretch">
         {/* Main Activity Card */}
         <div className="flex-1 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
-          <div className="px-6 py-5 border-b border-[var(--synapse-border)] bg-[rgba(255,255,255,0.02)]">
+          <div className="px-6 py-5 border-b border-[var(--synapse-border)] bg-[rgba(255,255,255,0.02)] flex justify-between items-center">
             <h2 className="font-semibold text-xl text-[var(--synapse-text)]">Activity Stream</h2>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span className="text-xs text-[var(--synapse-text-muted)] font-mono">LIVE</span>
+            </div>
           </div>
 
           <div className="p-8">
             <div className="flex flex-col">
-              {ACTIVITIES.map((activity, index) => (
-                <ActivityItem key={index} {...activity} />
-              ))}
+              {loading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-text-muted)]" />
+                </div>
+              ) : activities.length > 0 ? (
+                <>
+                  {activities.map((activity, index) => (
+                    <ActivityItem key={index} {...activity} />
+                  ))}
+                  {hasNext && (
+                    <div ref={observerTarget} className="flex justify-center py-4">
+                      {loadingMore && <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-10 text-[var(--synapse-text-muted)]">
+                  No recent activity in the system.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -82,4 +215,6 @@ export default function FeedPage() {
     </div>
   );
 }
+
+
 

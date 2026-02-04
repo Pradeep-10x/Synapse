@@ -137,7 +137,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
   const handleLike = async () => {
     const newIsLiked = !isLiked;
     const newLikesCount = newIsLiked ? likesCount + 1 : likesCount - 1;
-    
+
     // Optimistic update
     setIsLiked(newIsLiked);
     setLikesCount(newLikesCount);
@@ -240,7 +240,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
               <img
                 src={post.user.avatar || "/default-avatar.jpg"}
                 alt={post.user.username}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover scale-110"
               />
             </div>
             <div>
@@ -338,11 +338,10 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
         <div className="px-4 py-3 border-b border-[rgba(168,85,247,0.1)]">
           <div className="relative">
             <p
-              className={`text-[#e5e7eb] text-sm leading-relaxed ${
-                !isCaptionExpanded ? 'line-clamp-2' : ''
-              }`}
+              className={`text-[#e5e7eb] text-sm leading-relaxed ${!isCaptionExpanded ? 'line-clamp-2' : ''
+                }`}
             >
-              
+
               {post.caption}
             </p>
             {post.caption.length > 80 && (
@@ -439,7 +438,7 @@ export default function CommunityPostCard({ post, onLike, onDelete, isAdmin = fa
                             <img
                               src={comment.user.avatar || "/default-avatar.jpg"}
                               alt={comment.user.username}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover scale-110"
                             />
                           </div>
                         </Link>
