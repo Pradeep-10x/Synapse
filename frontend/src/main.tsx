@@ -32,7 +32,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/feed" element={<FeedPage />} />
             <Route path="/search" element={<SearchPage />} />
-            <Route path="/community" element={<CommunityPage />} />
+            <Route path="/communities" element={<CommunityPage />} />
             <Route path="/community/:id" element={<CommunityDetail />} />
             <Route path="/discover-communities" element={<DiscoverCommunities />} />
             <Route path="/notifications" element={<NotificationsPage />} />
@@ -50,7 +50,7 @@ function App() {
         toastOptions={{
           style: {
             background: 'rgba(10, 10, 15, 0.9)',
-            
+
             color: '#fff',
             border: '1px solid rgba(168, 85, 247, 0.3)',
             backdropFilter: 'blur(10px)',

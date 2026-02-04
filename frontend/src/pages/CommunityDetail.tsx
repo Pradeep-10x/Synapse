@@ -273,12 +273,12 @@ export default function CommunityDetail() {
 
     const handleRemoveUser = async (userId: string) => {
         if (!id || !confirm('Are you sure you want to remove this user from the community?')) return;
-        
+
         try {
             setRemovingUserId(userId);
             await communityAPI.removeUser(id, userId);
             toast.success('User removed from community');
-            
+
             // Refresh community data
             const updated = await communityAPI.getCommunity(id);
             setCommunity(updated.data.data);
@@ -317,7 +317,7 @@ export default function CommunityDetail() {
                 )}
 
                 <button
-                    onClick={() => navigate('/community')}
+                    onClick={() => navigate('/communities')}
                     className="absolute top-6 left-6 p-2 glass-card rounded-full text-white hover:bg-white/10 transition-colors z-10"
                 >
                     <ArrowLeft className="w-5 h-5" />
