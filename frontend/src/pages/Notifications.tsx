@@ -63,9 +63,10 @@ export default function NotificationsPage() {
   const { notifications, setNotifications, markAllAsRead, clearNotifications } = useSocketStore();
 
   useEffect(() => {
-    fetchNotifications();
-    // Mark all as read on mount
-    const markRead = async () => {
+    const initNotifications = async () => {
+      // First fetch notifications
+      await fetchNotifications();
+      // Then mark all as read (both on server and in local state)
       try {
         await notificationAPI.markAsRead();
         markAllAsRead();
@@ -73,7 +74,7 @@ export default function NotificationsPage() {
         console.error('Failed to mark notifications as read:', error);
       }
     };
-    markRead();
+    initNotifications();
   }, []);
 
   const fetchNotifications = async () => {

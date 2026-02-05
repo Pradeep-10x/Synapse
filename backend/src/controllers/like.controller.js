@@ -45,7 +45,10 @@ const likeUnlikePost = asyncHandler(async (req, res) => {
       post: postId,
     });
 
-    emitToUser(req, post.user, "notification:new", notification);
+    // Populate fromUser for realtime notification
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('fromUser', 'username avatar');
+    emitToUser(req, post.user, "notification:new", populatedNotification);
   }
 
 
@@ -91,7 +94,10 @@ const likeUnlikeReel = asyncHandler(async (req, res) => {
       reel: reelId,
     });
 
-    emitToUser(req, reel.user, "notification:new", notification);
+    // Populate fromUser for realtime notification
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('fromUser', 'username avatar');
+    emitToUser(req, reel.user, "notification:new", populatedNotification);
   }
 
   return res.status(200).json(
@@ -215,7 +221,10 @@ const likeUnlikeStory = asyncHandler(async (req, res) => {
       story: storyId,
     });
 
-    emitToUser(req, story.user, "notification:new", notification);
+    // Populate fromUser for realtime notification
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('fromUser', 'username avatar');
+    emitToUser(req, story.user, "notification:new", populatedNotification);
   }
 
   return res.status(200).json(

@@ -57,8 +57,18 @@ dotenv.config();
     
       const createdNotifications = await Notification.insertMany(notifications);
     
-      followerIds.forEach((followerId, index) => {
-        emitToUser(req, followerId, "notification:new", createdNotifications[index]);
+      // Populate fromUser for all notifications for realtime emission
+      const populatedNotifications = await Notification.find({
+        _id: { $in: createdNotifications.map(n => n._id) }
+      }).populate('fromUser', 'username avatar');
+
+      const notificationMap = new Map(populatedNotifications.map(n => [n.user.toString(), n]));
+      
+      followerIds.forEach((followerId) => {
+        const notification = notificationMap.get(followerId.toString());
+        if (notification) {
+          emitToUser(req, followerId, "notification:new", notification);
+        }
       });
     }
     

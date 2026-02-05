@@ -42,7 +42,10 @@ const createPostComment = asyncHandler(async (req, res) => {
       post: postId,
     });
 
-    emitToUser(req, post.user, "notification:new", notification);
+    // Populate fromUser for realtime notification
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('fromUser', 'username avatar');
+    emitToUser(req, post.user, "notification:new", populatedNotification);
   }
 
   res.status(201).json(new ApiResponse(201, populatedComment));
@@ -76,7 +79,10 @@ const createReelComment = asyncHandler(async (req, res) => {
       reel: reelId,
     });
 
-    emitToUser(req, reel.user, "notification:new", notification);
+    // Populate fromUser for realtime notification
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate('fromUser', 'username avatar');
+    emitToUser(req, reel.user, "notification:new", populatedNotification);
   }
 
   res.status(201).json(new ApiResponse(201, comment));

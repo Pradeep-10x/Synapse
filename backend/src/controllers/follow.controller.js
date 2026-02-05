@@ -51,13 +51,17 @@ const followUnfollowUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(targetUserId, {
     $inc: { followersCount: +1 }
   });
-const notification = await Notification.create({
-        user: targetUserId,
-        fromUser: currentUserId,
-        type: 'follow',
-    });
 
-  emitToUser(req, targetUserId, "notification:new", notification);
+  const notification = await Notification.create({
+    user: targetUserId,
+    fromUser: currentUserId,
+    type: 'follow',
+  });
+
+  // Populate fromUser for realtime notification
+  const populatedNotification = await Notification.findById(notification._id)
+    .populate('fromUser', 'username avatar');
+  emitToUser(req, targetUserId, "notification:new", populatedNotification);
 
 
   return res.status(200).json(
