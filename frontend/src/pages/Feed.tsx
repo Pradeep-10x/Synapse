@@ -4,7 +4,7 @@ import { LivePresence } from '@/components/layout/LivePresence';
 import { feedAPI, notificationAPI } from '@/lib/api';
 import { useSocketStore } from '@/store/socketStore';
 import { useAuthStore } from '@/store/authStore';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -22,22 +22,46 @@ export default function FeedPage() {
   const { socket } = useSocketStore();
   const { user } = useAuthStore();
 
-  const mapPostToActivity = (post: any): ActivityProps => ({
-    type: 'post',
-    timestamp: format(new Date(post.createdAt), 'HH:mm'),
-    user: {
-      name: post.user.username,
-      avatar: post.user.avatar
-    },
-    content: {
-      text: 'posted a new update',
-      highlight: post.caption,
-      mediaUrl: post.mediaUrl
-    },
-    postId: post._id,
-    originalTimestamp: new Date(post.createdAt).getTime(),
-    isRealtime: false
-  } as any);
+  const mapPostToActivity = (post: any): ActivityProps => {
+    // Determine media type description
+    let mediaDescription = 'posted a new update';
+    if (post.mediaType === 'image') {
+      mediaDescription = 'posted a new image';
+    } else if (post.mediaType === 'video') {
+      mediaDescription = 'posted a new video';
+    } else if (post.mediaUrl) {
+      // Fallback: detect from URL extension
+      const url = post.mediaUrl.toLowerCase();
+      if (url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') || url.includes('video')) {
+        mediaDescription = 'posted a new video';
+      } else if (url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png') || url.includes('.gif') || url.includes('.webp') || url.includes('image')) {
+        mediaDescription = 'posted a new image';
+      }
+    }
+
+    // Check if it's a community post
+    if (post.community) {
+      const communityName = post.community?.name || 'a community';
+      mediaDescription = `posted in ${communityName}`;
+    }
+
+    return {
+      type: 'post',
+      timestamp: format(new Date(post.createdAt), 'HH:mm'),
+      user: {
+        name: post.user?.username || post.author?.username || 'Unknown',
+        avatar: post.user?.avatar || post.author?.avatar
+      },
+      content: {
+        text: mediaDescription,
+        highlight: post.caption || post.text || '',
+        mediaUrl: post.mediaUrl
+      },
+      postId: post._id,
+      originalTimestamp: new Date(post.createdAt).getTime(),
+      isRealtime: false
+    } as any;
+  };
 
   const mapNotificationToActivity = (notif: any, isRealtime = false): ActivityProps => {
     let text = 'updated the system';
@@ -276,7 +300,7 @@ export default function FeedPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-medium text-[var(--synapse-text-muted)] uppercase tracking-wider">
-                        Real-time Activity
+                        <b>Real-time Activity</b>
                       </h3>
                       {realtimeNotifications.length > 0 && (
                         <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded-full">
@@ -301,7 +325,7 @@ export default function FeedPage() {
                       </div>
                     )}
                   </div>
-                  <div className="min-h-[50px]">
+                  <div className="min-h-[30px]">
                     {realtimeNotifications.length > 0 ? (
                       <AnimatePresence mode="wait">
                         <motion.div
@@ -315,7 +339,7 @@ export default function FeedPage() {
                         </motion.div>
                       </AnimatePresence>
                     ) : (
-                      <div className="flex items-center justify-center h-[50px] text-[var(--synapse-text-muted)] italic text-md">
+                      <div className="flex items-center justify-center h-[20px] text-[var(--synapse-text-muted)] italic text-md">
                         No real-time activity
                       </div>
                     )}
@@ -328,7 +352,8 @@ export default function FeedPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium text-[var(--synapse-text-muted)] uppercase tracking-wider">
-                      Recent Activities
+                      <b>Recent Activities</b>
+                   
                     </h3>
                     {/* Dots for recent */}
                     {totalRecentSlides > 1 && (
@@ -373,8 +398,7 @@ export default function FeedPage() {
                 {/* Section 3: Posts & Updates - With Carousel */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-[var(--synapse-text-muted)] uppercase tracking-wider">
-                      Posts & Updates
+                    <h3 className="text-sm font-medium text-[var(--synapse-text-muted)] uppercase tracking-wider"><b>Posts & Updates</b>
                     </h3>
                     {/* Dots for posts */}
                     {totalPostSlides > 1 && (
@@ -400,17 +424,44 @@ export default function FeedPage() {
                   </div>
                   <div className="min-h-[80px]">
                     {postsActivities.length > 0 ? (
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={postSlideIndex}
-                          initial={{ opacity: 0, x: 30 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -30 }}
-                          transition={{ duration: 0.25 }}
+                      <div className="flex items-center gap-2">
+                        {/* Left Arrow */}
+                        <button
+                          onClick={() => setPostSlideIndex(prev => prev > 0 ? prev - 1 : totalPostSlides - 1)}
+                          className={`p-2 rounded-full bg-[var(--synapse-surface-hover)] hover:bg-[var(--synapse-border)] transition-colors flex-shrink-0 ${
+                            totalPostSlides <= 1 ? 'opacity-30 cursor-not-allowed' : ''
+                          }`}
+                          disabled={totalPostSlides <= 1}
                         >
-                          <ActivityItem {...postsActivities[postSlideIndex]} />
-                        </motion.div>
-                      </AnimatePresence>
+                          <ChevronLeft className="w-5 h-5 text-[var(--synapse-text-muted)]" />
+                        </button>
+                        
+                        {/* Post Content - Shifted right */}
+                        <div className="flex-1 ml-2">
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={postSlideIndex}
+                              initial={{ opacity: 0, x: 30 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -30 }}
+                              transition={{ duration: 0.25 }}
+                            >
+                              <ActivityItem {...postsActivities[postSlideIndex]} />
+                            </motion.div>
+                          </AnimatePresence>
+                        </div>
+                        
+                        {/* Right Arrow */}
+                        <button
+                          onClick={() => setPostSlideIndex(prev => (prev + 1) % totalPostSlides)}
+                          className={`p-2 rounded-full bg-[var(--synapse-surface-hover)] hover:bg-[var(--synapse-border)] transition-colors flex-shrink-0 ${
+                            totalPostSlides <= 1 ? 'opacity-30 cursor-not-allowed' : ''
+                          }`}
+                          disabled={totalPostSlides <= 1}
+                        >
+                          <ChevronRight className="w-5 h-5 text-[var(--synapse-text-muted)]" />
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center justify-center h-[80px] text-[var(--synapse-text-muted)] italic text-sm">
                         No posts yet
