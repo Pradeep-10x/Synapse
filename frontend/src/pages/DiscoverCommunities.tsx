@@ -287,7 +287,7 @@ export default function DiscoverCommunities() {
                       <div className="flex items-start gap-4 mb-4">
                         <div className="w-14 h-14 rounded-xl bg-[#1a1a2e] border border-[rgba(168,85,247,0.1)] flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {community.avatar ? (
-                            <img src={community.avatar} alt={community.name} className="w-full h-full object-cover" />
+                            <img src={community.avatar || "/default-avatar.jpg"} alt={community.name} className="w-full h-full object-cover" />
                           ) : community.coverImage ? (
                             <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover opacity-50" />
                           ) : (
@@ -352,7 +352,7 @@ export default function DiscoverCommunities() {
                 </button>
                 <div className="flex items-center gap-3">
                   {selectedCommunity.avatar ? (
-                    <img src={selectedCommunity.avatar} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover" />
+                    <img src={selectedCommunity.avatar || "/default-avatar.jpg"} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover" />
                   ) : selectedCommunity.coverImage ? (
                     <img src={selectedCommunity.coverImage} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover opacity-50" />
                   ) : (

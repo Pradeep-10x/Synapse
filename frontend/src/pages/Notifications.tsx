@@ -142,14 +142,14 @@ export default function NotificationsPage() {
             <div
               key={notification._id}
               className={`flex items-start gap-4 p-4 rounded-xl transition-colors ${notification.isRead
-                  ? 'bg-[rgba(168,85,247,0.05)]'
-                  : 'bg-[rgba(168,85,247,0.15)] border border-[rgba(168,85,247,0.3)]'
+                ? 'bg-[rgba(168,85,247,0.05)]'
+                : 'bg-[rgba(168,85,247,0.15)] border border-[rgba(168,85,247,0.3)]'
                 } hover:bg-[rgba(168,85,247,0.2)]`}
             >
               {/* User Avatar */}
               <Link to={`/profile/${notification.fromUser?.username}`}>
                 <img
-                  src={notification.fromUser?.avatar || '/default-avatar.png'}
+                  src={notification.fromUser?.avatar || '/default-avatar.jpg'}
                   alt={notification.fromUser?.username}
                   className="w-12 h-12 rounded-full object-cover border-2 border-purple-500/30 scale-110"
                 />

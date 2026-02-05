@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSocketStore } from '@/store/socketStore';
+import { useSocketStore, RecentlyActiveUser } from '@/store/socketStore';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,8 +38,8 @@ export function LivePresence() {
 
     // Convert Map to array and sort by lastActive
     const recentlyActiveList = Array.from(recentlyActive.values())
-        .filter(user => user._id !== currentUser?._id && !onlineUsers.has(user._id))
-        .sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime())
+        .filter((user: RecentlyActiveUser) => user._id !== currentUser?._id && !onlineUsers.has(user._id))
+        .sort((a: RecentlyActiveUser, b: RecentlyActiveUser) => new Date(b.lastActive || 0).getTime() - new Date(a.lastActive || 0).getTime())
         .slice(0, 5);
 
     return (
@@ -58,7 +58,7 @@ export function LivePresence() {
                                 {onlineUsersList.map((user) => (
                                     <div key={user.id} className="relative group">
                                         <img
-                                            src={user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"}
+                                            src={user.avatar || "/default-avatar.jpg"}
                                             alt={user.username}
                                             className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] object-cover scale-110"
                                             title={user.username}

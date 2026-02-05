@@ -17,12 +17,20 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface RecentlyActiveUser {
+  _id: string;
+  username: string;
+  avatar?: string;
+  lastActive?: string;
+}
+
 interface SocketState {
   socket: Socket | null;
   isConnected: boolean;
   onlineUsers: Map<string, { username: string; avatar?: string }>;
   notifications: Notification[];
   unreadCount: number;
+  recentlyActive: Map<string, RecentlyActiveUser>;
 
   // Actions
   connect: (user: { _id: string; username: string; avatar?: string }) => void;
@@ -31,6 +39,7 @@ interface SocketState {
   setNotifications: (notifications: Notification[]) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
+  setRecentlyActive: (users: RecentlyActiveUser[]) => void;
 }
 
 const getSocketUrl = () => {
@@ -44,6 +53,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   onlineUsers: new Map(),
   notifications: [],
   unreadCount: 0,
+  recentlyActive: new Map(),
 
   connect: (user) => {
     const { socket: existingSocket } = get();
@@ -108,7 +118,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     // Handle user online/offline status
-    socket.on('user:status', (data: { userId: string; status: 'online' | 'offline'; username?: string; avatar?: string }) => {
+    socket.on('user:status', (data: { userId: string; status: 'online' | 'offline'; username?: string; avatar?: string; lastActive?: string }) => {
       const { onlineUsers } = get();
       const newOnlineUsers = new Map(onlineUsers);
 
@@ -119,6 +129,19 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         });
       } else {
         newOnlineUsers.delete(data.userId);
+
+        // Add to recently active if we have info (passed from backend on disconnect)
+        if (data.username || data.lastActive) {
+          const { recentlyActive } = get();
+          const newRecentlyActive = new Map(recentlyActive);
+          newRecentlyActive.set(data.userId, {
+            _id: data.userId,
+            username: data.username || 'User',
+            avatar: data.avatar,
+            lastActive: data.lastActive || new Date().toISOString()
+          });
+          set({ recentlyActive: newRecentlyActive });
+        }
       }
 
       set({ onlineUsers: newOnlineUsers });
@@ -158,5 +181,13 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   clearNotifications: () => {
     set({ notifications: [], unreadCount: 0 });
+  },
+
+  setRecentlyActive: (users: RecentlyActiveUser[]) => {
+    const recentlyActiveMap = new Map<string, RecentlyActiveUser>();
+    users.forEach(user => {
+      recentlyActiveMap.set(user._id, user);
+    });
+    set({ recentlyActive: recentlyActiveMap });
   },
 }));
