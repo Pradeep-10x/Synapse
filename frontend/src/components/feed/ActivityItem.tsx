@@ -21,7 +21,7 @@ export function ActivityItem({ type, user, timestamp, content, postId }: Activit
     const isClickable = !!postId && (type === 'post' || type === 'event');
 
     const activityContent = (
-        <div className={`flex flex-col gap-3 ${isClickable ? 'cursor-pointer hover:bg-[var(--synapse-surface)] transition-colors duration-200 -m-4 p-4 rounded-lg' : ''}`}>
+        <div className="flex flex-col gap-3">
             {/* Header Line */}
             <div className="flex items-center gap-4 text-base">
                 <span className="font-mono text-sm text-[var(--synapse-text-muted)]">{timestamp}</span>
@@ -43,8 +43,8 @@ export function ActivityItem({ type, user, timestamp, content, postId }: Activit
 
             {/* Content Body (Media) */}
             {content.mediaUrl && (
-                <div className="mt-3 relative group-hover:scale-[1.01] transition-transform duration-300 ease-out">
-                    <div className="aspect-[21/9] w-full max-w-3xl overflow-hidden rounded-lg border border-[var(--synapse-border)] relative">
+                <div className={`mt-3 relative transition-transform duration-300 ease-out ${isClickable ? 'hover:scale-[1.01] cursor-pointer' : ''}`}>
+                    <div className="aspect-[21/9] w-full max-w-3xl overflow-hidden rounded-lg border border-[var(--synapse-border)] relative hover:border-[var(--synapse-blue)] transition-colors">
                         <img
                             src={content.mediaUrl}
                             alt="Activity content"
@@ -61,9 +61,9 @@ export function ActivityItem({ type, user, timestamp, content, postId }: Activit
     );
 
     return (
-        <div className="group relative pl-10 py-4 border-l-2 border-[var(--synapse-border)] last:border-0 -ml-[1px]">
+        <div className="group relative pl-10 py-1.5 border-l-2 border-[var(--synapse-border)] last:border-0 -ml-[1px]">
             {/* Timeline Dot by Type */}
-            <div className={`absolute left-[-6px] top-7 w-3 h-3 rounded-full border-2 border-[var(--synapse-bg)] ${type === 'system' ? 'bg-amber-500' : 'bg-[var(--synapse-text-muted)] group-hover:bg-[var(--synapse-blue)]'} transition-colors duration-200`} />
+            <div className={`absolute left-[-6px] top-4 w-3 h-3 rounded-full border-2 border-[var(--synapse-bg)] ${type === 'system' ? 'bg-amber-500' : 'bg-[var(--synapse-text-muted)] group-hover:bg-[var(--synapse-blue)]'} transition-colors duration-200`} />
 
             {isClickable ? (
                 <Link to={`/post/${postId}`}>

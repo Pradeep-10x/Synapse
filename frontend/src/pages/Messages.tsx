@@ -43,7 +43,7 @@ interface CommunityChat {
 
 export default function MessagesPage() {
   const { user } = useAuthStore();
-  const { socket, onlineUsers } = useSocketStore();
+  const { socket, onlineUsers, clearMessagesCount } = useSocketStore();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const communityId = searchParams.get('communityId');
@@ -160,6 +160,8 @@ export default function MessagesPage() {
   useEffect(() => {
     fetchConversations();
     fetchCommunityChats();
+    // Clear unread messages count when opening messages page
+    clearMessagesCount();
   }, []);
 
   // Handle community chat from URL param - only run when communityId changes, not when communityChats updates

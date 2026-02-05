@@ -2,9 +2,10 @@ export const emitToUser = (req, userId, event, payload) => {
   const io = req.app.get("io");
   const onlineUsers = req.app.get("onlineUsers");
 
-  const socketId = onlineUsers.get(userId.toString());
-  if (socketId) {
-    io.to(socketId).emit(event, payload);
+  const userData = onlineUsers.get(userId.toString());
+  if (userData?.socketId) {
+    io.to(userData.socketId).emit(event, payload);
+    console.log(`Emitted ${event} to user ${userId} (socket: ${userData.socketId})`);
   }
 };
 
@@ -22,9 +23,9 @@ export const emitToFollowers = async (req, userId, event, payload) => {
 
     let emittedCount = 0;
     user.followers.forEach(followerId => {
-      const socketId = onlineUsers.get(followerId.toString());
-      if (socketId) {
-        io.to(socketId).emit(event, payload);
+      const userData = onlineUsers.get(followerId.toString());
+      if (userData?.socketId) {
+        io.to(userData.socketId).emit(event, payload);
         emittedCount++;
       }
     });
@@ -64,9 +65,9 @@ export const emitToCommunity = async (req, communityId, event, payload) => {
     // Emit to all online members
     let emittedCount = 0;
     allMembers.forEach(userId => {
-      const socketId = onlineUsers.get(userId);
-      if (socketId) {
-        io.to(socketId).emit(event, payload);
+      const userData = onlineUsers.get(userId);
+      if (userData?.socketId) {
+        io.to(userData.socketId).emit(event, payload);
         emittedCount++;
       }
     });

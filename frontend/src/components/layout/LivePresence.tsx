@@ -54,23 +54,31 @@ export function LivePresence() {
                 <div className="space-y-4">
                     {onlineUsersList.length > 0 ? (
                         <>
-                            <div className="flex items-center -space-x-2">
+                            <div className="flex flex-wrap gap-4">
                                 {onlineUsersList.map((user) => (
-                                    <div key={user.id} className="relative group">
-                                        <img
-                                            src={user.avatar || "/default-avatar.jpg"}
-                                            alt={user.username}
-                                            className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] object-cover scale-110"
-                                            title={user.username}
-                                        />
-                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+                                    <div key={user.id} className="relative group flex flex-col items-center">
+                                        <div className="relative">
+                                            <img
+                                                src={user.avatar || "/default-avatar.jpg"}
+                                                alt={user.username}
+                                                className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] object-cover"
+                                                title={user.username}
+                                            />
+                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full flex items-center justify-center z-10">
+                                                <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+                                            </div>
                                         </div>
+                                        <span className="mt-1.5 text-md font-bold text-[var(--synapse-text-muted)] max-w-[60px] truncate text-center">
+                                            {user.username}
+                                        </span>
                                     </div>
                                 ))}
                                 {onlineCount > 5 && (
-                                    <div className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] bg-[var(--synapse-surface-hover)] flex items-center justify-center text-xs font-semibold text-[var(--synapse-text-muted)] z-10">
-                                        +{onlineCount - 5}
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] bg-[var(--synapse-surface-hover)] flex items-center justify-center text-xs font-semibold text-[var(--synapse-text-muted)]">
+                                            +{onlineCount - 5}
+                                        </div>
+                                        <span className="mt-1.5 text-xs text-[var(--synapse-text-muted)]">more</span>
                                     </div>
                                 )}
                             </div>

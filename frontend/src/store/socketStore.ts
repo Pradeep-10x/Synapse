@@ -30,6 +30,7 @@ interface SocketState {
   onlineUsers: Map<string, { username: string; avatar?: string }>;
   notifications: Notification[];
   unreadCount: number;
+  unreadMessagesCount: number;
   recentlyActive: Map<string, RecentlyActiveUser>;
 
   // Actions
@@ -39,6 +40,7 @@ interface SocketState {
   setNotifications: (notifications: Notification[]) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
+  clearMessagesCount: () => void;
   setRecentlyActive: (users: RecentlyActiveUser[]) => void;
 }
 
@@ -53,6 +55,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   onlineUsers: new Map(),
   notifications: [],
   unreadCount: 0,
+  unreadMessagesCount: 0,
   recentlyActive: new Map(),
 
   connect: (user) => {
@@ -106,6 +109,15 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         notifications: [notification, ...notifications],
         unreadCount: get().unreadCount + 1
       });
+    });
+
+    // Handle real-time messages
+    socket.on('message:new', () => {
+      // Only increment if not on messages page or not in that conversation (advanced: checking active route is hard in store)
+      // For now, always increment, clearing is handled by View.
+      // Filter out own messages? Logic usually handled by component, but for badge, self-message shouldn't increment?
+      // Backend usually emits to receiver only. So valid.
+      set({ unreadMessagesCount: get().unreadMessagesCount + 1 });
     });
 
     // Handle initial list of online users
@@ -181,6 +193,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   clearNotifications: () => {
     set({ notifications: [], unreadCount: 0 });
+  },
+
+  clearMessagesCount: () => {
+    set({ unreadMessagesCount: 0 });
   },
 
   setRecentlyActive: (users: RecentlyActiveUser[]) => {

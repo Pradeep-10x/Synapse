@@ -3,17 +3,24 @@ import { ActivityItem, ActivityProps } from '@/components/feed/ActivityItem';
 import { LivePresence } from '@/components/layout/LivePresence';
 import { feedAPI, notificationAPI } from '@/lib/api';
 import { useSocketStore } from '@/store/socketStore';
+import { useAuthStore } from '@/store/authStore';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { AnimatePresence, motion } from 'framer-motion';
+
+const TWO_MINUTES = 2 * 60 * 1000; // 2 minutes in milliseconds
 
 export default function FeedPage() {
   const [activities, setActivities] = useState<ActivityProps[]>([]);
+  const [realtimeNotifications, setRealtimeNotifications] = useState<ActivityProps[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(true);
+  const [postSlideIndex, setPostSlideIndex] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
   const { socket } = useSocketStore();
+  const { user } = useAuthStore();
 
   const mapPostToActivity = (post: any): ActivityProps => ({
     type: 'post',
@@ -28,10 +35,11 @@ export default function FeedPage() {
       mediaUrl: post.mediaUrl
     },
     postId: post._id,
-    originalTimestamp: new Date(post.createdAt).getTime() // For sorting
+    originalTimestamp: new Date(post.createdAt).getTime(),
+    isRealtime: false
   } as any);
 
-  const mapNotificationToActivity = (notif: any): ActivityProps => {
+  const mapNotificationToActivity = (notif: any, isRealtime = false): ActivityProps => {
     let text = 'updated the system';
     let type: any = 'system';
 
@@ -67,10 +75,42 @@ export default function FeedPage() {
         text,
         highlight: ''
       },
-      postId: notif.post || notif.reel || null, // Best effort to link to content
-      originalTimestamp: new Date(notif.createdAt).getTime()
+      postId: notif.post || notif.reel || null,
+      originalTimestamp: new Date(notif.createdAt).getTime(),
+      isRealtime
     } as any;
   };
+
+  // Move realtime notifications to recent after 2 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setRealtimeNotifications(prev => {
+        const stillRealtime: ActivityProps[] = [];
+        const toMoveToRecent: ActivityProps[] = [];
+        
+        prev.forEach(notif => {
+          if (now - (notif as any).originalTimestamp < TWO_MINUTES) {
+            stillRealtime.push(notif);
+          } else {
+            toMoveToRecent.push({ ...notif, isRealtime: false } as any);
+          }
+        });
+
+        if (toMoveToRecent.length > 0) {
+          setActivities(prevActivities => {
+            const combined = [...toMoveToRecent, ...prevActivities];
+            combined.sort((a: any, b: any) => b.originalTimestamp - a.originalTimestamp);
+            return combined;
+          });
+        }
+
+        return stillRealtime;
+      });
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchFeed = async (pageNum: number, append = false) => {
     try {
@@ -87,7 +127,7 @@ export default function FeedPage() {
         try {
           const notifResponse = await notificationAPI.getNotifications();
           const notifications = notifResponse.data.data || [];
-          const notifActivities = notifications.map(mapNotificationToActivity);
+          const notifActivities = notifications.map((n: any) => mapNotificationToActivity(n, false));
           newActivities = [...newActivities, ...notifActivities];
         } catch (err) {
           console.error('Failed to load notifications', err);
@@ -100,7 +140,6 @@ export default function FeedPage() {
       if (append) {
         setActivities(prev => {
           const combined = [...prev, ...newActivities];
-          // Remove potential duplicates by some unique key if we had one, but strict sorting helps
           return combined;
         });
       } else {
@@ -137,18 +176,20 @@ export default function FeedPage() {
 
   // Real-time Socket Events
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !user) return;
 
     const handleNewPost = (data: any) => {
-      if (data?.post) {
+      if (data?.post && data.post.user?._id !== user._id && data.post.user !== user._id) {
         const newActivity = mapPostToActivity(data.post);
         setActivities(prev => [newActivity, ...prev]);
       }
     };
 
     const handleNewNotification = (notif: any) => {
-      const newActivity = mapNotificationToActivity(notif);
-      setActivities(prev => [newActivity, ...prev]);
+      if (notif.fromUser?._id !== user._id && notif.fromUser !== user._id) {
+        const newActivity = mapNotificationToActivity(notif, true);
+        setRealtimeNotifications(prev => [newActivity, ...prev]);
+      }
     };
 
     socket.on('post:new', handleNewPost);
@@ -158,7 +199,50 @@ export default function FeedPage() {
       socket.off('post:new', handleNewPost);
       socket.off('notification:new', handleNewNotification);
     };
-  }, [socket]);
+  }, [socket, user]);
+
+  // Separate notifications from posts for recent section
+  const recentNotifications = activities.filter((a: any) => a.type !== 'post').slice(0, 4);
+  const postsActivities = activities.filter((a: any) => a.type === 'post');
+
+  // Slide indexes for each section
+  const [realtimeSlideIndex, setRealtimeSlideIndex] = useState(0);
+  const [recentSlideIndex, setRecentSlideIndex] = useState(0);
+
+  // Post slide index for the posts carousel
+  const totalPostSlides = Math.min(postsActivities.length, 10); // Max 10 posts in carousel
+  const totalRealtimeSlides = Math.min(realtimeNotifications.length, 4);
+  const totalRecentSlides = Math.min(recentNotifications.length, 4);
+
+  // Auto-slide for realtime notifications
+  useEffect(() => {
+    if (totalRealtimeSlides > 1) {
+      const interval = setInterval(() => {
+        setRealtimeSlideIndex((prev) => (prev + 1) % totalRealtimeSlides);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [totalRealtimeSlides]);
+
+  // Auto-slide for recent notifications
+  useEffect(() => {
+    if (totalRecentSlides > 1) {
+      const interval = setInterval(() => {
+        setRecentSlideIndex((prev) => (prev + 1) % totalRecentSlides);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [totalRecentSlides]);
+
+  // Auto-slide for posts
+  useEffect(() => {
+    if (totalPostSlides > 1) {
+      const interval = setInterval(() => {
+        setPostSlideIndex((prev) => (prev + 1) % totalPostSlides);
+      }, 6000);
+      return () => clearInterval(interval);
+    }
+  }, [totalPostSlides]);
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -181,29 +265,166 @@ export default function FeedPage() {
             </div>
           </div>
 
-          <div className="p-8">
-            <div className="flex flex-col">
-              {loading ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-text-muted)]" />
+          <div className="p-6 space-y-2">
+            {loading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-text-muted)]" />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-[var(--synapse-text-muted)] uppercase tracking-wider">
+                        Real-time Activity
+                      </h3>
+                      {realtimeNotifications.length > 0 && (
+                        <span className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded-full">
+                          {realtimeNotifications.length} new
+                        </span>
+                      )}
+                    </div>
+                    {/* Dots for realtime */}
+                    {totalRealtimeSlides > 1 && (
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(totalRealtimeSlides, 4) }).map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setRealtimeSlideIndex(idx)}
+                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                              realtimeSlideIndex === idx
+                                ? 'bg-red-500 w-3'
+                                : 'bg-[var(--synapse-text-muted)] opacity-40 hover:opacity-70'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-h-[50px]">
+                    {realtimeNotifications.length > 0 ? (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={realtimeSlideIndex}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <ActivityItem {...realtimeNotifications[realtimeSlideIndex]} />
+                        </motion.div>
+                      </AnimatePresence>
+                    ) : (
+                      <div className="flex items-center justify-center h-[50px] text-[var(--synapse-text-muted)] italic text-md">
+                        No real-time activity
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : activities.length > 0 ? (
-                <>
-                  {activities.map((activity, index) => (
-                    <ActivityItem key={index} {...activity} />
-                  ))}
+
+                <div className="h-px bg-[var(--synapse-border)]" />
+
+                {/* Section 2: Recent Notifications */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-[var(--synapse-text-muted)] uppercase tracking-wider">
+                      Recent Activities
+                    </h3>
+                    {/* Dots for recent */}
+                    {totalRecentSlides > 1 && (
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(totalRecentSlides, 4) }).map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setRecentSlideIndex(idx)}
+                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                              recentSlideIndex === idx
+                                ? 'bg-emerald-500 w-3'
+                                : 'bg-[var(--synapse-text-muted)] opacity-40 hover:opacity-70'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-h-[50px]">
+                    {recentNotifications.length > 0 ? (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={recentSlideIndex}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <ActivityItem {...recentNotifications[recentSlideIndex]} />
+                        </motion.div>
+                      </AnimatePresence>
+                    ) : (
+                      <div className="flex items-center justify-center h-[50px] text-[var(--synapse-text-muted)] italic text-md">
+                        No recent notifications
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="h-px bg-[var(--synapse-border)]" />
+
+                {/* Section 3: Posts & Updates - With Carousel */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-[var(--synapse-text-muted)] uppercase tracking-wider">
+                      Posts & Updates
+                    </h3>
+                    {/* Dots for posts */}
+                    {totalPostSlides > 1 && (
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(totalPostSlides, 4) }).map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setPostSlideIndex(idx)}
+                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                              postSlideIndex === idx
+                                ? 'bg-blue-500 w-3'
+                                : 'bg-[var(--synapse-text-muted)] opacity-40 hover:opacity-70'
+                            }`}
+                          />
+                        ))}
+                        {totalPostSlides > 4 && (
+                          <span className="text-xs text-[var(--synapse-text-muted)] ml-1">
+                            +{totalPostSlides - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-h-[80px]">
+                    {postsActivities.length > 0 ? (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={postSlideIndex}
+                          initial={{ opacity: 0, x: 30 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -30 }}
+                          transition={{ duration: 0.25 }}
+                        >
+                          <ActivityItem {...postsActivities[postSlideIndex]} />
+                        </motion.div>
+                      </AnimatePresence>
+                    ) : (
+                      <div className="flex items-center justify-center h-[80px] text-[var(--synapse-text-muted)] italic text-sm">
+                        No posts yet
+                      </div>
+                    )}
+                  </div>
                   {hasNext && (
-                    <div ref={observerTarget} className="flex justify-center py-4">
-                      {loadingMore && <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />}
+                    <div ref={observerTarget} className="flex justify-center py-2">
+                      {loadingMore && <Loader2 className="w-5 h-5 animate-spin text-[var(--synapse-text-muted)]" />}
                     </div>
                   )}
-                </>
-              ) : (
-                <div className="text-center py-10 text-[var(--synapse-text-muted)]">
-                  No recent activity in the system.
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -215,6 +436,3 @@ export default function FeedPage() {
     </div>
   );
 }
-
-
-

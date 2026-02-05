@@ -1,12 +1,13 @@
-import {asyncHandler} from '../utils/asyncHandler.js';
-import {ApiError} from '../utils/ApiError.js';
-import {ApiResponse} from '../utils/ApiResponse.js';
-import {User} from '../models/user.model.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { User } from '../models/user.model.js';
 import { Notification } from "../models/notification.model.js";
 
- const getNotifications = asyncHandler(async (req, res) => {
+const getNotifications = asyncHandler(async (req, res) => {
   const notifications = await Notification.find({
-    user: req.user._id
+    user: req.user._id,
+    fromUser: { $ne: req.user._id } // Filter out self-notifications
   })
     .populate("fromUser", "username avatar")
     .sort({ createdAt: -1 })
