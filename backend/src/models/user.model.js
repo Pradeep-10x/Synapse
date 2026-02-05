@@ -5,78 +5,82 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
 const userSchema = new Schema({
- username :{
-    type : String,
-    required: true,
-    unique : true,
-    trim : true
- },
-   email: {
-    type : String,
-    required : true,
-    unique : true,
-    trim : true,
-    lowercase : true
-   },
-   password : {
-    type : String,
-    required : true,
-   },
-   fullName:{
-    type : String,
-    required : true,
-    trim : true,
+    username: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
     },
-    bio : {
-    type: String,
-    maxlength:160,
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        lowercase: true
     },
-    avatar:{
+    password: {
+        type: String,
+        required: true,
+    },
+    fullName: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    bio: {
+        type: String,
+        maxlength: 160,
+    },
+    avatar: {
         type: String,
     },
     refreshToken: {
         type: String,
     },
-    followersCount : {
-        type : Number,
-        default : 0,
+    followersCount: {
+        type: Number,
+        default: 0,
     },
-    followingCount : {
-        type : Number,
-        default : 0,
+    followingCount: {
+        type: Number,
+        default: 0,
     },
-  
-  isVerified :{
-            type : Boolean,
-            default : false,
+
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    VerificationBadge: {
+        type: String,
+        enum: ["Gold", "Silver"],
+        default: null,
+    },
+    // Privacy settings
+    privacy: {
+        privateAccount: {
+            type: Boolean,
+            default: false
         },
-  VerificationBadge: {
-            type : String, 
-            enum : ["Gold" , "Silver"],
-            default : null,
+        messagePolicy: {
+            type: String,
+            enum: ["everyone", "followers"],
+            default: "everyone"
         },
-  // Privacy settings
-  privacy: {
-    privateAccount: {
-      type: Boolean,
-      default: false
+        allowMentions: {
+            type: Boolean,
+            default: true
+        },
+        allowTagging: {
+            type: Boolean,
+            default: true
+        }
     },
-    messagePolicy: {
-      type: String,
-      enum: ["everyone", "followers"],
-      default: "everyone"
-    },
-    allowMentions: {
-      type: Boolean,
-      default: true
-    },
-    allowTagging: {
-      type: Boolean,
-      default: true
+    lastActive: {
+        type: Date,
+        default: Date.now
     }
-  }
 }, {
-    timestamps : true   
+    timestamps: true
 });
 userSchema.pre("save", async function () {
 
@@ -86,26 +90,27 @@ userSchema.pre("save", async function () {
 });
 
 
-userSchema.methods.isPasswordCorrect= async function (password){
-    return await bcrypt.compare(password,this.password);
+userSchema.methods.isPasswordCorrect = async function (password) {
+    return await bcrypt.compare(password, this.password);
 }
 
-userSchema.methods.generateAccessToken = function (){
+userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
-        _id:this._id},
+            _id: this._id
+        },
         process.env.JWT_SECRET,
         {
-            expiresIn : "1d"
+            expiresIn: "1d"
         }
     )
 }
 
-userSchema.methods.generateRefreshToken = function(){
+userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id,
-            
+
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
@@ -113,4 +118,4 @@ userSchema.methods.generateRefreshToken = function(){
         }
     )
 }
-export const User=mongoose.model("User",userSchema)
+export const User = mongoose.model("User", userSchema)

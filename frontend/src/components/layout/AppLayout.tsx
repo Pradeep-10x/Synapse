@@ -11,7 +11,11 @@ export default function AppLayout() {
   // Initialize socket connection when user is authenticated
   useEffect(() => {
     if (user?._id && !isConnected) {
-      connect(user._id);
+      connect({
+        _id: user._id,
+        username: user.username,
+        avatar: user.avatar
+      });
     }
 
     return () => {

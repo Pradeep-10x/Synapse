@@ -20,12 +20,12 @@ export interface Notification {
 interface SocketState {
   socket: Socket | null;
   isConnected: boolean;
-  onlineUsers: Set<string>;
+  onlineUsers: Map<string, { username: string; avatar?: string }>;
   notifications: Notification[];
   unreadCount: number;
-  
+
   // Actions
-  connect: (userId: string) => void;
+  connect: (user: { _id: string; username: string; avatar?: string }) => void;
   disconnect: () => void;
   addNotification: (notification: Notification) => void;
   setNotifications: (notifications: Notification[]) => void;
@@ -41,13 +41,13 @@ const getSocketUrl = () => {
 export const useSocketStore = create<SocketState>((set, get) => ({
   socket: null,
   isConnected: false,
-  onlineUsers: new Set(),
+  onlineUsers: new Map(),
   notifications: [],
   unreadCount: 0,
 
-  connect: (userId: string) => {
+  connect: (user) => {
     const { socket: existingSocket } = get();
-    
+
     // Don't create duplicate connections
     if (existingSocket?.connected) {
       return;
@@ -55,7 +55,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     const socketUrl = getSocketUrl();
     const socket = io(socketUrl, {
-      query: { userId },
+      query: {
+        userId: user._id,
+        username: user.username,
+        avatar: user.avatar
+      },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -65,9 +69,13 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       set({ isConnected: true });
-      
+
       // Register user as online
-      socket.emit('user:online', userId);
+      socket.emit('user:online', {
+        userId: user._id,
+        username: user.username,
+        avatar: user.avatar
+      });
     });
 
     socket.on('disconnect', () => {
@@ -84,23 +92,35 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     socket.on('notification:new', (notification: Notification) => {
       console.log('New notification received:', notification);
       const { notifications } = get();
-      set({ 
+      set({
         notifications: [notification, ...notifications],
         unreadCount: get().unreadCount + 1
       });
     });
 
+    // Handle initial list of online users
+    socket.on('online:users', (users: Array<{ userId: string; username: string; avatar?: string }>) => {
+      const onlineMap = new Map();
+      users.forEach(u => {
+        onlineMap.set(u.userId, { username: u.username, avatar: u.avatar });
+      });
+      set({ onlineUsers: onlineMap });
+    });
+
     // Handle user online/offline status
-    socket.on('user:status', (data: { userId: string; status: 'online' | 'offline' }) => {
+    socket.on('user:status', (data: { userId: string; status: 'online' | 'offline'; username?: string; avatar?: string }) => {
       const { onlineUsers } = get();
-      const newOnlineUsers = new Set(onlineUsers);
-      
+      const newOnlineUsers = new Map(onlineUsers);
+
       if (data.status === 'online') {
-        newOnlineUsers.add(data.userId);
+        newOnlineUsers.set(data.userId, {
+          username: data.username || 'User',
+          avatar: data.avatar
+        });
       } else {
         newOnlineUsers.delete(data.userId);
       }
-      
+
       set({ onlineUsers: newOnlineUsers });
     });
 
@@ -117,7 +137,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   addNotification: (notification: Notification) => {
     const { notifications } = get();
-    set({ 
+    set({
       notifications: [notification, ...notifications],
       unreadCount: get().unreadCount + 1
     });
@@ -130,7 +150,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   markAllAsRead: () => {
     const { notifications } = get();
-    set({ 
+    set({
       notifications: notifications.map(n => ({ ...n, isRead: true })),
       unreadCount: 0
     });
