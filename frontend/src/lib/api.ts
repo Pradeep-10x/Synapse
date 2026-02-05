@@ -38,6 +38,7 @@ export const userAPI = {
   getPrivacy: () => api.get('/user/privacy'),
   updatePrivacy: (data: { privateAccount?: boolean; messagePolicy?: 'everyone' | 'followers'; allowMentions?: boolean; allowTagging?: boolean }) =>
     api.patch('/user/privacy', data),
+  getRecentlyActive: () => api.get('/user/recently-active'),
 };
 
 // ============== POST API ==============

@@ -311,7 +311,7 @@ export default function CommunityDetail() {
                 {community.coverImage ? (
                     <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover" />
                 ) : community.avatar ? (
-                    <img src={community.avatar} alt={community.name} className="w-full h-full object-cover" />
+                    <img src={community.avatar || "/default-avatar.jpg"} alt={community.name} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full" />
                 )}
@@ -331,7 +331,7 @@ export default function CommunityDetail() {
                         <div className="flex items-end gap-5">
                             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#1a1a2e] border-4 border-[#0a0a12] shadow-2xl flex items-center justify-center overflow-hidden shrink-0">
                                 {community.avatar ? (
-                                    <img src={community.avatar} alt={community.name} className="w-full h-full object-cover" />
+                                    <img src={community.avatar || "/default-avatar.jpg"} alt={community.name} className="w-full h-full object-cover" />
                                 ) : community.coverImage ? (
                                     <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover opacity-50" />
                                 ) : (

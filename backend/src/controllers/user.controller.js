@@ -242,7 +242,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
     if (!user) {
         throw new ApiError(404, "User not found");
     }
-    
+
     // Check if current user is following this user
     let isFollowing = false;
     if (req.user && req.user._id.toString() !== user._id.toString()) {
@@ -253,10 +253,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
         });
         isFollowing = !!follow;
     }
-    
+
     const userData = user.toObject();
     userData.isFollowing = isFollowing;
-    
+
     return res.status(200).json(new ApiResponse(200, userData, "User profile fetched successfully"));
 });
 
@@ -277,7 +277,7 @@ const searchUsers = asyncHandler(async (req, res) => {
 
 const updatePrivacy = asyncHandler(async (req, res) => {
     const { privateAccount, messagePolicy, allowMentions, allowTagging } = req.body;
-    
+
     const updateFields = {};
     if (typeof privateAccount === 'boolean') {
         updateFields['privacy.privateAccount'] = privateAccount;
@@ -313,7 +313,7 @@ const updatePrivacy = asyncHandler(async (req, res) => {
 
 const getPrivacy = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select("privacy");
-    
+
     if (!user) {
         throw new ApiError(404, "User not found");
     }
@@ -328,4 +328,15 @@ const getPrivacy = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, loginUser, logoutUser, deleteUser, refreshaccessToken, changePassword, GetCurrentUser, updateUserDetails, UpdateAvatar, getUserProfile, searchUsers, updatePrivacy, getPrivacy };
+const getRecentlyActiveUsers = asyncHandler(async (req, res) => {
+    const users = await User.find({
+        _id: { $ne: req.user._id }
+    })
+        .sort({ lastActive: -1 })
+        .limit(10)
+        .select("username fullName avatar lastActive");
+
+    return res.status(200).json(new ApiResponse(200, users, "Recently active users fetched successfully"));
+});
+
+export { registerUser, loginUser, logoutUser, deleteUser, refreshaccessToken, changePassword, GetCurrentUser, updateUserDetails, UpdateAvatar, getUserProfile, searchUsers, updatePrivacy, getPrivacy, getRecentlyActiveUsers };

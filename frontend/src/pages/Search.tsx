@@ -40,7 +40,7 @@ export default function SearchPage() {
   // Debounced search as user types
   useEffect(() => {
     const trimmedQuery = query.trim();
-    
+
     // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -219,7 +219,7 @@ export default function SearchPage() {
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-full bg-[#7c3aed]/20 flex items-center justify-center overflow-hidden flex-shrink-0">
                       {result.avatar ? (
-                        <img src={result.avatar} alt={result.username} className="w-full h-full object-cover" />
+                        <img src={result.avatar || "/default-avatar.jpg"} alt={result.username} className="w-full h-full object-cover" />
                       ) : (
                         <User className="w-7 h-7 text-[#a855f7]" />
                       )}
@@ -265,10 +265,10 @@ export default function SearchPage() {
                       {result.user && (
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-6 h-6 rounded-full overflow-hidden">
-                            <img 
-                              src={result.user.avatar || "/default-avatar.jpg"} 
-                              alt={result.user.username} 
-                              className="w-full h-full object-cover" 
+                            <img
+                              src={result.user.avatar || "/default-avatar.jpg"}
+                              alt={result.user.username}
+                              className="w-full h-full object-cover"
                             />
                           </div>
                           <span className="text-sm font-medium text-[#e5e7eb]">{result.user.username}</span>

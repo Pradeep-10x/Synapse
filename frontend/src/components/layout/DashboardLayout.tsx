@@ -65,7 +65,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             className="flex items-center gap-2 p-1.5 rounded-sm hover:bg-[var(--synapse-surface)] transition-colors"
                         >
                             <img
-                                src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"}
+                                src={user?.avatar || "/default-avatar.jpg"}
                                 alt="Profile"
                                 className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)] scale-110"
                             />
