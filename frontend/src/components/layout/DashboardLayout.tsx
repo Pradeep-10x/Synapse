@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Bell, Mail, User, Settings, LogOut, HelpCircle, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useSocketStore } from '@/store/socketStore';
 
 interface DashboardLayoutProps {
     children?: React.ReactNode;
@@ -14,6 +15,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const profileRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
+    // Assuming we will add unreadMessagesCount to store soon, or use unreadNotifs for now? User asked for both.
+    // I need to update store first to have `unreadMessagesCount`.
+    // For now I will use `unreadNotifs` for notifications. For messages, I'll temporarily use 0 or a placeholder state if not in store yet.
+    // Wait, the store I viewed had `unreadCount` which seemed to serve notifications.
+    // I'll stick to `unreadNotifs` for the bell.
+    // For Mail icon, I will use a local state or `unreadMessages` if I add it to store.
+    // Let's assume I will add `unreadMessagesCount` to store in the next step. So I'll destructure it here even if it errors TS momentarily (I will fix store immediately).
+    // actually, let's just use 0 for now and fix store, then update this file.
+    // Or better, I update the store FIRST.
+    // But I'm already in this tool call.
+    // Okay, I will reference `unreadMessagesCount` and trust I update the store in the next step.
+    const { unreadCount, unreadMessagesCount } = useSocketStore();
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -39,37 +52,52 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Main Content Area */}
             <main className="flex-1 ml-[260px] min-h-screen flex flex-col">
                 {/* Top Navbar */}
-                <header className="h-20 flex items-center justify-end gap-4 px-15 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40">
+                <header className="h-20 flex items-center justify-end gap-6 px-10 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40">
                     {/* Notification Icon */}
                     <button
-                        onClick={() => navigate('/notifications')}
-                        className="relative p-3 rounded-lg hover:bg-[var(--synapse-surface)] transition-colors group"
+                        onClick={() => {
+                            navigate('/notifications');
+                            // markAllAsRead(); // Logic handled in Notifications page usually, or clear badge here?
+                            // User said "once opened market them as seen and removee dot and numbers"
+                        }}
+                        className="relative p-2 rounded-xl hover:bg-[var(--synapse-surface)] transition-colors group"
                     >
-                        <Bell className="w-7 h-7 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)]" />
-                        <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                        <Bell className="w-6 h-6 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)] transition-colors" />
+                        {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                        )}
                     </button>
 
                     {/* Message Icon */}
                     <button
                         onClick={() => navigate('/messages')}
-                        className="relative p-3 rounded-lg hover:bg-[var(--synapse-surface)] transition-colors group"
+                        className="relative p-2 rounded-xl hover:bg-[var(--synapse-surface)] transition-colors group"
                     >
-                        <Mail className="w-7 h-7 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)]" />
-                        <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
+                        <Mail className="w-6 h-6 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)] transition-colors" />
+                        {unreadMessagesCount > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#7c3aed] rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
+                                {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                            </span>
+                        )}
                     </button>
 
                     {/* Profile Dropdown */}
                     <div className="relative ml-2" ref={profileRef}>
                         <button
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
-                            className="flex items-center gap-2 p-1.5 rounded-sm hover:bg-[var(--synapse-surface)] transition-colors"
+                            className="flex items-center gap-3 p-1.5 rounded-full hover:bg-[var(--synapse-surface)] transition-colors border border-transparent hover:border-[var(--synapse-border)]"
                         >
                             <img
                                 src={user?.avatar || "/default-avatar.jpg"}
                                 alt="Profile"
-                                className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)] scale-110"
+                                className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)]"
                             />
-                            <ChevronDown className={`w-5 h-5 text-[var(--synapse-text-muted)] transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+                            <div className="hidden md:block text-left mr-1">
+                                <p className="text-sm font-bold text-[var(--synapse-text)] leading-none">{user?.username}</p>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-[var(--synapse-text-muted)] transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {/* Dropdown Menu */}

@@ -64,6 +64,16 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     fetchNotifications();
+    // Mark all as read on mount
+    const markRead = async () => {
+      try {
+        await notificationAPI.markAsRead();
+        markAllAsRead();
+      } catch (error) {
+        console.error('Failed to mark notifications as read:', error);
+      }
+    };
+    markRead();
   }, []);
 
   const fetchNotifications = async () => {

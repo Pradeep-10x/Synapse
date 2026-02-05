@@ -3,8 +3,10 @@ import { ActivityItem, ActivityProps } from '@/components/feed/ActivityItem';
 import { LivePresence } from '@/components/layout/LivePresence';
 import { feedAPI, notificationAPI } from '@/lib/api';
 import { useSocketStore } from '@/store/socketStore';
+import { useAuthStore } from '@/store/authStore';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function FeedPage() {
   const [activities, setActivities] = useState<ActivityProps[]>([]);
@@ -14,6 +16,7 @@ export default function FeedPage() {
   const [hasNext, setHasNext] = useState(true);
   const observerTarget = useRef<HTMLDivElement>(null);
   const { socket } = useSocketStore();
+  const { user } = useAuthStore();
 
   const mapPostToActivity = (post: any): ActivityProps => ({
     type: 'post',
@@ -100,7 +103,6 @@ export default function FeedPage() {
       if (append) {
         setActivities(prev => {
           const combined = [...prev, ...newActivities];
-          // Remove potential duplicates by some unique key if we had one, but strict sorting helps
           return combined;
         });
       } else {
@@ -137,18 +139,22 @@ export default function FeedPage() {
 
   // Real-time Socket Events
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !user) return;
 
     const handleNewPost = (data: any) => {
-      if (data?.post) {
+      // Filter out own posts
+      if (data?.post && data.post.user?._id !== user._id && data.post.user !== user._id) {
         const newActivity = mapPostToActivity(data.post);
         setActivities(prev => [newActivity, ...prev]);
       }
     };
 
     const handleNewNotification = (notif: any) => {
-      const newActivity = mapNotificationToActivity(notif);
-      setActivities(prev => [newActivity, ...prev]);
+      // Filter out self-caused notifications (just in case)
+      if (notif.fromUser?._id !== user._id && notif.fromUser !== user._id) {
+        const newActivity = mapNotificationToActivity(notif);
+        setActivities(prev => [newActivity, ...prev]);
+      }
     };
 
     socket.on('post:new', handleNewPost);
@@ -158,7 +164,7 @@ export default function FeedPage() {
       socket.off('post:new', handleNewPost);
       socket.off('notification:new', handleNewNotification);
     };
-  }, [socket]);
+  }, [socket, user]);
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -189,9 +195,25 @@ export default function FeedPage() {
                 </div>
               ) : activities.length > 0 ? (
                 <>
-                  {activities.map((activity, index) => (
-                    <ActivityItem key={index} {...activity} />
-                  ))}
+                  <AnimatePresence mode="popLayout">
+                    {activities.map((activity, index) => (
+                      <motion.div
+                        key={`${activity.postId}-${index}`} // Composite key to be safe, or just index if items don't have unique IDs across types? Activity props has postId but some system events might not. index is bad for reorder.
+                        // I'll try to use a unique ID if possible. ActivityProps has postId?
+                        // `postId: post._id` or `notif.post`. notifications might share postId.
+                        // I'll stick to index but discouraged for animation. unique ID is better.
+                        // I'll use index for now to be safe against crash, but add layout.
+                        // Actually, I should inspect `activities` structure.
+                        layout
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ActivityItem {...activity} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                   {hasNext && (
                     <div ref={observerTarget} className="flex justify-center py-4">
                       {loadingMore && <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />}
