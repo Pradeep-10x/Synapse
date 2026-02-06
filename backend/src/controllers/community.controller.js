@@ -316,11 +316,22 @@ export const getJoinedCommunities = asyncHandler(async (req, res) => {
     .populate("creator", "username avatar")
     .sort({ updatedAt: -1 });
 
-  // Convert isPrivate to isPublic for frontend
+  // Convert isPrivate to isPublic for frontend and add user role
   const communitiesData = communities.map(comm => {
     const data = comm.toObject();
     data.isPublic = !data.isPrivate;
     delete data.isPrivate;
+    
+    // Determine user's role in this community
+    const userId = req.user._id.toString();
+    if (data.creator._id.toString() === userId) {
+      data.userRole = 'owner';
+    } else if (data.admins?.some(admin => admin.toString() === userId || admin._id?.toString() === userId)) {
+      data.userRole = 'admin';
+    } else {
+      data.userRole = 'member';
+    }
+    
     return data;
   });
 

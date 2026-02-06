@@ -4,7 +4,7 @@ import { uploadonCloudinary } from "../utils/cloudinary.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { emitToCommunity } from "../utils/socketEmitters.js";
+import { emitToCommunity, emitCommunityEvent } from "../utils/socketEmitters.js";
 
 export const createCommunityPost = asyncHandler(async (req, res) => {
   const { text, caption } = req.body;
@@ -78,6 +78,9 @@ export const createCommunityPost = asyncHandler(async (req, res) => {
       createdAt: new Date().toISOString()
     }
   });
+
+  // Increment community events counter
+  emitCommunityEvent(req, communityId);
 
   return res.status(201).json(new ApiResponse(201, transformedPost, "Post created successfully"));
 });

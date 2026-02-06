@@ -4,6 +4,7 @@ import { Community } from "../models/community.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { emitCommunityEvent } from "../utils/socketEmitters.js";
 
 export const addCommunityComment = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -30,6 +31,9 @@ export const addCommunityComment = asyncHandler(async (req, res) => {
   // Update comment count
   post.commentsCount = (post.commentsCount || 0) + 1;
   await post.save();
+
+  // Increment community events counter
+  emitCommunityEvent(req, post.community.toString());
 
   return res.status(201).json(new ApiResponse(201, {
     _id: populatedComment._id,

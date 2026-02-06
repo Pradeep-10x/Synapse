@@ -16,9 +16,10 @@ const PORT = process.env.PORT || 5000;
 
 
 const server = http.createServer(app);
-const { io, onlineUsers } = initSocket(server);
+const { io, onlineUsers, communityEventsToday } = initSocket(server);
 app.set("io", io);
 app.set("onlineUsers", onlineUsers);
+app.set("communityEventsToday", communityEventsToday);
 connectDB()
   .then(() => {
     server.listen(PORT, () => {

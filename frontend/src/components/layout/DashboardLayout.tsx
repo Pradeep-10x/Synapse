@@ -1,7 +1,7 @@
 
 import { Sidebar } from './Sidebar';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Mail, User, Settings, LogOut, HelpCircle, ChevronDown } from 'lucide-react';
+import { Bell, Mail, User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
@@ -127,12 +127,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                         <Settings className="w-4 h-4" />
                                         Settings
                                     </button>
-                                    <button
-                                        className="w-full flex items-center gap-3 px-4 py-2 text-md text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
-                                    >
-                                        <HelpCircle className="w-4 h-4" />
-                                        Help & Support
-                                    </button>
+                                    
                                 </div>
 
                                 {/* Logout */}
