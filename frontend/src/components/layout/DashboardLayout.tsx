@@ -89,11 +89,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                             className="flex items-center gap-3 p-1.5 rounded-md hover:bg-[var(--synapse-surface)] transition-colors border border-transparent hover:border-[var(--synapse-border)]"
                         >
-                            <img
-                                src={user?.avatar || "/default-avatar.jpg"}
-                                alt="Profile"
-                                className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)]"
-                            />
+                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--synapse-border)]">
+                                <img
+                                    src={user?.avatar || "/default-avatar.jpg"}
+                                    alt="Profile"
+                                    className="w-full h-full object-cover scale-125"
+                                />
+                            </div>
                             <div className="hidden md:block text-left mr-1">
                                 <p className="text-lg font-semibold text-[var(--synapse-text)] leading-none tracking-tight">{user?.username}</p>
                             </div>

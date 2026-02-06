@@ -273,7 +273,7 @@ export default function FeedPage() {
       {/* Page Header */}
       <div className="mb-8 pt-2">
         <h1 className="text-sm font-medium text-[var(--synapse-text-muted)] tracking-widest uppercase mb-1">
-          Live Status: <span className="text-[var(--synapse-text)]">Active</span> • Real-time Feed
+          Live Status: <span className="text-green-500 font-semibold">Active</span> • Real-time Feed
         </h1>
       </div>
 
