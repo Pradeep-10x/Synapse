@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSocketStore, RecentlyActiveUser } from '@/store/socketStore';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 export function LivePresence() {
     const { onlineUsers, recentlyActive, setRecentlyActive } = useSocketStore();
     const { user: currentUser } = useAuthStore();
+    const [, setTick] = useState(0); // Force re-render for time updates
 
     // Convert Map to array, exclude current user, and take first 5
     const onlineUsersList = Array.from(onlineUsers.entries())
@@ -31,9 +32,16 @@ export function LivePresence() {
 
         fetchRecentlyActive();
 
-        // Refresh every minute
-        const interval = setInterval(fetchRecentlyActive, 60000);
-        return () => clearInterval(interval);
+        // Refresh data every 30 seconds
+        const fetchInterval = setInterval(fetchRecentlyActive, 30000);
+        
+        // Update displayed time every 30 seconds
+        const tickInterval = setInterval(() => setTick(t => t + 1), 30000);
+        
+        return () => {
+            clearInterval(fetchInterval);
+            clearInterval(tickInterval);
+        };
     }, []);
 
     // Convert Map to array and sort by lastActive

@@ -1,12 +1,12 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Activity, LayoutGrid, Calendar, MessageSquare, Send } from 'lucide-react';
+import { Activity, LayoutGrid, Calendar, MessageSquare, Settings } from 'lucide-react';
 
 const MENU_ITEMS = [
     { icon: Activity, label: 'Activity', path: '/feed' },
-    { icon: LayoutGrid, label: 'Domains', path: '/communities' },
-    { icon: Calendar, label: 'Events', path: '/events' },
+    { icon: LayoutGrid, label: 'Community', path: '/communities' },
+    { icon: Calendar, label: 'Post', path: '/events' },
     { icon: MessageSquare, label: 'Messages', path: '/messages' },
-    { icon: Send, label: 'Direct', path: '/direct' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
 export function Sidebar() {
