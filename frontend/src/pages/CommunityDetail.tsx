@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Users, Globe, Lock, Loader2, ArrowLeft, Plus, Image as ImageIcon, X, Send, Settings, Trash2, MessageSquare, LogOut } from 'lucide-react';
+import { Loader2, ArrowLeft, Image as ImageIcon, X, Send, Settings, Trash2, MessageSquare, LogOut, ChevronDown, ChevronUp, Heart, Users, Info, Crown, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { communityAPI, communityPostAPI } from '@/lib/api';
+import { communityAPI, communityPostAPI, communityCommentAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useCommunityStore } from '@/store/communityStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
-import CommunityPostCard from '@/components/feed/CommunityPostCard';
 import EditCommunityModal from '@/components/community/EditCommunityModal';
 
 interface Community {
@@ -49,12 +48,36 @@ interface CommunityPost {
     };
 }
 
+interface Comment {
+    _id: string;
+    user: {
+        _id: string;
+        username: string;
+        avatar?: string;
+    };
+    content: string;
+    createdAt: string;
+}
+
+const formatTimeAgo = (date: string): string => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hour ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+};
+
 export default function CommunityDetail() {
     const { id } = useParams<{ id: string }>();
     const { triggerRefresh } = useCommunityStore();
     const { user: currentUser } = useAuthStore();
     const { socket } = useSocketStore();
     const navigate = useNavigate();
+    
     const [community, setCommunity] = useState<Community | null>(null);
     const [posts, setPosts] = useState<CommunityPost[]>([]);
     const [loading, setLoading] = useState(true);
@@ -62,20 +85,27 @@ export default function CommunityDetail() {
     const [isJoined, setIsJoined] = useState(false);
     const [joining, setJoining] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showPostModal, setShowPostModal] = useState(false);
     const [showMembersModal, setShowMembersModal] = useState(false);
-    const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
-    // New Post State
-    const [showCreatePost, setShowCreatePost] = useState(false);
+    // Post creation
     const [postCaption, setPostCaption] = useState('');
     const [postMedia, setPostMedia] = useState<File | null>(null);
     const [mediaPreview, setMediaPreview] = useState<string | null>(null);
     const [creatingPost, setCreatingPost] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Pagination
     const [page, setPage] = useState(1);
     const [hasNext, setHasNext] = useState(true);
     const observerTarget = useRef<HTMLDivElement>(null);
+
+    // Comments state per post
+    const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+    const [postComments, setPostComments] = useState<Record<string, Comment[]>>({});
+    const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
+    const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+    const [submittingComment, setSubmittingComment] = useState<Record<string, boolean>>({});
 
     // Infinite scroll
     useEffect(() => {
@@ -104,7 +134,6 @@ export default function CommunityDetail() {
         };
     }, [hasNext, loadingPosts, page, id]);
 
-
     useEffect(() => {
         if (id) {
             fetchCommunityData();
@@ -115,12 +144,9 @@ export default function CommunityDetail() {
     useEffect(() => {
         if (!socket || !id) return;
 
-        // Handle new post in this community
         const handleNewPost = (data: any) => {
             if (data?.post && data?.post?.community?._id === id) {
-                // Add new post to the beginning of the list
                 setPosts(prev => {
-                    // Check if post already exists to avoid duplicates
                     const exists = prev.some(p => p._id === data.post._id);
                     if (exists) return prev;
                     return [data.post, ...prev];
@@ -128,14 +154,14 @@ export default function CommunityDetail() {
             }
         };
 
-        // Handle post liked
         const handlePostLiked = (data: any) => {
             if (data?.postId) {
                 setPosts(prev => prev.map(post => {
                     if (post._id === data.postId) {
                         return {
                             ...post,
-                            likesCount: data.likesCount || post.likesCount
+                            likesCount: data.likesCount ?? post.likesCount,
+                            isLiked: data.isLiked ?? post.isLiked
                         };
                     }
                     return post;
@@ -143,89 +169,77 @@ export default function CommunityDetail() {
             }
         };
 
-        // Handle member joined - refresh community data
-        const handleMemberJoined = (data: any) => {
-            if (data?.community?._id === id) {
-                fetchCommunityData();
-            }
-        };
-
-        socket.on('community:post:new', handleNewPost);
-        socket.on('community:post:liked', handlePostLiked);
-        socket.on('community:member:joined', handleMemberJoined);
+        socket.on('community:newPost', handleNewPost);
+        socket.on('community:postLiked', handlePostLiked);
 
         return () => {
-            socket.off('community:post:new', handleNewPost);
-            socket.off('community:post:liked', handlePostLiked);
-            socket.off('community:member:joined', handleMemberJoined);
+            socket.off('community:newPost', handleNewPost);
+            socket.off('community:postLiked', handlePostLiked);
         };
     }, [socket, id]);
 
     const fetchCommunityData = async () => {
         if (!id) return;
+        setLoading(true);
         try {
-            setLoading(true);
-            const response = await communityAPI.getCommunity(id);
-            const data = response.data.data;
-            setCommunity(data);
-            const isMem = data?.members?.some((m: any) => (m._id || m) === currentUser?._id);
-            const isCreator = (data?.creator?._id || data?.creator) === currentUser?._id;
-            setIsJoined(isMem || isCreator);
+            const [communityRes] = await Promise.all([
+                communityAPI.getCommunity(id)
+            ]);
+            
+            const communityData = communityRes.data.data;
+            setCommunity(communityData);
+            
+            const isCreator = currentUser?._id === communityData.creator._id;
+            const isAdmin = communityData.admins?.some((a: any) => a._id === currentUser?._id);
+            const isMember = communityData.members?.some((m: any) => m._id === currentUser?._id);
+            setIsJoined(isCreator || isAdmin || isMember);
 
-            // Fetch posts
-            fetchPosts(1, false);
-        } catch (error: any) {
-            console.error('Failed to fetch community:', error);
-            toast.error('Community not found');
-            navigate('/community');
+            await fetchPosts(1, false);
+        } catch (error) {
+            console.error('Error fetching community:', error);
+            toast.error('Failed to load community');
+            navigate('/communities');
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchPosts = async (pageNum: number, append = false) => {
+    const fetchPosts = async (pageNum: number, append: boolean) => {
         if (!id) return;
+        setLoadingPosts(true);
         try {
-            setLoadingPosts(true);
-            const response = await communityPostAPI.getFeed(id, pageNum, 10);
-            const { posts: newPosts, hasNext: more } = response.data.data || { posts: [], hasNext: false };
-
+            const res = await communityPostAPI.getFeed(id, pageNum, 10);
+            const data = res.data.data;
+            
             if (append) {
-                setPosts(prev => [...prev, ...newPosts]);
+                setPosts(prev => [...prev, ...(data.posts || [])]);
             } else {
-                setPosts(newPosts);
+                setPosts(data.posts || []);
             }
-            setHasNext(more);
+            setHasNext(data.hasNext ?? false);
         } catch (error) {
-            console.error('Failed to fetch posts:', error);
+            console.error('Error fetching posts:', error);
         } finally {
             setLoadingPosts(false);
         }
     };
 
     const handleJoinLeave = async () => {
-        if (!community || !id) return;
+        if (!community) return;
+        setJoining(true);
         try {
-            setJoining(true);
             if (isJoined) {
-                const isCreator = (community.creator?._id || community.creator) === currentUser?._id;
-                if (isCreator) {
-                    toast.error("Creators cannot leave their community");
-                    return;
-                }
-                await communityAPI.leaveCommunity(id);
-                toast.success(`Left ${community.name}`);
+                await communityAPI.leaveCommunity(community._id);
                 setIsJoined(false);
-                triggerRefresh();
+                setCommunity(prev => prev ? { ...prev, membersCount: prev.membersCount - 1 } : null);
+                toast.success('Left community');
             } else {
-                await communityAPI.joinCommunity(id);
-                toast.success(`Joined ${community.name}!`);
+                await communityAPI.joinCommunity(community._id);
                 setIsJoined(true);
-                triggerRefresh();
-                fetchPosts(1, false);
+                setCommunity(prev => prev ? { ...prev, membersCount: prev.membersCount + 1 } : null);
+                toast.success('Joined community!');
             }
-            const updated = await communityAPI.getCommunity(id);
-            setCommunity(updated.data.data);
+            triggerRefresh();
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Action failed');
         } finally {
@@ -233,538 +247,1021 @@ export default function CommunityDetail() {
         }
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setPostMedia(file);
-            setMediaPreview(URL.createObjectURL(file));
+    const handleCreatePost = async () => {
+        if (!community || (!postCaption.trim() && !postMedia)) {
+            toast.error('Please add some content');
+            return;
         }
-    };
 
-    const handleCreatePost = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!id || (!postCaption.trim() && !postMedia)) return;
-
+        setCreatingPost(true);
         try {
-            setCreatingPost(true);
             const formData = new FormData();
-            if (postCaption) formData.append('text', postCaption);
-            if (postMedia) formData.append('media', postMedia);
+            if (postCaption.trim()) {
+                formData.append('caption', postCaption.trim());
+            }
+            if (postMedia) {
+                formData.append('media', postMedia);
+            }
 
-            await communityPostAPI.create(id, formData);
-            toast.success('Post shared to community!');
-
+            const res = await communityPostAPI.create(community._id, formData);
+            const newPost = res.data.data;
+            setPosts(prev => [newPost, ...prev]);
             setPostCaption('');
             setPostMedia(null);
             setMediaPreview(null);
-            setShowCreatePost(false);
-            fetchPosts(1, false);
+            toast.success('Post created!');
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to post');
+            toast.error(error.response?.data?.message || 'Failed to create post');
         } finally {
             setCreatingPost(false);
         }
     };
 
-    const handleCommunityUpdate = (updatedData: any) => {
-        setCommunity(updatedData);
-        setIsJoined(true); // If they updated it, they are definitely in it
-    };
-
-    const handleRemoveUser = async (userId: string) => {
-        if (!id || !confirm('Are you sure you want to remove this user from the community?')) return;
-
-        try {
-            setRemovingUserId(userId);
-            await communityAPI.removeUser(id, userId);
-            toast.success('User removed from community');
-
-            // Refresh community data
-            const updated = await communityAPI.getCommunity(id);
-            setCommunity(updated.data.data);
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to remove user');
-        } finally {
-            setRemovingUserId(null);
+    const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setPostMedia(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setMediaPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
+    const handleLikePost = async (postId: string) => {
+        try {
+            const res = await communityPostAPI.like(postId);
+            const { isLiked, likesCount } = res.data.data;
+            
+            setPosts(prev => prev.map(post => {
+                if (post._id === postId) {
+                    return { ...post, isLiked, likesCount };
+                }
+                return post;
+            }));
+        } catch (error) {
+            console.error('Error liking post:', error);
+        }
+    };
+
+    const handleDeletePost = async (postId: string) => {
+        try {
+            await communityPostAPI.delete(postId);
+            setPosts(prev => prev.filter(p => p._id !== postId));
+            toast.success('Post deleted');
+        } catch (error) {
+            toast.error('Failed to delete post');
+        }
+    };
+
+    const toggleComments = async (postId: string) => {
+        const isExpanded = expandedComments.has(postId);
+        
+        if (isExpanded) {
+            setExpandedComments(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(postId);
+                return newSet;
+            });
+        } else {
+            setExpandedComments(prev => new Set(prev).add(postId));
+            
+            if (!postComments[postId]) {
+                setLoadingComments(prev => ({ ...prev, [postId]: true }));
+                try {
+                    const res = await communityCommentAPI.getComments(postId);
+                    setPostComments(prev => ({ ...prev, [postId]: res.data.data || [] }));
+                } catch (error) {
+                    console.error('Error fetching comments:', error);
+                } finally {
+                    setLoadingComments(prev => ({ ...prev, [postId]: false }));
+                }
+            }
+        }
+    };
+
+    const handleSubmitComment = async (postId: string) => {
+        const content = commentInputs[postId]?.trim();
+        if (!content) return;
+
+        setSubmittingComment(prev => ({ ...prev, [postId]: true }));
+        try {
+            const res = await communityCommentAPI.addComment(postId, content);
+            const newComment = res.data.data;
+            
+            setPostComments(prev => ({
+                ...prev,
+                [postId]: [...(prev[postId] || []), newComment]
+            }));
+            
+            setPosts(prev => prev.map(post => {
+                if (post._id === postId) {
+                    return { ...post, commentsCount: post.commentsCount + 1 };
+                }
+                return post;
+            }));
+            
+            setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+        } catch (error) {
+            toast.error('Failed to add comment');
+        } finally {
+            setSubmittingComment(prev => ({ ...prev, [postId]: false }));
+        }
+    };
+
+    const handleDeleteComment = async (postId: string, commentId: string) => {
+        try {
+            await communityCommentAPI.deleteComment(commentId);
+            setPostComments(prev => ({
+                ...prev,
+                [postId]: (prev[postId] || []).filter(c => c._id !== commentId)
+            }));
+            setPosts(prev => prev.map(post => {
+                if (post._id === postId) {
+                    return { ...post, commentsCount: Math.max(0, post.commentsCount - 1) };
+                }
+                return post;
+            }));
+            toast.success('Comment deleted');
+        } catch (error) {
+            toast.error('Failed to delete comment');
+        }
+    };
+
+    const isCreator = currentUser?._id === community?.creator._id;
+    const isAdmin = community?.admins?.some((a: any) => a._id === currentUser?._id) || isCreator;
+
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--synapse-bg)' }}>
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--synapse-primary)' }} />
             </div>
         );
     }
 
-    if (!community) return null;
-
-    const communityCreatorId = community.creator?._id || (typeof community.creator === 'string' ? community.creator : '');
-    const isOwner = communityCreatorId === currentUser?._id;
-    const isAdmin = isOwner ||
-        community.admins?.some((admin: any) => (admin._id || admin) === currentUser?._id);
+    if (!community) {
+        return (
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--synapse-bg)' }}>
+                <p style={{ color: 'var(--synapse-text-secondary)' }}>Community not found</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-[#0a0a12]">
-            {/* Header Banner */}
-            <div className=" h-24 sm:h-40 pt-0 mt-6 bg-[#1a1a2e] overflow-hidden">
+        <div className="min-h-screen" style={{ background: 'var(--synapse-bg)' }}>
+            {/* Banner */}
+            <div className="relative h-32 md:h-35 overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
                 {community.coverImage ? (
-                    <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover" />
-                ) : community.avatar ? (
-                    <img src={community.avatar || "/default-avatar.jpg"} alt={community.name} className="w-full h-full object-cover" />
+                    <img 
+                        src={community.coverImage} 
+                        alt={community.name}
+                        className="w-full h-full object-cover"
+                    />
                 ) : (
-                    <div className="w-full h-full" />
+                    <div 
+                        className="w-full h-full"
+                        style={{
+                            background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%)',
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+                        }}
+                    />
                 )}
-
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--synapse-bg)] via-transparent to-transparent" />
+                
+                {/* Back button */}
                 <button
                     onClick={() => navigate('/communities')}
-                    className="absolute top-6 left-6 p-2 glass-card rounded-full text-white hover:bg-white/10 transition-colors z-10"
+                    className="absolute top-4 left-4 p-2 rounded-full bg-black/60 backdrop-blur-sm hover:bg-black/40 transition-colors"
                 >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-5 h-5 text-white" />
                 </button>
+
+                {/* Settings button for admins */}
+                {isAdmin && (
+                    <div className="absolute top-4 right-4 flex gap-2">
+                        <button
+                            onClick={() => setShowEditModal(true)}
+                            className="p-2 rounded-full bg-black/60 backdrop-blur-sm hover:bg-black/40 transition-colors"
+                        >
+                            <Settings className="w-5 h-5 text-white" />
+                        </button>
+                        {/* {isCreator && (
+                            <button
+                                onClick={handleDeleteCommunity}
+                                className="p-2 rounded-full bg-red-500/20 backdrop-blur-sm hover:bg-red-500/30 transition-colors"
+                            >
+                                <Trash2 className="w-5 h-5 text-red-400" />
+                            </button>
+                        )} */}
+                    </div>
+                )}
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-                {/* Community Info Card */}
-                <div className="p-6 mb-8">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                        <div className="flex items-end gap-5">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#1a1a2e] border-4 border-[#0a0a12] shadow-2xl flex items-center justify-center overflow-hidden shrink-0">
-                                {community.avatar ? (
-                                    <img src={community.avatar || "/default-avatar.jpg"} alt={community.name} className="w-full h-full object-cover" />
-                                ) : community.coverImage ? (
-                                    <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover opacity-50" />
-                                ) : (
-                                    <Users className="w-12 h-12 text-[#a855f7]" />
-                                )}
-                            </div>
-                            <div className="pb-1 flex flex-col gap-1">
-                                <h1 className="text-xl sm:text-2xl font-bold text-[#e5e7eb] tracking-tight">o/{community.name}</h1>
-
-                                <div className="flex items-center gap-2 text-xs font-medium text-[#9ca3af]">
-                                    {community.isPublic ? (
-                                        <>
-                                            <Globe className="w-4 h-4" />
-                                            <span>Public</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Lock className="w-4 h-4" />
-                                            <span>Private</span>
-                                        </>
-                                    )}
-                                </div>
-
-                                <div
-                                    onClick={() => setShowMembersModal(true)}
-                                    className="flex items-center gap-2 text-sm text-[#9ca3af] cursor-pointer hover:text-[#a855f7] transition-colors"
-                                >
-                                    <span className="flex items-center gap-1.5 font-medium">
-                                        <Users className="w-4 h-4" />
-                                        {(community.membersCount || 0).toLocaleString()} members
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={isOwner || isJoined ? () => setShowCreatePost(true) : handleJoinLeave}
-                                disabled={joining}
-                                className={`flex-1 sm:flex-none px-8 py-2.5 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${isOwner || isJoined
-                                    ? 'bg-[#7c3aed] text-white'
-                                    : 'bg-[#a855f7] text-white'
-                                    }`}
-                            >
-                                {joining ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : isOwner || isJoined ? (
-                                    <>
-                                        <Plus className="w-4 h-4" />
-                                        Create Post
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="w-5 h-5" />
-                                        Join Community
-                                    </>
-                                )}
-                            </button>
-                            {isOwner || isJoined ? (
-                                <button
-                                    onClick={() => navigate(`/messages?communityId=${id}`)}
-                                    className="p-2.5 glass-card rounded-xl text-[#9ca3af] hover:text-[#06b6d4] hover:border-[#06b6d4]/30 transition-all group"
-                                    title="Open Community Chat"
-                                >
-                                    <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                </button>
-                            ) : null}
-                            {isAdmin && (
-                                <button
-                                    onClick={() => setShowEditModal(true)}
-                                    className="p-2.5 glass-card rounded-xl text-[#9ca3af] hover:text-[#a855f7] hover:border-[#a855f7]/30 transition-all group"
-                                    title="Community Settings"
-                                >
-                                    <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
-                                </button>
-                            )}
-                            {isJoined && !isOwner && (
-                                <button
-                                    onClick={handleJoinLeave}
-                                    disabled={joining}
-                                    className="p-2.5 glass-card rounded-xl text-red-400 hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30 transition-all group border border-red-400/20"
-                                    title="Leave Community"
-                                >
-                                    {joining ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <LogOut className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                    )}
-                                </button>
-                            )}
-                        </div>
+            {/* Community Avatar and Name */}
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--synapse-border)' }}>
+                <div className="flex items-center gap-4">
+                    <div className="relative -mt-12">
+                        <img
+                            src={community.avatar || community.coverImage || '/default-community.jpg'}
+                            alt={community.name}
+                            className="w-25 h-25 rounded-full object-cover border-4"
+                            style={{ borderColor: 'var(--synapse-bg)', boxShadow: '0 0 0 2px rgba(255,255,255,0.15)' }}
+                        />
                     </div>
-
-                    <div className="mt-2 sm:pl-6 flex flex-col gap-4">
-                        <p className="text-[#9ca3af] leading-relaxed max-w-2xl text-sm">{community.description}</p>
+                    <div>
+                        <h1 className="text-2xl font-bold" style={{ color: 'var(--synapse-text)' }}>
+                            {community.name}
+                        </h1>
+                        <p className="text-sm" style={{ color: 'var(--synapse-text-secondary)' }}>
+                            {community.membersCount} members • {community.isPublic ? 'Public' : 'Private'}
+                        </p>
                     </div>
                 </div>
+            </div>
 
-                {/* Main Content Area */}
-                <div className="space-y-6">
-                    {/* Posts Feed */}
-                    <div className="space-y-6">
-                        {loadingPosts && posts.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                                <Loader2 className="w-10 h-10 animate-spin text-[#a855f7]" />
-                                <p className="text-[#9ca3af] animate-pulse">Scanning the orbit for signals...</p>
-                            </div>
-                        ) : posts.length > 0 ? (
-                            <>
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 py-5">
+                <div className="flex gap-6">
+                    {/* Left Content */}
+                    <div className="flex-1 min-w-0">
+                        <div className="space-y-6">
+                            {/* Posts */}
+                            <div className="space-y-4">
                                 {posts.map((post) => (
-                                    <CommunityPostCard
+                                    <PostCard
                                         key={post._id}
                                         post={post}
                                         isAdmin={isAdmin}
-                                        onDelete={(id) => setPosts(prev => prev.filter(p => p._id !== id))}
+                                        currentUserId={currentUser?._id}
+                                        onLike={handleLikePost}
+                                        onDelete={handleDeletePost}
+                                        onDeleteComment={(commentId) => handleDeleteComment(post._id, commentId)}
+                                        expanded={expandedComments.has(post._id)}
+                                        onToggleComments={() => toggleComments(post._id)}
+                                        comments={postComments[post._id] || []}
+                                        loadingComments={loadingComments[post._id] || false}
+                                        commentInput={commentInputs[post._id] || ''}
+                                        onCommentInputChange={(value) => setCommentInputs(prev => ({ ...prev, [post._id]: value }))}
+                                        onSubmitComment={() => handleSubmitComment(post._id)}
+                                        submittingComment={submittingComment[post._id] || false}
                                     />
                                 ))}
-                                {hasNext && (
-                                    <div ref={observerTarget} className="flex justify-center py-8">
-                                        <Loader2 className="w-6 h-6 animate-spin text-[#a855f7]" />
+
+                                {loadingPosts && (
+                                    <div className="flex justify-center py-8">
+                                        <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--synapse-primary)' }} />
                                     </div>
                                 )}
-                            </>
-                        ) : (
-                            <div className="glass-panel rounded-2xl p-12 text-center">
-                                <div className="w-16 h-16 rounded-full bg-[#1a1a2e] flex items-center justify-center mx-auto mb-4 border border-[rgba(168,85,247,0.1)]">
-                                    <Users className="w-8 h-8 text-[#6b7280]" />
-                                </div>
-                                <h3 className="text-[#e5e7eb] font-bold text-lg mb-2">No transmissions yet</h3>
-                                <p className="text-[#9ca3af] max-w-xs mx-auto mb-6">Be the first to share something with this community or invite others to join the conversation.</p>
-                                {isJoined && (
-                                    <button
-                                        onClick={() => setShowCreatePost(true)}
-                                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#7c3aed]/10 text-[#a855f7] border border-[#7c3aed]/30 rounded-xl font-bold hover:bg-[#7c3aed]/20 transition-all"
-                                    >
-                                        <Plus className="w-5 h-5" />
-                                        Create First Post
-                                    </button>
+
+                                {!loadingPosts && posts.length === 0 && (
+                                    <div className="text-center py-12">
+                                        <p style={{ color: 'var(--synapse-text-secondary)' }}>No posts yet. Be the first to share!</p>
+                                    </div>
                                 )}
+
+                                <div ref={observerTarget} className="h-4" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Sidebar - Actions */}
+                    <div className="hidden lg:block w-80 flex-shrink-0">
+                        <div className="sticky top-6 space-y-4">
+                        {/* Action Buttons */}
+                        {isJoined && (
+                            <div 
+                                className="rounded-md p-4 space-y-3"
+                                style={{ 
+                                    background: 'var(--synapse-surface)',
+                                    border: '1px solid var(--synapse-border)'
+                                }}
+                            >
+                                <button 
+                                    onClick={() => setShowPostModal(true)}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-sm text-sm font-medium transition-all hover:bg-white/5"
+                                    style={{ 
+                                        color: 'var(--synapse-text)',
+                                        border: '1px solid var(--synapse-border)'
+                                    }}
+                                >
+                                    <MessageSquare className="w-5 h-5" style={{ color: 'var(--synapse-primary)' }} />
+                                    Discussion
+                                </button>
+                                <button 
+                                    onClick={() => setShowPostModal(true)}
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-sm text-sm font-medium transition-all hover:bg-white/5"
+                                    style={{ 
+                                        color: 'var(--synapse-text)',
+                                        border: '1px solid var(--synapse-border)'
+                                    }}
+                                >
+                                    <ImageIcon className="w-5 h-5" style={{ color: 'var(--synapse-primary)' }} />
+                                    Post media
+                                </button>
                             </div>
                         )}
+
+                        {/* Join/Leave Button */}
+                        {!isCreator && (
+                            <button
+                                onClick={handleJoinLeave}
+                                disabled={joining}
+                                className={`w-full py-3 rounded-md font-medium transition-all ${
+                                    isJoined
+                                        ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                        : 'text-black'
+                                }`}
+                                style={!isJoined ? { background: 'var(--synapse-primary)' } : {}}
+                            >
+                                {joining ? (
+                                    <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                                ) : isJoined ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <LogOut className="w-4 h-4" />
+                                        Leave Community
+                                    </span>
+                                ) : (
+                                    'Join Community'
+                                )}
+                            </button>
+                        )}
+
+                        {/* Members Box */}
+                        <div 
+                            className="rounded-md p-4"
+                            style={{ 
+                                background: 'var(--synapse-surface)',
+                                border: '1px solid var(--synapse-border)'
+                            }}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--synapse-text)' }}>
+                                    <Users className="w-4 h-4" style={{ color: 'var(--synapse-primary)' }} />
+                                    Members
+                                </h3>
+                                <span className="text-xs" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                    {community.membersCount}
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {/* Sort: Owner first, then admins, then regular members */}
+                                {(() => {
+                                    const allMembers = [
+                                        { ...community.creator, role: 'owner' as const },
+                                        ...(community.admins || []).filter((a: any) => a._id !== community.creator._id).map((a: any) => ({ ...a, role: 'admin' as const })),
+                                        ...(community.members || []).filter((m: any) => 
+                                            m._id !== community.creator._id && 
+                                            !(community.admins || []).some((a: any) => a._id === m._id)
+                                        ).map((m: any) => ({ ...m, role: 'member' as const }))
+                                    ];
+                                    return allMembers.slice(0, 5).map((member: any) => (
+                                        <Link
+                                            key={member._id}
+                                            to={`/profile/${member.username}`}
+                                            className="flex items-center gap-2 p-2 rounded-md hover:bg-white/5 transition-colors"
+                                        >
+                                            <div className="relative">
+                                                <img
+                                                    src={member.avatar || '/default-avatar.jpg'}
+                                                    alt={member.username}
+                                                    className="w-8 h-8 rounded-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate" style={{ color: 'var(--synapse-text)' }}>
+                                                    {member.username}
+                                                </p>
+                                            </div>
+                                            {member.role === 'owner' && (
+                                                <Crown className="w-4 h-4 text-yellow-500" />
+                                            )}
+                                            {member.role === 'admin' && (
+                                                <Shield className="w-4 h-4 text-blue-400" />
+                                            )}
+                                        </Link>
+                                    ));
+                                })()}
+                            </div>
+                            {community.membersCount > 5 && (
+                                <button
+                                    onClick={() => setShowMembersModal(true)}
+                                    className="w-full mt-3 py-2 text-sm font-medium rounded-md hover:bg-white/5 transition-colors"
+                                    style={{ color: 'var(--synapse-primary)' }}
+                                >
+                                    View all {community.membersCount} members
+                                </button>
+                            )}
+                        </div>
+
+                        {/* About Box */}
+                        <div 
+                            className="rounded-md p-4"
+                            style={{ 
+                                background: 'var(--synapse-surface)',
+                                border: '1px solid var(--synapse-border)'
+                            }}
+                        >
+                            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3" style={{ color: 'var(--synapse-text)' }}>
+                                <Info className="w-4 h-4" style={{ color: 'var(--synapse-primary)' }} />
+                                About
+                            </h3>
+                            <p className="text-sm leading-relaxed" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                {community.description || 'No description available.'}
+                            </p>
+                            <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--synapse-border)' }}>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span style={{ color: 'var(--synapse-text-secondary)' }}>Visibility</span>
+                                    <span style={{ color: 'var(--synapse-text)' }}>{community.isPublic ? 'Public' : 'Private'}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span style={{ color: 'var(--synapse-text-secondary)' }}>Created by</span>
+                                    <Link to={`/profile/${community.creator.username}`} className="hover:underline" style={{ color: 'var(--synapse-primary)' }}>
+                                        {community.creator.username}
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* Edit Modal */}
             <EditCommunityModal
                 isOpen={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                onSuccess={handleCommunityUpdate}
                 community={community}
+                onClose={() => setShowEditModal(false)}
+                onSuccess={(updated) => {
+                    setCommunity(prev => prev ? { ...prev, ...updated } : null);
+                    setShowEditModal(false);
+                }}
             />
 
             {/* Create Post Modal */}
             <AnimatePresence>
-                {showCreatePost && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+                {showPostModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        style={{ background: 'rgba(0,0,0,0.8)' }}
+                        onClick={() => setShowPostModal(false)}
+                    >
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => {
-                                setShowCreatePost(false);
-                                setPostCaption('');
-                                setPostMedia(null);
-                                setMediaPreview(null);
-                            }}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                        />
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-[#0a0a12] border border-[rgba(168,85,247,0.2)] w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl relative z-10"
+                            className="w-full max-w-lg rounded-md overflow-hidden"
+                            style={{ 
+                                background: 'var(--synapse-surface)',
+                                border: '1px solid var(--synapse-border)'
+                            }}
                         >
                             {/* Modal Header */}
-                            <div className="p-6 border-b border-[rgba(168,85,247,0.1)] flex items-center justify-between bg-[rgba(168,85,247,0.02)]">
-                                <h2 className="text-xl font-bold text-white">Create Post</h2>
+                            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--synapse-border)' }}>
+                                <h3 className="text-lg font-semibold" style={{ color: 'var(--synapse-text)' }}>Create Post</h3>
                                 <button
                                     onClick={() => {
-                                        setShowCreatePost(false);
-                                        setPostCaption('');
+                                        setShowPostModal(false);
                                         setPostMedia(null);
                                         setMediaPreview(null);
+                                        setPostCaption('');
                                     }}
-                                    className="p-2 hover:bg-white/5 rounded-full text-[#9ca3af] hover:text-white transition-colors"
+                                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-5 h-5" style={{ color: 'var(--synapse-text-secondary)' }} />
                                 </button>
                             </div>
 
-                            {/* Modal Content */}
-                            <form onSubmit={handleCreatePost} className="p-6 space-y-4">
-                                {mediaPreview && (
-                                    <div className="relative rounded-xl overflow-hidden bg-[#0a0a12] aspect-video mb-4">
-                                        <img src={mediaPreview} alt="Preview" className="w-full h-full object-contain" />
-                                        <button
-                                            type="button"
-                                            onClick={() => { setPostMedia(null); setMediaPreview(null); }}
-                                            className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-full text-white hover:bg-black/80"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )}
+                            {/* Modal Body */}
+                            <div className="p-4 space-y-4">
+                                {/* Media Upload Area */}
+                                <div 
+                                    className="relative aspect-square rounded-md overflow-hidden cursor-pointer group"
+                                    style={{ 
+                                        background: 'var(--synapse-bg)',
+                                        border: '2px dashed var(--synapse-border)'
+                                    }}
+                                    onClick={() => !mediaPreview && fileInputRef.current?.click()}
+                                >
+                                    {mediaPreview ? (
+                                        <>
+                                            {postMedia?.type.startsWith('video/') ? (
+                                                <video 
+                                                    src={mediaPreview} 
+                                                    className="w-full h-full object-cover"
+                                                    controls
+                                                />
+                                            ) : (
+                                                <img 
+                                                    src={mediaPreview} 
+                                                    alt="Preview" 
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            )}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setPostMedia(null);
+                                                    setMediaPreview(null);
+                                                }}
+                                                className="absolute top-3 right-3 p-2 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
+                                            >
+                                                <X className="w-4 h-4 text-white" />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                                            <div 
+                                                className="p-4 rounded-full"
+                                                style={{ background: 'var(--synapse-surface)' }}
+                                            >
+                                                <ImageIcon className="w-8 h-8" style={{ color: 'var(--synapse-primary)' }} />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-medium" style={{ color: 'var(--synapse-text)' }}>
+                                                    Click to upload
+                                                </p>
+                                                <p className="text-sm mt-1" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                    Photo or Video (1:1 ratio recommended)
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
 
-                                <div className="flex items-start gap-4">
-                                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 mt-1">
-                                        <img src={currentUser?.avatar || "/default-avatar.jpg"} alt="You" className="w-full h-full object-cover" />
-                                    </div>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*,video/*"
+                                    className="hidden"
+                                    onChange={handleMediaSelect}
+                                />
+
+                                {/* Caption Input */}
+                                <div>
                                     <textarea
                                         value={postCaption}
                                         onChange={(e) => setPostCaption(e.target.value)}
-                                        placeholder="Share something with the community..."
-                                        className="flex-1 bg-transparent border-none focus:ring-0 text-[#e5e7eb] placeholder-[#6b7280] resize-none min-h-[120px] text-lg"
-                                        autoFocus
+                                        placeholder="Write a caption..."
+                                        className="w-full bg-transparent resize-none outline-none text-sm p-3 rounded-md"
+                                        style={{ 
+                                            color: 'var(--synapse-text)',
+                                            background: 'var(--synapse-bg)',
+                                            border: '1px solid var(--synapse-border)'
+                                        }}
+                                        rows={3}
                                     />
                                 </div>
+                            </div>
 
-                                <div className="flex items-center justify-between pt-4 border-t border-[rgba(168,85,247,0.1)]">
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="p-2 text-[#9ca3af] hover:text-[#a855f7] hover:bg-[#a855f7]/10 rounded-lg transition-all flex items-center gap-2 text-sm font-medium"
-                                        >
-                                            <ImageIcon className="w-5 h-5" />
-                                            <span>Photo/Video</span>
-                                        </button>
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            accept="image/*,video/*"
-                                            onChange={handleFileSelect}
-                                            className="hidden"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setShowCreatePost(false);
-                                                setPostCaption('');
-                                                setPostMedia(null);
-                                                setMediaPreview(null);
-                                            }}
-                                            className="px-4 py-2 text-sm font-medium text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={creatingPost || (!postCaption.trim() && !postMedia)}
-                                            className="px-6 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-xl text-white font-bold text-sm transition-all disabled:opacity-50 flex items-center gap-2"
-                                        >
-                                            {creatingPost ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                            Post
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
+                            {/* Modal Footer */}
+                            <div className="p-4 border-t" style={{ borderColor: 'var(--synapse-border)' }}>
+                                <button
+                                    onClick={async () => {
+                                        await handleCreatePost();
+                                        setShowPostModal(false);
+                                    }}
+                                    disabled={creatingPost || (!postCaption.trim() && !postMedia)}
+                                    className="w-full py-3 rounded-md text-sm font-semibold transition-all disabled:opacity-50"
+                                    style={{ 
+                                        background: '#3b82f6',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    {creatingPost ? (
+                                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                                    ) : (
+                                        'Share Post'
+                                    )}
+                                </button>
+                            </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
             {/* Members Modal */}
             <AnimatePresence>
                 {showMembersModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        style={{ background: 'rgba(0,0,0,0.8)' }}
+                        onClick={() => setShowMembersModal(false)}
+                    >
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setShowMembersModal(false)}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-                        />
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            className="bg-[#0a0a12] border border-[rgba(168,85,247,0.2)] w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative z-10 flex flex-col max-h-[80vh]"
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-md rounded-md overflow-hidden"
+                            style={{ 
+                                background: 'var(--synapse-surface)',
+                                border: '1px solid var(--synapse-border)'
+                            }}
                         >
-                            <div className="p-6 border-b border-[rgba(168,85,247,0.1)] flex items-center justify-between bg-[rgba(168,85,247,0.02)]">
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-[#a855f7]" />
-                                    Orbit Members
-                                </h2>
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--synapse-border)' }}>
+                                <h3 className="text-lg font-semibold" style={{ color: 'var(--synapse-text)' }}>
+                                    Members ({community.membersCount})
+                                </h3>
                                 <button
                                     onClick={() => setShowMembersModal(false)}
-                                    className="p-2 hover:bg-white/5 rounded-full text-[#9ca3af] hover:text-white transition-colors"
+                                    className="p-2 rounded-lg hover:bg-white/10 transition-colors"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-5 h-5" style={{ color: 'var(--synapse-text-secondary)' }} />
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-                                {/* Owner Section */}
-                                <div className="px-4 py-2 text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Creator</div>
-                                <Link
-                                    to={`/profile/${community.creator.username}`}
-                                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full border-2 border-[#a855f7] p-0.5 overflow-hidden">
+                            {/* Modal Body */}
+                            <div className="p-4 max-h-96 overflow-y-auto">
+                                <div className="space-y-2">
+                                    {/* Owner */}
+                                    <div className="mb-4">
+                                        <p className="text-xs font-medium mb-2 px-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                            OWNER
+                                        </p>
+                                        <Link
+                                            to={`/profile/${community.creator.username}`}
+                                            onClick={() => setShowMembersModal(false)}
+                                            className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors"
+                                        >
                                             <img
-                                                src={community.creator.avatar || "/default-avatar.jpg"}
+                                                src={community.creator.avatar || '/default-avatar.jpg'}
                                                 alt={community.creator.username}
-                                                className="w-full h-full rounded-full object-cover"
+                                                className="w-10 h-10 rounded-full object-cover"
                                             />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-white group-hover:text-[#a855f7] transition-colors">
-                                                u/{community.creator.username}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate" style={{ color: 'var(--synapse-text)' }}>
+                                                    {community.creator.username}
+                                                </p>
                                             </div>
-                                            <div className="text-xs text-[#9ca3af]">Main Transmission</div>
-                                        </div>
+                                            <Crown className="w-4 h-4 text-yellow-500" />
+                                        </Link>
                                     </div>
-                                    <div className="px-2 py-0.5 rounded-md bg-[#a855f7]/10 border border-[#a855f7]/30 text-[10px] font-bold text-[#a855f7] uppercase tracking-wider">
-                                        Owner
-                                    </div>
-                                </Link>
 
-                                {/* Admins Section */}
-                                {community.admins?.filter(a => a._id !== community.creator._id).length > 0 && (
-                                    <>
-                                        <div className="px-4 py-2 mt-4 text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Admins</div>
-                                        {community.admins
-                                            .filter(a => a._id !== community.creator._id)
-                                            .map((admin: any) => (
-                                                <div
-                                                    key={admin._id}
-                                                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group"
-                                                >
+                                    {/* Admins */}
+                                    {(community.admins || []).filter((a: any) => a._id !== community.creator._id).length > 0 && (
+                                        <div className="mb-4">
+                                            <p className="text-xs font-medium mb-2 px-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                ADMINS
+                                            </p>
+                                            {(community.admins || [])
+                                                .filter((a: any) => a._id !== community.creator._id)
+                                                .map((admin: any) => (
                                                     <Link
+                                                        key={admin._id}
                                                         to={`/profile/${admin.username}`}
-                                                        className="flex items-center gap-3 flex-1"
+                                                        onClick={() => setShowMembersModal(false)}
+                                                        className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors"
                                                     >
-                                                        <div className="w-10 h-10 rounded-full border-2 border-[rgba(168,85,247,0.3)] p-0.5 overflow-hidden">
-                                                            <img
-                                                                src={admin.avatar || "/default-avatar.jpg"}
-                                                                alt={admin.username}
-                                                                className="w-full h-full rounded-full object-cover"
-                                                            />
+                                                        <img
+                                                            src={admin.avatar || '/default-avatar.jpg'}
+                                                            alt={admin.username}
+                                                            className="w-10 h-10 rounded-full object-cover"
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-medium truncate" style={{ color: 'var(--synapse-text)' }}>
+                                                                {admin.username}
+                                                            </p>
                                                         </div>
-                                                        <div className="font-bold text-white group-hover:text-[#a855f7] transition-colors">
-                                                            u/{admin.username}
+                                                        <Shield className="w-4 h-4 text-blue-400" />
+                                                    </Link>
+                                                ))}
+                                        </div>
+                                    )}
+
+                                    {/* Members */}
+                                    {(community.members || []).filter((m: any) => 
+                                        m._id !== community.creator._id && 
+                                        !(community.admins || []).some((a: any) => a._id === m._id)
+                                    ).length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-medium mb-2 px-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                MEMBERS
+                                            </p>
+                                            {(community.members || [])
+                                                .filter((m: any) => 
+                                                    m._id !== community.creator._id && 
+                                                    !(community.admins || []).some((a: any) => a._id === m._id)
+                                                )
+                                                .map((member: any) => (
+                                                    <Link
+                                                        key={member._id}
+                                                        to={`/profile/${member.username}`}
+                                                        onClick={() => setShowMembersModal(false)}
+                                                        className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors"
+                                                    >
+                                                        <img
+                                                            src={member.avatar || '/default-avatar.jpg'}
+                                                            alt={member.username}
+                                                            className="w-10 h-10 rounded-full object-cover"
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-medium truncate" style={{ color: 'var(--synapse-text)' }}>
+                                                                {member.username}
+                                                            </p>
                                                         </div>
                                                     </Link>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider">
-                                                            Admin
-                                                        </div>
-                                                        {isAdmin && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleRemoveUser(admin._id);
-                                                                }}
-                                                                disabled={removingUserId === admin._id}
-                                                                className="p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                                                title="Remove from community"
-                                                            >
-                                                                {removingUserId === admin._id ? (
-                                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                                ) : (
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                )}
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))
-                                        }
-                                    </>
-                                )}
-
-                                {/* Members Section */}
-                                <div className="px-4 py-2 mt-4 text-[10px] font-bold text-[#6b7280] uppercase tracking-widest">Members</div>
-                                {community.members
-                                    ?.filter(m => m._id !== community.creator._id && !community.admins.some(a => a._id === m._id))
-                                    .map((member: any) => (
-                                        <div
-                                            key={member._id}
-                                            className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group"
-                                        >
-                                            <Link
-                                                to={`/profile/${member.username}`}
-                                                className="flex items-center gap-3 flex-1"
-                                            >
-                                                <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden">
-                                                    <img
-                                                        src={member.avatar || "/default-avatar.jpg"}
-                                                        alt={member.username}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="font-bold text-white group-hover:text-[#a855f7] transition-colors">
-                                                    u/{member.username}
-                                                </div>
-                                            </Link>
-                                            {isAdmin && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleRemoveUser(member._id);
-                                                    }}
-                                                    disabled={removingUserId === member._id}
-                                                    className="p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                                    title="Remove from community"
-                                                >
-                                                    {removingUserId === member._id ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                        <Trash2 className="w-4 h-4" />
-                                                    )}
-                                                </button>
-                                            )}
+                                                ))}
                                         </div>
-                                    ))
-                                }
-                            </div>
-
-                            <div className="p-4 bg-[rgba(168,85,247,0.02)] border-t border-[rgba(168,85,247,0.05)] text-center">
-                                <p className="text-xs text-[#6b7280]">
-                                    Showing all {community.membersCount} participants in orbit
-                                </p>
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>
     );
 }
 
+// Post Card Component
+interface PostCardProps {
+    post: CommunityPost;
+    isAdmin: boolean;
+    currentUserId?: string;
+    onLike: (postId: string) => void;
+    onDelete: (postId: string) => void;
+    onDeleteComment: (commentId: string) => void;
+    expanded: boolean;
+    onToggleComments: () => void;
+    comments: Comment[];
+    loadingComments: boolean;
+    commentInput: string;
+    onCommentInputChange: (value: string) => void;
+    onSubmitComment: () => void;
+    submittingComment: boolean;
+}
+
+function PostCard({ 
+    post, 
+    isAdmin, 
+    currentUserId,
+    onLike,
+    onDelete,
+    onDeleteComment,
+    expanded,
+    onToggleComments,
+    comments,
+    loadingComments,
+    commentInput,
+    onCommentInputChange,
+    onSubmitComment,
+    submittingComment
+}: PostCardProps) {
+    const isOwner = currentUserId === post.user._id;
+    const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+    const canDeleteComment = (comment: Comment) => {
+        if (!currentUserId) return false;
+        // Owner of comment, post creator, or admin can delete
+        return comment.user._id === currentUserId || post.user._id === currentUserId || isAdmin;
+    };
+
+    const handleDeleteCommentClick = async (commentId: string) => {
+        setDeletingCommentId(commentId);
+        await onDeleteComment(commentId);
+        setDeletingCommentId(null);
+    };
+
+    return (
+        <div 
+            className="rounded-md overflow-hidden"
+            style={{ 
+                background: 'var(--synapse-surface)',
+                border: '1px solid var(--synapse-border)'
+            }}
+        >
+            {/* Post Header */}
+            <div className="p-4">
+                <div className="flex items-start justify-between">
+                    <Link to={`/profile/${post.user.username}`} className="flex items-center gap-3">
+                        <img
+                            src={post.user.avatar || '/default-avatar.jpg'}
+                            alt={post.user.username}
+                            className="w-10 h-10 rounded-full object-cover"
+                        />
+                        <div>
+                            <p className="font-medium" style={{ color: 'var(--synapse-text)' }}>
+                                {post.user.username}
+                            </p>
+                            <p className="text-xs" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                {formatTimeAgo(post.createdAt)}
+                            </p>
+                        </div>
+                    </Link>
+                    
+                    {(isOwner || isAdmin) && (
+                        <button
+                            onClick={() => onDelete(post._id)}
+                            className="p-2 rounded-md hover:bg-red-500/10 text-red-400 transition-colors"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Caption */}
+                {post.caption && (
+                    <p className="mt-3" style={{ color: 'var(--synapse-text)' }}>
+                        {post.caption}
+                    </p>
+                )}
+            </div>
+
+            {/* Media */}
+            {post.mediaUrl && (
+                <div className="relative">
+                    {post.mediaType === 'video' ? (
+                        <video
+                            src={post.mediaUrl}
+                            controls
+                            className="w-full max-h-96 object-contain bg-black"
+                        />
+                    ) : (
+                        <img
+                            src={post.mediaUrl}
+                            alt=""
+                            className="w-full max-h-96 object-contain bg-black"
+                        />
+                    )}
+                    {post.mediaType === 'image' && (
+                        <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-xs bg-black/60 text-white">
+                            JPG
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Engagement */}
+            <div className="p-4 pt-2">
+                {/* Like and Comment buttons */}
+                <div className="flex items-center gap-4 mb-3">
+                    <button
+                        onClick={() => onLike(post._id)}
+                        className="flex items-center gap-1.5 transition-colors"
+                        style={{ color: post.isLiked ? '#ef4444' : 'var(--synapse-text-secondary)' }}
+                    >
+                        <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-red-500' : ''}`} />
+                        <span className="text-sm">{post.likesCount}</span>
+                    </button>
+                    <button
+                        onClick={onToggleComments}
+                        className="flex items-center gap-1.5 transition-colors"
+                        style={{ color: 'var(--synapse-text-secondary)' }}
+                    >
+                        <MessageSquare className="w-5 h-5" />
+                        <span className="text-sm">{post.commentsCount}</span>
+                    </button>
+                </div>
+
+                <p className="text-xs mb-3" style={{ color: 'var(--synapse-text-secondary)' }}>
+                    {formatTimeAgo(post.createdAt)}
+                </p>
+
+                {/* Comment Input */}
+                <div className="flex items-center gap-3 pt-3" style={{ borderTop: '1px solid var(--synapse-border)' }}>
+                    <img
+                        src={currentUserId ? '/default-avatar.jpg' : '/default-avatar.jpg'}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <div 
+                        className="flex-1 flex items-center rounded-md px-4 py-2"
+                        style={{ background: 'var(--synapse-bg)' }}
+                    >
+                        <input
+                            type="text"
+                            value={commentInput}
+                            onChange={(e) => onCommentInputChange(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && onSubmitComment()}
+                            placeholder="Write a comment..."
+                            className="flex-1 bg-transparent outline-none text-sm"
+                            style={{ color: 'var(--synapse-text)' }}
+                        />
+                        <button
+                            onClick={onSubmitComment}
+                            disabled={submittingComment || !commentInput.trim()}
+                            className="ml-2 disabled:opacity-50"
+                            style={{ color: 'var(--synapse-primary)' }}
+                        >
+                            {submittingComment ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Send className="w-4 h-4" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Toggle Comments */}
+                {post.commentsCount > 0 && (
+                    <button
+                        onClick={onToggleComments}
+                        className="flex items-center gap-1 mt-3 text-sm"
+                        style={{ color: 'var(--synapse-text-secondary)' }}
+                    >
+                        {expanded ? (
+                            <>
+                                <ChevronUp className="w-4 h-4" />
+                                Hide comments
+                            </>
+                        ) : (
+                            <>
+                                <ChevronDown className="w-4 h-4" />
+                                View all {post.commentsCount} comments
+                            </>
+                        )}
+                    </button>
+                )}
+
+                {/* Expanded Comments - Below input */}
+                <AnimatePresence>
+                    {expanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden mt-3"
+                        >
+                            <div className="max-h-80 overflow-y-auto">
+                                {loadingComments ? (
+                                    <div className="flex justify-center py-4">
+                                        <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--synapse-primary)' }} />
+                                    </div>
+                                ) : comments.length > 0 ? (
+                                    <div>
+                                        {comments.map((comment, index) => (
+                                            <div 
+                                                key={comment._id} 
+                                                className="py-3"
+                                                style={{ 
+                                                    borderTop: index === 0 ? '1px solid var(--synapse-border)' : 'none',
+                                                    borderBottom: '1px solid var(--synapse-border)'
+                                                }}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <Link to={`/profile/${comment.user.username}`}>
+                                                        <img
+                                                            src={comment.user.avatar || '/default-avatar.jpg'}
+                                                            alt=""
+                                                            className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                                                        />
+                                                    </Link>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <Link 
+                                                                    to={`/profile/${comment.user.username}`}
+                                                                    className="text-sm font-medium hover:underline" 
+                                                                    style={{ color: 'var(--synapse-text)' }}
+                                                                >
+                                                                    {comment.user.username}
+                                                                </Link>
+                                                                <span className="text-xs" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                                    {formatTimeAgo(comment.createdAt)}
+                                                                </span>
+                                                            </div>
+                                                            {canDeleteComment(comment) && (
+                                                                <button
+                                                                    onClick={() => handleDeleteCommentClick(comment._id)}
+                                                                    disabled={deletingCommentId === comment._id}
+                                                                    className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors"
+                                                                    title="Delete comment"
+                                                                >
+                                                                    {deletingCommentId === comment._id ? (
+                                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                    ) : (
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-sm mt-1 break-words" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                            {comment.content}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-center py-4" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                        No comments yet. Be the first to comment!
+                                    </p>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </div>
+    );
+}

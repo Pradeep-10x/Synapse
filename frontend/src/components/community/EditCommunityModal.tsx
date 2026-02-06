@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Globe, Lock, Loader2, Camera, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Upload, Globe, Lock, Loader2, Camera, Trash2, AlertTriangle, Settings, Image as ImageIcon } from 'lucide-react';
 import { communityAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useCommunityStore } from '@/store/communityStore';
@@ -26,6 +26,7 @@ export default function EditCommunityModal({ isOpen, onClose, onSuccess, communi
     const navigate = useNavigate();
     const [updating, setUpdating] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [activeTab, setActiveTab] = useState<'general' | 'images' | 'danger'>('general');
     const [formData, setFormData] = useState({
         name: community.name,
         description: community.description,
@@ -124,195 +125,348 @@ export default function EditCommunityModal({ isOpen, onClose, onSuccess, communi
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                    style={{ background: 'rgba(0,0,0,0.8)' }}
+                    onClick={onClose}
+                >
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-[#0a0a12] border border-[rgba(168,85,247,0.3)] rounded-2xl p-6 w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh] no-scrollbar"
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.95, opacity: 0 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full max-w-lg rounded-md overflow-hidden max-h-[90vh] flex flex-col"
+                        style={{ 
+                            background: 'var(--synapse-surface)',
+                            border: '1px solid var(--synapse-border)'
+                        }}
                     >
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-[#e5e7eb]">Edit Community</h2>
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--synapse-border)' }}>
+                            <div className="flex items-center gap-3">
+                                <Settings className="w-5 h-5" style={{ color: 'var(--synapse-primary)' }} />
+                                <h3 className="text-lg font-semibold" style={{ color: 'var(--synapse-text)' }}>
+                                    Community Settings
+                                </h3>
+                            </div>
                             <button
                                 onClick={onClose}
-                                className="text-[#9ca3af] hover:text-[#e5e7eb]"
+                                className="p-2 rounded-md hover:bg-white/10 transition-colors"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-5 h-5" style={{ color: 'var(--synapse-text-secondary)' }} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Images Section */}
-                            <div className="space-y-4">
-                                <div className="relative">
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Cover Banner</label>
-                                    <div
-                                        onClick={() => coverInputRef.current?.click()}
-                                        className="aspect-[3/1] rounded-xl border-2 border-dashed border-[rgba(168,85,247,0.2)] flex items-center justify-center cursor-pointer hover:border-[rgba(168,85,247,0.4)] transition-all overflow-hidden bg-[rgba(168,85,247,0.02)]"
-                                    >
-                                        {coverPreview ? (
-                                            <div className="relative w-full h-full group">
-                                                <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Upload className="w-6 h-6 text-white" />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="text-center">
-                                                <Upload className="w-6 h-6 text-[#9ca3af] mx-auto mb-1" />
-                                                <p className="text-xs text-[#6b7280]">Update Banner</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <input
-                                        ref={coverInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleCoverImageChange}
-                                        className="hidden"
-                                    />
-
-                                    {/* Avatar Photo Overlay */}
-                                    <div className="absolute -bottom-4 left-6">
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                avatarInputRef.current?.click();
-                                            }}
-                                            className="w-20 h-20 rounded-2xl border-4 border-[#0a0a12] bg-[#1a1a2e] flex items-center justify-center cursor-pointer hover:bg-[#252545] transition-all shadow-xl overflow-hidden group"
-                                        >
-                                            {avatarPreview ? (
-                                                <div className="relative w-full h-full">
-                                                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Upload className="w-5 h-5 text-white" />
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <Camera className="w-8 h-8 text-[#9ca3af] group-hover:text-[#a855f7] transition-colors" />
-                                            )}
-                                        </div>
-                                        <input
-                                            ref={avatarInputRef}
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleAvatarImageChange}
-                                            className="hidden"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Community Name</label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="Orbit name..."
-                                        className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] transition-all"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Description</label>
-                                    <textarea
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        placeholder="Mission briefing..."
-                                        rows={3}
-                                        className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] resize-none transition-all"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Mission Rules (One per line)</label>
-                                    <textarea
-                                        value={formData.rules}
-                                        onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
-                                        placeholder="Rules of Engagement..."
-                                        rows={3}
-                                        className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] resize-none transition-all"
-                                    />
-                                </div>
-
-                                <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, isPublic: true })}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${formData.isPublic
-                                            ? 'bg-[#a855f7] text-white'
-                                            : 'glass-card text-[#9ca3af]'
-                                            }`}
-                                    >
-                                        <Globe className="w-4 h-4" />
-                                        Public
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, isPublic: false })}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${!formData.isPublic
-                                            ? 'bg-[#a855f7] text-white'
-                                            : 'glass-card text-[#9ca3af]'
-                                            }`}
-                                    >
-                                        <Lock className="w-4 h-4" />
-                                        Private
-                                    </button>
-                                </div>
-                            </div>
-
+                        {/* Tab Navigation */}
+                        <div className="flex border-b" style={{ borderColor: 'var(--synapse-border)' }}>
                             <button
-                                type="submit"
-                                disabled={updating || !formData.name.trim()}
-                                className="w-full py-4 bg-[#a855f7] hover:bg-[#9333ea] rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                onClick={() => setActiveTab('general')}
+                                className="flex-1 py-3 text-sm font-medium transition-colors relative"
+                                style={{ 
+                                    color: activeTab === 'general' ? 'var(--synapse-primary)' : 'var(--synapse-text-secondary)',
+                                    background: activeTab === 'general' ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
+                                }}
                             >
-                                {updating ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Re-entering Orbit...
-                                    </>
-                                ) : (
-                                    'Update Community'
+                                General
+                                {activeTab === 'general' && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--synapse-primary)' }} />
                                 )}
                             </button>
-                        </form>
-
-                        {/* Delete Community Section */}
-                        <div className="mt-6 pt-6 border-t border-red-500/20">
-                            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 space-y-3">
-                                <div className="flex items-start gap-3">
-                                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                                    <div className="flex-1">
-                                        <h3 className="text-sm font-bold text-red-400 mb-1">Delete Community</h3>
-                                        <p className="text-xs text-[#9ca3af] leading-relaxed">
-                                            This will permanently delete the community and all its posts. This action cannot be undone.
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleDeleteCommunity}
-                                    disabled={deleting}
-                                    className="w-full py-3 bg-red-600 hover:bg-red-700 rounded-xl text-white font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {deleting ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Deleting...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Trash2 className="w-4 h-4" />
-                                            Delete Community
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => setActiveTab('images')}
+                                className="flex-1 py-3 text-sm font-medium transition-colors relative"
+                                style={{ 
+                                    color: activeTab === 'images' ? 'var(--synapse-primary)' : 'var(--synapse-text-secondary)',
+                                    background: activeTab === 'images' ? 'rgba(59, 130, 246, 0.1)' : 'transparent'
+                                }}
+                            >
+                                Images
+                                {activeTab === 'images' && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--synapse-primary)' }} />
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('danger')}
+                                className="flex-1 py-3 text-sm font-medium transition-colors relative"
+                                style={{ 
+                                    color: activeTab === 'danger' ? '#ef4444' : 'var(--synapse-text-secondary)',
+                                    background: activeTab === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 'transparent'
+                                }}
+                            >
+                                Danger Zone
+                                {activeTab === 'danger' && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500" />
+                                )}
+                            </button>
                         </div>
+
+                        {/* Modal Body */}
+                        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+                            <div className="p-4 space-y-4">
+                                {/* General Tab */}
+                                {activeTab === 'general' && (
+                                    <>
+                                        {/* Community Name */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                Community Name
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                placeholder="Enter community name..."
+                                                className="w-full px-4 py-3 rounded-md text-sm outline-none transition-all"
+                                                style={{ 
+                                                    background: 'var(--synapse-bg)',
+                                                    border: '1px solid var(--synapse-border)',
+                                                    color: 'var(--synapse-text)'
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Description */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                Description
+                                            </label>
+                                            <textarea
+                                                value={formData.description}
+                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                placeholder="Describe your community..."
+                                                rows={3}
+                                                className="w-full px-4 py-3 rounded-md text-sm outline-none resize-none transition-all"
+                                                style={{ 
+                                                    background: 'var(--synapse-bg)',
+                                                    border: '1px solid var(--synapse-border)',
+                                                    color: 'var(--synapse-text)'
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Rules */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                Community Rules <span className="text-xs opacity-60">(one per line)</span>
+                                            </label>
+                                            <textarea
+                                                value={formData.rules}
+                                                onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
+                                                placeholder="Enter community rules..."
+                                                rows={3}
+                                                className="w-full px-4 py-3 rounded-md text-sm outline-none resize-none transition-all"
+                                                style={{ 
+                                                    background: 'var(--synapse-bg)',
+                                                    border: '1px solid var(--synapse-border)',
+                                                    color: 'var(--synapse-text)'
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Visibility */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-3" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                Visibility
+                                            </label>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, isPublic: true })}
+                                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition-all"
+                                                    style={{ 
+                                                        background: formData.isPublic ? 'var(--synapse-primary)' : 'var(--synapse-bg)',
+                                                        border: `1px solid ${formData.isPublic ? 'transparent' : 'var(--synapse-border)'}`,
+                                                        color: formData.isPublic ? '#000' : 'var(--synapse-text-secondary)'
+                                                    }}
+                                                >
+                                                    <Globe className="w-4 h-4" />
+                                                    Public
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, isPublic: false })}
+                                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-md text-sm font-medium transition-all"
+                                                    style={{ 
+                                                        background: !formData.isPublic ? 'var(--synapse-primary)' : 'var(--synapse-bg)',
+                                                        border: `1px solid ${!formData.isPublic ? 'transparent' : 'var(--synapse-border)'}`,
+                                                        color: !formData.isPublic ? '#000' : 'var(--synapse-text-secondary)'
+                                                    }}
+                                                >
+                                                    <Lock className="w-4 h-4" />
+                                                    Private
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Images Tab */}
+                                {activeTab === 'images' && (
+                                    <>
+                                        {/* Cover Banner */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                Cover Banner
+                                            </label>
+                                            <div
+                                                onClick={() => coverInputRef.current?.click()}
+                                                className="relative aspect-[3/1] rounded-md overflow-hidden cursor-pointer group"
+                                                style={{ 
+                                                    background: 'var(--synapse-bg)',
+                                                    border: '2px dashed var(--synapse-border)'
+                                                }}
+                                            >
+                                                {coverPreview ? (
+                                                    <>
+                                                        <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <Upload className="w-6 h-6 text-white" />
+                                                                <span className="text-sm text-white">Change Banner</span>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                                                        <div 
+                                                            className="p-3 rounded-full"
+                                                            style={{ background: 'var(--synapse-surface)' }}
+                                                        >
+                                                            <ImageIcon className="w-6 h-6" style={{ color: 'var(--synapse-primary)' }} />
+                                                        </div>
+                                                        <p className="text-sm" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                            Click to upload banner
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <input
+                                                ref={coverInputRef}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleCoverImageChange}
+                                                className="hidden"
+                                            />
+                                        </div>
+
+                                        {/* Avatar */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                Community Avatar
+                                            </label>
+                                            <div className="flex items-center gap-4">
+                                                <div
+                                                    onClick={() => avatarInputRef.current?.click()}
+                                                    className="relative w-24 h-24 rounded-full overflow-hidden cursor-pointer group"
+                                                    style={{ 
+                                                        background: 'var(--synapse-bg)',
+                                                        border: '2px dashed var(--synapse-border)'
+                                                    }}
+                                                >
+                                                    {avatarPreview ? (
+                                                        <>
+                                                            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Camera className="w-6 h-6 text-white" />
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <Camera className="w-8 h-8" style={{ color: 'var(--synapse-primary)' }} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium" style={{ color: 'var(--synapse-text)' }}>
+                                                        Upload Avatar
+                                                    </p>
+                                                    <p className="text-xs mt-1" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                        Recommended: Square image, at least 200x200px
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <input
+                                                ref={avatarInputRef}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleAvatarImageChange}
+                                                className="hidden"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Danger Zone Tab */}
+                                {activeTab === 'danger' && (
+                                    <div 
+                                        className="rounded-md p-4 space-y-4"
+                                        style={{ 
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)'
+                                        }}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                            <div className="flex-1">
+                                                <h3 className="text-sm font-semibold text-red-400 mb-1">
+                                                    Delete Community
+                                                </h3>
+                                                <p className="text-xs leading-relaxed" style={{ color: 'var(--synapse-text-secondary)' }}>
+                                                    Once you delete a community, there is no going back. This will permanently delete the community, all posts, and remove all members. Please be certain.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleDeleteCommunity}
+                                            disabled={deleting}
+                                            className="w-full py-3 rounded-md text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                                        >
+                                            {deleting ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                    Deleting...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Delete Community
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Modal Footer - Only show on General and Images tabs */}
+                            {activeTab !== 'danger' && (
+                                <div className="p-4 border-t" style={{ borderColor: 'var(--synapse-border)' }}>
+                                    <button
+                                        type="submit"
+                                        disabled={updating || !formData.name.trim()}
+                                        className="w-full py-3 rounded-md text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        style={{ 
+                                            background: '#3b82f6',
+                                            color: '#fff'
+                                        }}
+                                    >
+                                        {updating ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                Updating...
+                                            </>
+                                        ) : (
+                                            'Save Changes'
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </form>
                     </motion.div>
-                </div>
+                </motion.div>
             )}
         </AnimatePresence>
     );
