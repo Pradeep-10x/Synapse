@@ -87,7 +87,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <div className="relative ml-2" ref={profileRef}>
                         <button
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
-                            className="flex items-center gap-3 p-1.5 rounded-full hover:bg-[var(--synapse-surface)] transition-colors border border-transparent hover:border-[var(--synapse-border)]"
+                            className="flex items-center gap-3 p-1.5 rounded-md hover:bg-[var(--synapse-surface)] transition-colors border border-transparent hover:border-[var(--synapse-border)]"
                         >
                             <img
                                 src={user?.avatar || "/default-avatar.jpg"}
@@ -95,38 +95,38 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                 className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)]"
                             />
                             <div className="hidden md:block text-left mr-1">
-                                <p className="text-sm font-bold text-[var(--synapse-text)] leading-none">{user?.username}</p>
+                                <p className="text-lg font-semibold text-[var(--synapse-text)] leading-none tracking-tight">{user?.username}</p>
                             </div>
                             <ChevronDown className={`w-4 h-4 text-[var(--synapse-text-muted)] transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {/* Dropdown Menu */}
                         {isProfileOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-lg shadow-xl py-2 z-50">
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-md shadow-xl py-2 z-50">
                                 {/* User Info */}
                                 <div className="px-4 py-3 border-b border-[var(--synapse-border)]">
-                                    <p className="text-sm font-medium text-[var(--synapse-text)] truncate">{user?.fullName || user?.username || 'Guest User'}</p>
-                                    <p className="text-xs text-[var(--synapse-text-muted)] truncate">{user?.email || 'guest@example.com'}</p>
+                                    <p className="text-md font-medium text-[var(--synapse-text)] truncate">{user?.fullName || user?.username || 'Guest User'}</p>
+                                    <p className="text-sm text-[var(--synapse-text-muted)] truncate">{user?.email || 'guest@example.com'}</p>
                                 </div>
 
                                 {/* Menu Items */}
                                 <div className="py-1">
                                     <button
                                         onClick={() => { navigate('/profile'); setIsProfileOpen(false); }}
-                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
+                                        className="w-full flex items-center gap-3 px-4 py-2 text-md text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <User className="w-4 h-4" />
                                         View Profile
                                     </button>
                                     <button
                                         onClick={() => { navigate('/settings'); setIsProfileOpen(false); }}
-                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
+                                        className="w-full flex items-center gap-3 px-4 py-2 text-md text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <Settings className="w-4 h-4" />
                                         Settings
                                     </button>
                                     <button
-                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
+                                        className="w-full flex items-center gap-3 px-4 py-2 text-md text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <HelpCircle className="w-4 h-4" />
                                         Help & Support
@@ -137,7 +137,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                 <div className="border-t border-[var(--synapse-border)] pt-1 mt-1">
                                     <button
                                         onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-[var(--synapse-surface-hover)] transition-colors"
+                                        className="w-full flex items-center gap-3 px-4 py-2 text-md text-red-400 hover:text-red-300 hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <LogOut className="w-4 h-4" />
                                         Log Out
