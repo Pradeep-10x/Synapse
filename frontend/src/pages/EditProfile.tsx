@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Camera, Check, X, Loader2, Link as LinkIcon, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Camera, Check, X, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
 

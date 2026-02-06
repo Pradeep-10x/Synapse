@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { userAPI, postAPI, notificationAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'react-hot-toast';
-import { Bookmark, Loader2, Pencil, ChevronDown, Activity, Image } from 'lucide-react';
+import { Bookmark, Loader2, Pencil, ChevronDown, Image } from 'lucide-react';
 
 type Tab = 'activity' | 'media' | 'saved';
 
@@ -43,7 +43,7 @@ export default function ProfilePage() {
   const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('media');
   const [posts, setPosts] = useState<any[]>([]);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [, setActivities] = useState<ActivityItem[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingContent, setLoadingContent] = useState(false);
@@ -161,15 +161,6 @@ export default function ProfilePage() {
     }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--synapse-bg)]">
@@ -198,7 +189,6 @@ export default function ProfilePage() {
   // Calculate stats for display
   const domainsCount = 3; // Placeholder - could be communities joined
   const postsCount = posts.length;
-  const connectionsCount = profileUser.followersCount + profileUser.followingCount;
 
   return (
     <div className="min-h-screen bg-[var(--synapse-bg)] p-4 md:p-6">
