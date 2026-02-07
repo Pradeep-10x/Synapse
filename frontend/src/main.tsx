@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
 import AuthPage from './pages/Auth';
 import FeedPage from './pages/Feed';
+import PersonalPage from './pages/Personal';
 import CreatePage from './pages/Create';
 import CommunityPage from './pages/Community';
 import CommunityDetail from './pages/CommunityDetail';
@@ -32,6 +33,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/feed" element={<FeedPage />} />
+            <Route path="/personal" element={<PersonalPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/communities" element={<CommunityPage />} />
             <Route path="/community/:id" element={<CommunityDetail />} />

@@ -253,37 +253,39 @@ export default function PostCard({ post, onLike, onDelete, initialCommentsOpen =
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-md)] overflow-hidden mb-4 shadow-sm transition-all duration-300"
+      className="p-4 rounded-xl border border-[var(--synapse-border)] bg-[var(--synapse-bg)]/50 hover:border-[var(--synapse-text-muted)]/20 transition-all duration-200 mb-4"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-[var(--synapse-border)]">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <Link
           to={`/profile/${post.user.username}`}
-          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity group"
+          className="flex items-center gap-3 min-w-0 flex-1 group"
         >
-          <div className="w-10 h-10 rounded-full bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 rounded-full border border-[var(--synapse-border)] flex items-center justify-center overflow-hidden ring-1 ring-[var(--synapse-surface)]">
             <img
               src={post.user.avatar || "/default-avatar.jpg"}
               alt={post.user.username}
-              className="w-full h-full object-cover scale-110"
+              className="w-full h-full object-cover"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-lg text-[var(--synapse-text)] tracking-tight group-hover:text-[var(--synapse-blue)] transition-colors">{post.user.username}</span>
+              <span className="font-semibold text-sm text-[var(--synapse-text)] truncate group-hover:text-[var(--synapse-blue)] transition-colors">
+                {post.user.username}
+              </span>
               {post.user.isVerified && (
-                <span className="text-[var(--synapse-blue)] text-[10px] font-medium bg-[var(--synapse-active)] px-1 rounded-[2px]">PRO</span>
+                <span className="text-[#06b6d4] text-[10px] font-medium bg-[var(--synapse-active)] px-1 rounded-[2px] flex-shrink-0">PRO</span>
               )}
             </div>
-            <span className="text-sm font-mono text-[var(--synapse-text-muted)]">
+            <div className="flex items-center gap-2 text-xs text-[var(--synapse-text-muted)] font-medium">
               {formatDistanceToNow(new Date(post.createdAt))}
-            </span>
+            </div>
           </div>
         </Link>
-        <div className="relative" ref={optionsRef}>
+        <div className="relative flex-shrink-0" ref={optionsRef}>
           <button
             onClick={() => setShowOptions(!showOptions)}
-            className="text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors p-1"
+            className="p-2 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors"
           >
             <MoreHorizontal className="w-5 h-5" />
           </button>
@@ -296,12 +298,12 @@ export default function PostCard({ post, onLike, onDelete, initialCommentsOpen =
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.1 }}
-                className="absolute right-0 top-8 z-50 w-48 bg-[var(--synapse-surface)] rounded-[var(--radius-sm)] shadow-xl border border-[var(--synapse-border)] overflow-hidden"
+                className="absolute right-0 top-full mt-1 z-50 w-48 bg-[var(--synapse-surface)] rounded-lg shadow-xl border border-[var(--synapse-border)] overflow-hidden"
               >
                 <div className="p-1">
                   <button
                     onClick={handleShare}
-                    className="w-full px-3 py-2 text-left text-xs text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] flex items-center gap-2 transition-colors rounded-[2px]"
+                    className="w-full px-3 py-2 text-left text-xs text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] flex items-center gap-2 transition-colors rounded-md"
                   >
                     <Share2 className="w-3.5 h-3.5 text-[var(--synapse-text-muted)]" />
                     Share Post
@@ -311,7 +313,7 @@ export default function PostCard({ post, onLike, onDelete, initialCommentsOpen =
                       <div className="h-[1px] bg-[var(--synapse-border)] my-1"></div>
                       <button
                         onClick={handleEditCaption}
-                        className="w-full px-3 py-2 text-left text-xs text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] flex items-center gap-2 transition-colors rounded-[2px]"
+                        className="w-full px-3 py-2 text-left text-xs text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] flex items-center gap-2 transition-colors rounded-md"
                       >
                         <Pencil className="w-3.5 h-3.5 text-[var(--synapse-text-muted)]" />
                         Edit Caption
@@ -319,7 +321,7 @@ export default function PostCard({ post, onLike, onDelete, initialCommentsOpen =
                       <button
                         onClick={handleDeletePost}
                         disabled={isDeleting}
-                        className="w-full px-3 py-2 text-left text-xs text-red-500 hover:bg-red-500/10 flex items-center gap-2 transition-colors rounded-[2px]"
+                        className="w-full px-3 py-2 text-left text-xs text-red-500 hover:bg-red-500/10 flex items-center gap-2 transition-colors rounded-md"
                       >
                         {isDeleting ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -339,186 +341,205 @@ export default function PostCard({ post, onLike, onDelete, initialCommentsOpen =
 
       {/* Caption */}
       {isEditingCaption ? (
-        <div className="px-3 py-2 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]">
+        <div className="mb-3 p-2 border border-[var(--synapse-border)] rounded-md bg-[var(--synapse-surface-hover)]">
           <textarea
             value={editedCaption}
             onChange={(e) => setEditedCaption(e.target.value)}
-            className="w-full bg-[var(--synapse-bg)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] px-3 py-2 text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] resize-none font-mono text-xs"
+            className="w-full bg-transparent border-none text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none resize-none text-sm"
             rows={2}
             placeholder="Write a caption..."
           />
           <div className="flex justify-end gap-2 mt-2">
             <button
               onClick={handleCancelEdit}
-              className="p-1.5 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors"
+              className="p-1 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)]"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
             <button
               onClick={handleSaveCaption}
               disabled={savingCaption}
-              className="p-1.5 text-[var(--synapse-blue)] hover:bg-[var(--synapse-active)] rounded-[var(--radius-sm)] transition-colors disabled:opacity-50"
+              className="p-1 text-[var(--synapse-blue)] hover:bg-[var(--synapse-active)] rounded transition-colors disabled:opacity-50"
             >
               {savingCaption ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Check className="w-3.5 h-3.5" />
+                <Check className="w-4 h-4" />
               )}
             </button>
           </div>
         </div>
       ) : caption && (
-        <div className="px-4 py-3.5 text-[var(--synapse-text)] text-base leading-relaxed border-b border-[var(--synapse-border)]/50 font-sans">
-          <span><b>Caption :</b> {caption}</span>
+        <div className="mb-3">
+          <p className={`text-sm text-[var(--synapse-text)] leading-relaxed ${!isCaptionExpanded ? 'line-clamp-2' : ''}`}>
+            {caption}
+          </p>
+          {caption.length > 100 && (
+            <button
+              onClick={() => setIsCaptionExpanded(!isCaptionExpanded)}
+              className="text-[var(--synapse-blue)] text-xs font-medium mt-1 hover:underline"
+            >
+              {isCaptionExpanded ? 'Show less' : 'Show more'}
+            </button>
+          )}
         </div>
       )}
 
       {/* Media */}
-      <div className="relative bg-black w-full flex items-center justify-center border-b border-[var(--synapse-border)]">
-        {post.mediaType === 'image' ? (
-          <img
-            src={post.mediaUrl}
-            alt={post.caption || 'Post content'}
-            className="w-full h-auto max-h-[450px] object-cover"
-          />
-        ) : (
-          <video
-            src={post.mediaUrl}
-            className="w-full h-full max-h-[450px] object-cover"
-            controls
-            muted={!isVideoPlaying}
-            onPlay={() => setIsVideoPlaying(true)}
-            onPause={() => setIsVideoPlaying(false)}
-          />
-        )}
-      </div>
+      {post.mediaUrl && (
+        <div
+          className="block rounded-md overflow-hidden border mb-3"
+          style={{ borderColor: 'rgba(83, 81, 81, 0.93)' }}
+        >
+          {post.mediaType === 'image' ? (
+            <img
+              src={post.mediaUrl}
+              alt={post.caption || 'Post content'}
+              className="w-full aspect-video object-cover"
+            />
+          ) : (
+            <video
+              src={post.mediaUrl}
+              className="w-full h-auto max-h-[400px] object-cover"
+              controls
+              muted={!isVideoPlaying}
+              onPlay={() => setIsVideoPlaying(true)}
+              onPause={() => setIsVideoPlaying(false)}
+            />
+          )}
+        </div>
+      )}
 
       {/* Actions */}
-      <div className="p-3 bg-[var(--synapse-surface)]">
-        <div className="flex items-center gap-5">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-1.5 transition-all duration-200 group ${isLiked ? 'text-red-500' : 'text-[var(--synapse-text-muted)] hover:text-red-500'
-              }`}
+      <div className="flex items-center gap-5 pt-1">
+        <button
+          onClick={handleLike}
+          className={`flex items-center gap-1.5 transition-all duration-200 group ${isLiked ? 'text-red-500' : 'text-[var(--synapse-text-muted)] hover:text-red-500'
+            }`}
+        >
+          <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+          <span className="text-sm font-medium">{likesCount}</span>
+        </button>
+
+        <button
+          ref={toggleButtonRef}
+          onClick={handleToggleComments}
+          className="flex items-center gap-1.5 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-blue)] transition-colors group"
+        >
+          <MessageCircle className="w-5 h-5" />
+          <span className="text-sm font-medium">{commentsCount}</span>
+        </button>
+
+        <button
+          onClick={() => {
+            // Basic bookmark support if needed, or keeping it visual
+            toast.success('Bookmarked');
+          }}
+          className="text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors ml-auto"
+        >
+          <Bookmark className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Comments Section */}
+      <AnimatePresence>
+        {showComments && (
+          <motion.div
+            ref={commentsRef}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
-            <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : 'stroke-[1.5]'}`} />
-            <span className="text-base font-medium font-mono">{likesCount}</span>
-          </button>
+            <div className="mt-4 pt-4 border-t border-[var(--synapse-border)]">
+              {/* Add Comment Form */}
+              <form onSubmit={handleSubmitComment} className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-full bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] overflow-hidden shrink-0">
+                  <img src={currentUser?.avatar || "/default-avatar.jpg"} alt="Me" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    placeholder="Add to the discussion..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="w-full bg-[var(--synapse-bg)] border border-[var(--synapse-border)] rounded-md pl-3 pr-10 py-2 text-sm text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim() || submittingComment}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[var(--synapse-blue)] hover:text-white disabled:opacity-30 transition-colors"
+                  >
+                    {submittingComment ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </form>
 
-          <button
-            ref={toggleButtonRef}
-            onClick={handleToggleComments}
-            className="flex items-center gap-1.5 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-blue)] transition-colors group"
-          >
-            <MessageCircle className="w-6 h-6 stroke-[1.5]" />
-            <span className="text-base font-medium font-mono">{commentsCount}</span>
-          </button>
-
-          <button className="text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors ml-auto">
-            <Bookmark className="w-6 h-6 stroke-[1.5]" />
-          </button>
-        </div>
-
-        {/* Comments Section */}
-        <AnimatePresence>
-          {showComments && (
-            <motion.div
-              ref={commentsRef}
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-4 pt-4 border-t border-[var(--synapse-border)]">
-                {/* Add Comment Form */}
-                <form onSubmit={handleSubmitComment} className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 rounded-full bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] overflow-hidden shrink-0">
-                    <img src={currentUser?.avatar || "/default-avatar.jpg"} alt="Me" className="w-full h-full object-cover scale-110" />
-                  </div>
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      placeholder="Add to the discussion..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="w-full bg-[var(--synapse-bg)] border border-[var(--synapse-border)] rounded-[var(--radius-sm)] pl-3 pr-10 py-2.5 text-sm text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!newComment.trim() || submittingComment}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-[var(--synapse-blue)] hover:text-white disabled:opacity-30 transition-colors"
-                    >
-                      {submittingComment ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </form>
-
-                {/* Comments List */}
-                {loadingComments ? (
-                  <div className="flex justify-center py-6">
-                    <Loader2 className="w-5 h-5 animate-spin text-[var(--synapse-text-muted)]" />
-                  </div>
-                ) : comments.length > 0 ? (
-                  <div className="flex flex-col">
-                    {comments.map((comment) => (
-                      <div key={comment._id} className="flex gap-3 py-3 border-b border-[var(--synapse-border)]/30 last:border-0 group/comment">
-                        <Link to={`/profile/${comment.user.username}`} className="shrink-0 pt-0.5">
-                          <div className="w-6 h-6 rounded-full bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] overflow-hidden">
-                            <img
-                              src={comment.user.avatar || "/default-avatar.jpg"}
-                              alt={comment.user.username}
-                              className="w-full h-full object-cover scale-110"
-                            />
-                          </div>
-                        </Link>
-                        <div className="flex-1 min-w-0 relative">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <div className="flex items-center gap-2">
-                              <Link
-                                to={`/profile/${comment.user.username}`}
-                                className="font-bold text-sm text-[var(--synapse-text)] hover:text-[var(--synapse-blue)] transition-colors tracking-tight"
-                              >
-                                {comment.user.username}
-                              </Link>
-                              <span className="text-xs uppercase tracking-wider text-[var(--synapse-text-muted)] opacity-60">
-                                {formatDistanceToNow(new Date(comment.createdAt))}
-                              </span>
-                            </div>
-                            {canDeleteComment(comment) && (
-                              <button
-                                onClick={() => handleDeleteComment(comment._id)}
-                                disabled={deletingCommentId === comment._id}
-                                className="opacity-0 group-hover/comment:opacity-100 text-[var(--synapse-text-muted)] hover:text-red-500 transition-all p-1"
-                              >
-                                {deletingCommentId === comment._id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-3 h-3" />
-                                )}
-                              </button>
-                            )}
-                          </div>
-                          <p className="text-base font-mono text-[var(--synapse-text)] leading-relaxed">{comment.content}</p>
+              {/* Comments List */}
+              {loadingComments ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="w-5 h-5 animate-spin text-[var(--synapse-text-muted)]" />
+                </div>
+              ) : comments.length > 0 ? (
+                <div className="flex flex-col space-y-3">
+                  {comments.map((comment) => (
+                    <div key={comment._id} className="flex gap-3 group/comment">
+                      <Link to={`/profile/${comment.user.username}`} className="shrink-0 pt-0.5">
+                        <div className="w-8 h-8 rounded-full bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] overflow-hidden">
+                          <img
+                            src={comment.user.avatar || "/default-avatar.jpg"}
+                            alt={comment.user.username}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              to={`/profile/${comment.user.username}`}
+                              className="font-semibold text-sm text-[var(--synapse-text)] hover:text-[var(--synapse-blue)] transition-colors"
+                            >
+                              {comment.user.username}
+                            </Link>
+                            <span className="text-xs text-[var(--synapse-text-muted)]">
+                              {formatDistanceToNow(new Date(comment.createdAt))}
+                            </span>
+                          </div>
+                          {canDeleteComment(comment) && (
+                            <button
+                              onClick={() => handleDeleteComment(comment._id)}
+                              disabled={deletingCommentId === comment._id}
+                              className="opacity-0 group-hover/comment:opacity-100 text-[var(--synapse-text-muted)] hover:text-red-500 transition-all p-1"
+                            >
+                              {deletingCommentId === comment._id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-sm text-[var(--synapse-text)] leading-relaxed">{comment.content}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 border border-dashed border-[var(--synapse-border)] rounded-[var(--radius-sm)]">
-                    <p className="text-[var(--synapse-text-muted)] text-sm">No activity yet. Initialize discussion.</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div >
-    </motion.article >
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-[var(--synapse-text-muted)] text-sm">No comments yet.</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.article>
   );
 }
 
