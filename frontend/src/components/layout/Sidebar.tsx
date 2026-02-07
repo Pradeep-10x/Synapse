@@ -1,9 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Activity, LayoutGrid, Calendar, MessageSquare, Settings, User } from 'lucide-react';
+import { Activity, LayoutGrid, MessageSquare, Settings, User } from 'lucide-react';
+
 
 const MENU_ITEMS = [
     { icon: Activity, label: 'Activity', path: '/feed' },
-   
+
     { icon: LayoutGrid, label: 'Community', path: '/communities' },
     { icon: User, label: 'Personal', path: '/personal' },
     { icon: MessageSquare, label: 'Messages', path: '/messages' },

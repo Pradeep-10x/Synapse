@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -65,14 +65,14 @@ const formatTimeAgo = (date: Date): string => {
 export default function PersonalPage() {
   const { user: currentUser } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<Tab>('connections');
+  const [activeTab] = useState<Tab>('connections'); // Fixed: Removed unused setActiveTab
+
 
   const [followers, setFollowers] = useState<FollowerItem[]>([]);
   const [following, setFollowing] = useState<FollowingItem[]>([]);
-  const [followersPage, setFollowersPage] = useState(1);
-  const [followingPage, setFollowingPage] = useState(1);
-  const [hasMoreFollowers, setHasMoreFollowers] = useState(true);
-  const [hasMoreFollowing, setHasMoreFollowing] = useState(true);
+
+
+
   const [loadingConnections, setLoadingConnections] = useState(true);
 
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -80,8 +80,8 @@ export default function PersonalPage() {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
 
-  const [searchResults, setSearchResults] = useState<ConnectionUser[] | null>(null);
-  const [searching, setSearching] = useState(false);
+
+
   const [followState, setFollowState] = useState<Record<string, boolean>>({});
   const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
@@ -97,38 +97,7 @@ export default function PersonalPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const allConnections = useMemo(() => {
-    const map = new Map<string, { user: ConnectionUser; isFollowing: boolean }>();
-    following.forEach((item) => {
-      const u = item.following;
-      if (u?._id) map.set(u._id, { user: u, isFollowing: true });
-    });
-    followers.forEach((item) => {
-      const u = item.follower;
-      if (u?._id && !map.has(u._id)) map.set(u._id, { user: u, isFollowing: false });
-    });
-    return Array.from(map.values());
-  }, [followers, following]);
 
-  const filteredConnections = useMemo(() => {
-    if (!searchQuery.trim()) return allConnections;
-    const q = searchQuery.toLowerCase().trim();
-    return allConnections.filter(
-      (c) =>
-        c.user.username?.toLowerCase().includes(q) ||
-        (c.user.fullName && c.user.fullName.toLowerCase().includes(q))
-    );
-  }, [allConnections, searchQuery]);
-
-  const displayConnections = searchQuery.trim().length >= 2 && searchResults !== null
-    ? searchResults.map((u) => ({
-      user: u,
-      isFollowing: followState[u._id] ?? false,
-    }))
-    : filteredConnections.map((c) => ({
-      user: c.user,
-      isFollowing: followState[c.user._id] ?? c.isFollowing,
-    }));
 
   const fetchConnections = async (silent = false) => {
     if (!userId) return;
@@ -142,8 +111,7 @@ export default function PersonalPage() {
       const g = followingRes.data?.data?.following ?? [];
       setFollowers(Array.isArray(f) ? f : []);
       setFollowing(Array.isArray(g) ? g : []);
-      setHasMoreFollowers(followersRes.data?.data?.hasNext === true);
-      setHasMoreFollowing(followingRes.data?.data?.hasNext === true);
+
 
       const nextState: Record<string, boolean> = {};
       (Array.isArray(f) ? f : []).forEach((item: FollowerItem) => {
@@ -184,60 +152,9 @@ export default function PersonalPage() {
     }
   };
 
-  useEffect(() => {
-    if (searchQuery.trim().length < 2) {
-      setSearchResults(null);
-      return;
-    }
-    const t = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const { data } = await userAPI.searchUsers(searchQuery.trim());
-        const list = data?.data;
-        setSearchResults(Array.isArray(list) ? list : list ? [list] : []);
-      } catch {
-        setSearchResults([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
 
-  const loadMoreConnections = async () => {
-    if (!userId || (!hasMoreFollowers && !hasMoreFollowing) || loadingConnections) return;
-    setLoadingConnections(true);
-    try {
-      if (hasMoreFollowing) {
-        const res = await userAPI.getFollowing(userId);
-        const list = res.data?.data?.following ?? [];
-        if (list.length) {
-          setFollowing((prev) => [...prev, ...list]);
-          setFollowingPage((p) => p + 1);
-          list.forEach((item: FollowingItem) => {
-            if (item.following?._id) setFollowState((s) => ({ ...s, [item.following._id]: true }));
-          });
-        }
-        setHasMoreFollowing(!!res.data?.data?.hasNext);
-      }
-      if (hasMoreFollowers && !hasMoreFollowing) {
-        const res = await userAPI.getFollowers(userId);
-        const list = res.data?.data?.followers ?? [];
-        if (list.length) {
-          setFollowers((prev) => [...prev, ...list]);
-          setFollowersPage((p) => p + 1);
-          list.forEach((item: FollowerItem) => {
-            if (item.follower?._id) setFollowState((s) => ({ ...s, [item.follower._id]: false }));
-          });
-        }
-        setHasMoreFollowers(!!res.data?.data?.hasNext);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingConnections(false);
-    }
-  };
+
+
 
   useEffect(() => {
     if (!userId) return;
@@ -301,10 +218,8 @@ export default function PersonalPage() {
     );
   }
 
-  const followersCount = currentUser.followersCount ?? 0;
-  const followingCount = currentUser.followingCount ?? 0;
-
   return (
+
     <div className="animate-in fade-in duration-300 h-full overflow-hidden flex flex-col">
       {/* Search - sharp, modern */}
       <div className="mb-8">
