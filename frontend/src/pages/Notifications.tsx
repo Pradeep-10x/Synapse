@@ -1,45 +1,49 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Heart, MessageCircle, UserPlus, Play, Image, Loader2, Trash2, CheckCheck } from 'lucide-react';
+import { 
+  Bell, 
+  Heart, 
+  MessageCircle, 
+  UserPlus, 
+  Play, 
+  Loader2,
+  CheckCheck,
+  Trash2,
+  ChevronDown
+} from 'lucide-react';
 import { notificationAPI } from '@/lib/api';
 import { useSocketStore, Notification } from '@/store/socketStore';
 import { toast } from 'react-hot-toast';
 
-const getNotificationIcon = (type: string) => {
+const getNotificationBadgeColor = (type: string) => {
   switch (type) {
     case 'like':
-      return <Heart className="w-5 h-5 text-red-500" />;
+      return 'bg-rose-500';
     case 'comment':
-      return <MessageCircle className="w-5 h-5 text-blue-500" />;
+      return 'bg-blue-500';
     case 'follow':
-      return <UserPlus className="w-5 h-5 text-green-500" />;
+      return 'bg-emerald-500';
     case 'reel':
-      return <Play className="w-5 h-5 text-purple-500" />;
-    case 'post':
-    case 'story':
-      return <Image className="w-5 h-5 text-yellow-500" />;
+      return 'bg-violet-500';
     default:
-      return <Bell className="w-5 h-5 text-gray-500" />;
+      return 'bg-gray-500';
   }
 };
 
-const getNotificationMessage = (notification: Notification) => {
-  const username = notification.fromUser?.username || 'Someone';
-  switch (notification.type) {
+const getActionLabel = (type: string) => {
+  switch (type) {
     case 'like':
-      return `${username} liked your ${notification.post ? 'post' : notification.reel ? 'reel' : 'story'}`;
+      return 'Liked';
     case 'comment':
-      return `${username} commented on your ${notification.post ? 'post' : 'reel'}`;
+      return 'Commented';
     case 'follow':
-      return `${username} started following you`;
+      return 'Followed you';
     case 'post':
-      return `${username} shared a new post`;
+      return 'New post';
     case 'reel':
-      return `${username} shared a new reel`;
-    case 'story':
-      return `${username} shared a new story`;
+      return 'New reel';
     default:
-      return notification.message || 'New notification';
+      return 'Notification';
   }
 };
 
@@ -51,11 +55,11 @@ const formatTime = (date: string) => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return notifDate.toLocaleDateString();
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays < 7) return `${diffDays}d`;
+  return notifDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 export default function NotificationsPage() {
@@ -64,9 +68,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const initNotifications = async () => {
-      // First fetch notifications
       await fetchNotifications();
-      // Then mark all as read (both on server and in local state)
       try {
         await notificationAPI.markAsRead();
         markAllAsRead();
@@ -93,9 +95,9 @@ export default function NotificationsPage() {
     try {
       await notificationAPI.markAsRead();
       markAllAsRead();
-      toast.success('All notifications marked as read');
+      toast.success('All marked as read');
     } catch (error) {
-      toast.error('Failed to mark notifications as read');
+      toast.error('Failed to mark as read');
     }
   };
 
@@ -103,7 +105,7 @@ export default function NotificationsPage() {
     try {
       await notificationAPI.deleteNotifications();
       clearNotifications();
-      toast.success('All notifications cleared');
+      toast.success('Notifications cleared');
     } catch (error) {
       toast.error('Failed to clear notifications');
     }
@@ -111,87 +113,183 @@ export default function NotificationsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+      <div className="min-h-screen flex items-center justify-center bg-[var(--synapse-bg)]">
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">Notifications</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={handleMarkAllRead}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-[rgba(168,85,247,0.1)] rounded-lg transition-colors"
-          >
-            <CheckCheck className="w-4 h-4" />
-            <span className="hidden sm:inline">Mark all read</span>
-          </button>
+    <div className="min-h-screen bg-[var(--synapse-bg)]">
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-semibold tracking-wide text-[var(--synapse-text)]">
+            NOTIFICATIONS
+          </h1>
+          
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleMarkAllRead}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-blue-400 hover:bg-blue-500/10 rounded-md transition-all"
+              title="Mark all as read"
+            >
+              <CheckCheck className="w-4 h-4" />
+              <span className="hidden md:inline">Read All</span>
+            </button>
+            <button
+              onClick={handleClearAll}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-[var(--synapse-text-muted)] hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-all"
+              title="Delete all"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span className="hidden md:inline">Delete</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent mb-6" />
+
+        {/* Notifications List */}
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Bell className="w-12 h-12 text-[var(--synapse-text-muted)] opacity-40 mb-4" />
+            <p className="text-[var(--synapse-text-muted)]">No notifications</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {notifications.map((notification) => (
+              <NotificationRow key={notification._id} notification={notification} />
+            ))}
+          </div>
+        )}
+
+        {/* Clear All Footer */}
+        {notifications.length > 0 && (
           <button
             onClick={handleClearAll}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="flex items-center gap-1 mt-8 text-sm text-blue-400 hover:text-blue-300 transition-colors"
           >
-            <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Clear all</span>
+            Clear All
+            <ChevronDown className="w-4 h-4" />
           </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NotificationRow({ notification }: { notification: Notification }) {
+  const badgeColor = getNotificationBadgeColor(notification.type);
+  const actionLabel = getActionLabel(notification.type);
+  
+  const getNotificationContent = () => {
+    const username = notification.fromUser?.username || 'Someone';
+    
+    switch (notification.type) {
+      case 'like':
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{username}</span>
+            <span className="text-[var(--synapse-text-muted)]"> liked your post</span>
+          </>
+        );
+      case 'comment':
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{username}</span>
+            <span className="text-[var(--synapse-text-muted)]"> commented on your post</span>
+            {notification.message && (
+              <span className="text-[var(--synapse-text-muted)]">: "{notification.message}"</span>
+            )}
+          </>
+        );
+      case 'follow':
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{username}</span>
+            <span className="text-[var(--synapse-text-muted)]"> followed you</span>
+          </>
+        );
+      case 'post':
+      case 'reel':
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{username}</span>
+            <span className="text-[var(--synapse-text-muted)]"> shared a new {notification.type}</span>
+          </>
+        );
+      default:
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{notification.message || 'New notification'}</span>
+          </>
+        );
+    }
+  };
+
+  const getIcon = () => {
+    switch (notification.type) {
+      case 'like':
+        return <Heart className="w-3.5 h-3.5 text-white" fill="currentColor" />;
+      case 'comment':
+        return <MessageCircle className="w-3.5 h-3.5 text-white" />;
+      case 'follow':
+        return <UserPlus className="w-3.5 h-3.5 text-white" />;
+      case 'reel':
+        return <Play className="w-3.5 h-3.5 text-white" fill="currentColor" />;
+      default:
+        return <Bell className="w-3.5 h-3.5 text-white" />;
+    }
+  };
+
+  return (
+    <div className={`group flex items-center gap-4 px-4 py-4 rounded-lg transition-colors hover:bg-[var(--synapse-surface)]/50 ${
+      !notification.isRead ? 'bg-[var(--synapse-surface)]/30' : ''
+    }`}>
+      {/* Avatar with badge */}
+      <Link to={`/profile/${notification.fromUser?.username}`} className="relative flex-shrink-0">
+        <img
+          src={notification.fromUser?.avatar || '/default-avatar.jpg'}
+          alt=""
+          className="w-11 h-11 rounded-full object-cover"
+        />
+        <div className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full ${badgeColor} flex items-center justify-center ring-2 ring-[var(--synapse-bg)]`}>
+          {getIcon()}
+        </div>
+      </Link>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm leading-relaxed">
+          {getNotificationContent()}
+        </p>
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-xs text-[var(--synapse-text-muted)]">
+            {formatTime(notification.createdAt)}
+          </span>
+          <span className="text-xs text-[var(--synapse-text-muted)] opacity-60">
+            {actionLabel}
+          </span>
         </div>
       </div>
 
-      {/* Notifications List */}
-      {notifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Bell className="w-16 h-16 text-gray-600 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-400 mb-2">No notifications yet</h2>
-          <p className="text-gray-500">When you get notifications, they'll show up here</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {notifications.map((notification) => (
-            <div
-              key={notification._id}
-              className={`flex items-start gap-4 p-4 rounded-xl transition-colors ${notification.isRead
-                ? 'bg-[rgba(168,85,247,0.05)]'
-                : 'bg-[rgba(168,85,247,0.15)] border border-[rgba(168,85,247,0.3)]'
-                } hover:bg-[rgba(168,85,247,0.2)]`}
-            >
-              {/* User Avatar */}
-              <Link to={`/profile/${notification.fromUser?.username}`}>
-                <img
-                  src={notification.fromUser?.avatar || '/default-avatar.jpg'}
-                  alt={notification.fromUser?.username}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-purple-500/30 scale-110"
-                />
-              </Link>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <p className="text-gray-200">
-                  <Link
-                    to={`/profile/${notification.fromUser?.username}`}
-                    className="font-semibold text-white hover:text-purple-400 transition-colors"
-                  >
-                    {notification.fromUser?.username}
-                  </Link>{' '}
-                  {getNotificationMessage(notification).replace(notification.fromUser?.username || '', '')}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">{formatTime(notification.createdAt)}</p>
-              </div>
-
-              {/* Icon */}
-              <div className="flex-shrink-0">
-                {getNotificationIcon(notification.type)}
-              </div>
-
-              {/* Unread indicator */}
-              {!notification.isRead && (
-                <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0" />
-              )}
+      {/* Thumbnail */}
+      {notification.post && (
+        <Link to={`/post/${notification.post}`} className="flex-shrink-0">
+          <div className="w-16 h-16 rounded-lg bg-[var(--synapse-surface)] border border-[var(--synapse-border)] overflow-hidden group-hover:border-[var(--synapse-text-muted)]/30 transition-colors">
+            <div className="w-full h-full bg-gradient-to-br from-[var(--synapse-surface)] to-[var(--synapse-border)] flex items-center justify-center">
+              <Play className="w-5 h-5 text-[var(--synapse-text-muted)] opacity-50" />
             </div>
-          ))}
-        </div>
+          </div>
+        </Link>
+      )}
+
+      {/* Unread dot */}
+      {!notification.isRead && (
+        <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
       )}
     </div>
   );

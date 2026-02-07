@@ -9,6 +9,29 @@ export const emitToUser = (req, userId, event, payload) => {
   }
 };
 
+// Emit a community event and increment events counter
+export const emitCommunityEvent = (req, communityId) => {
+  const io = req.app.get("io");
+  const communityEventsToday = req.app.get("communityEventsToday");
+  
+  if (io && communityEventsToday) {
+    // Check for day reset
+    const today = new Date().toDateString();
+    const lastEventDate = req.app.get("lastEventDate") || today;
+    
+    if (today !== lastEventDate) {
+      communityEventsToday.clear();
+      req.app.set("lastEventDate", today);
+    }
+    
+    const current = communityEventsToday.get(communityId) || 0;
+    communityEventsToday.set(communityId, current + 1);
+    
+    io.emit("community:eventsCount", { communityId, eventsCount: current + 1 });
+    console.log(`Community ${communityId} event count: ${current + 1}`);
+  }
+};
+
 // Emit to all followers of a user
 export const emitToFollowers = async (req, userId, event, payload) => {
   try {

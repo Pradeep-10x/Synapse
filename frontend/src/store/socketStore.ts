@@ -32,6 +32,8 @@ interface SocketState {
   unreadCount: number;
   unreadMessagesCount: number;
   recentlyActive: Map<string, RecentlyActiveUser>;
+  communityActiveCounts: Map<string, number>;
+  communityEventsCounts: Map<string, number>;
 
   // Actions
   connect: (user: { _id: string; username: string; avatar?: string }) => void;
@@ -42,6 +44,9 @@ interface SocketState {
   clearNotifications: () => void;
   clearMessagesCount: () => void;
   setRecentlyActive: (users: RecentlyActiveUser[]) => void;
+  requestCommunityActiveCounts: (communityIds: string[]) => void;
+  joinCommunityRoom: (communityId: string) => void;
+  leaveCommunityRoom: (communityId: string) => void;
 }
 
 const getSocketUrl = () => {
@@ -57,6 +62,8 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   unreadCount: 0,
   unreadMessagesCount: 0,
   recentlyActive: new Map(),
+  communityActiveCounts: new Map(),
+  communityEventsCounts: new Map(),
 
   connect: (user) => {
     const { socket: existingSocket } = get();
@@ -159,6 +166,42 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       set({ onlineUsers: newOnlineUsers });
     });
 
+    // Handle community active count updates
+    socket.on('community:activeCount', (data: { communityId: string; activeCount: number }) => {
+      const { communityActiveCounts } = get();
+      const newCounts = new Map(communityActiveCounts);
+      newCounts.set(data.communityId, data.activeCount);
+      set({ communityActiveCounts: newCounts });
+    });
+
+    // Handle bulk active counts response
+    socket.on('community:activeCounts', (counts: Record<string, number>) => {
+      const { communityActiveCounts } = get();
+      const newCounts = new Map(communityActiveCounts);
+      Object.entries(counts).forEach(([id, count]) => {
+        newCounts.set(id, count);
+      });
+      set({ communityActiveCounts: newCounts });
+    });
+
+    // Handle community events count updates
+    socket.on('community:eventsCount', (data: { communityId: string; eventsCount: number }) => {
+      const { communityEventsCounts } = get();
+      const newCounts = new Map(communityEventsCounts);
+      newCounts.set(data.communityId, data.eventsCount);
+      set({ communityEventsCounts: newCounts });
+    });
+
+    // Handle bulk events counts response
+    socket.on('community:eventsCounts', (counts: Record<string, number>) => {
+      const { communityEventsCounts } = get();
+      const newCounts = new Map(communityEventsCounts);
+      Object.entries(counts).forEach(([id, count]) => {
+        newCounts.set(id, count);
+      });
+      set({ communityEventsCounts: newCounts });
+    });
+
     set({ socket });
   },
 
@@ -205,5 +248,26 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       recentlyActiveMap.set(user._id, user);
     });
     set({ recentlyActive: recentlyActiveMap });
+  },
+
+  requestCommunityActiveCounts: (communityIds: string[]) => {
+    const { socket } = get();
+    if (socket?.connected && communityIds.length > 0) {
+      socket.emit('community:getActiveCounts', { communityIds });
+    }
+  },
+
+  joinCommunityRoom: (communityId: string) => {
+    const { socket } = get();
+    if (socket?.connected) {
+      socket.emit('community:join', { communityId });
+    }
+  },
+
+  leaveCommunityRoom: (communityId: string) => {
+    const { socket } = get();
+    if (socket?.connected) {
+      socket.emit('community:leave', { communityId });
+    }
   },
 }));

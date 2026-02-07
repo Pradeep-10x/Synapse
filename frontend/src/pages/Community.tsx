@@ -5,6 +5,7 @@ import { communityAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { CommunityDomainCard } from '@/components/community/CommunityDomainCard';
 import CreateCommunityModal from '@/components/community/CreateCommunityModal';
+import { useSocketStore } from '@/store/socketStore';
 
 interface Community {
   _id: string;
@@ -12,6 +13,7 @@ interface Community {
   description: string;
   membersCount: number;
   coverImage?: string;
+  userRole?: 'owner' | 'admin' | 'member';
 }
 
 export default function CommunityPage() {
@@ -19,10 +21,19 @@ export default function CommunityPage() {
   const [joinedCommunities, setJoinedCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const { communityActiveCounts, communityEventsCounts, requestCommunityActiveCounts, isConnected } = useSocketStore();
 
   useEffect(() => {
     fetchJoinedCommunities();
   }, []);
+
+  // Request active counts when communities are loaded and socket is connected
+  useEffect(() => {
+    if (joinedCommunities.length > 0 && isConnected) {
+      const communityIds = joinedCommunities.map(c => c._id);
+      requestCommunityActiveCounts(communityIds);
+    }
+  }, [joinedCommunities, isConnected, requestCommunityActiveCounts]);
 
   const fetchJoinedCommunities = async () => {
     try {
@@ -78,9 +89,9 @@ export default function CommunityPage() {
             <CommunityDomainCard
               key={community._id}
               {...community}
-              // Mocked Data for Design Aesthetics
-              activeNow={Math.floor(Math.random() * 20) + 2}
-              eventsCount={Math.floor(Math.random() * 5)}
+              activeNow={communityActiveCounts.get(community._id) || 0}
+              eventsCount={communityEventsCounts.get(community._id) || 0}
+              userRole={community.userRole}
             />
           ))}
         </div>

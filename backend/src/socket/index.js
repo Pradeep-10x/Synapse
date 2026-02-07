@@ -13,6 +13,34 @@ const initSocket = (server) => {
   });
 
   const onlineUsers = new Map();
+  // Track active users per community: Map<communityId, Set<userId>>
+  const communityActiveUsers = new Map();
+  // Track events today per community: Map<communityId, number>
+  const communityEventsToday = new Map();
+  // Track the date for resetting events count
+  let lastEventDate = new Date().toDateString();
+
+  // Helper to get/reset events count
+  const getEventsCount = (communityId) => {
+    const today = new Date().toDateString();
+    if (today !== lastEventDate) {
+      // New day, reset all counts
+      communityEventsToday.clear();
+      lastEventDate = today;
+    }
+    return communityEventsToday.get(communityId) || 0;
+  };
+
+  const incrementEventsCount = (communityId) => {
+    const today = new Date().toDateString();
+    if (today !== lastEventDate) {
+      communityEventsToday.clear();
+      lastEventDate = today;
+    }
+    const current = communityEventsToday.get(communityId) || 0;
+    communityEventsToday.set(communityId, current + 1);
+    return current + 1;
+  };
 
   io.on("connection", (socket) => {
     // ... (existing connection logic) ...
@@ -69,6 +97,71 @@ const initSocket = (server) => {
       }
     });
 
+    // Handle community room join (for tracking active users)
+    socket.on("community:join", (data) => {
+      const { communityId } = data;
+      const uid = socket.handshake.query.userId;
+      
+      if (communityId && uid) {
+        socket.join(`community:${communityId}`);
+        
+        // Track active user in this community
+        if (!communityActiveUsers.has(communityId)) {
+          communityActiveUsers.set(communityId, new Set());
+        }
+        communityActiveUsers.get(communityId).add(uid);
+        
+        // Broadcast updated count to all users viewing communities
+        const activeCount = communityActiveUsers.get(communityId).size;
+        io.emit("community:activeCount", { communityId, activeCount });
+        
+        console.log(`User ${uid} joined community room ${communityId}, active: ${activeCount}`);
+      }
+    });
+
+    // Handle community room leave
+    socket.on("community:leave", (data) => {
+      const { communityId } = data;
+      const uid = socket.handshake.query.userId;
+      
+      if (communityId && uid) {
+        socket.leave(`community:${communityId}`);
+        
+        // Remove user from tracking
+        if (communityActiveUsers.has(communityId)) {
+          communityActiveUsers.get(communityId).delete(uid);
+          const activeCount = communityActiveUsers.get(communityId).size;
+          io.emit("community:activeCount", { communityId, activeCount });
+          
+          console.log(`User ${uid} left community room ${communityId}, active: ${activeCount}`);
+        }
+      }
+    });
+
+    // Request active counts for multiple communities
+    socket.on("community:getActiveCounts", (data) => {
+      const { communityIds } = data;
+      if (Array.isArray(communityIds)) {
+        const activeCounts = {};
+        const eventsCounts = {};
+        communityIds.forEach(id => {
+          activeCounts[id] = communityActiveUsers.has(id) ? communityActiveUsers.get(id).size : 0;
+          eventsCounts[id] = getEventsCount(id);
+        });
+        socket.emit("community:activeCounts", activeCounts);
+        socket.emit("community:eventsCounts", eventsCounts);
+      }
+    });
+
+    // Track community events (posts, comments, etc.)
+    socket.on("community:newEvent", (data) => {
+      const { communityId } = data;
+      if (communityId) {
+        const eventsCount = incrementEventsCount(communityId);
+        io.emit("community:eventsCount", { communityId, eventsCount });
+      }
+    });
+
     socket.on("disconnect", async () => {
       let disconnectedUser = null;
       for (let [key, value] of onlineUsers.entries()) {
@@ -88,6 +181,15 @@ const initSocket = (server) => {
           console.error("Error updating lastActive for user:", disconnectedUser, error);
         }
 
+        // Remove user from all community tracking and broadcast updates
+        for (const [communityId, users] of communityActiveUsers.entries()) {
+          if (users.has(disconnectedUser)) {
+            users.delete(disconnectedUser);
+            const activeCount = users.size;
+            io.emit("community:activeCount", { communityId, activeCount });
+          }
+        }
+
         socket.broadcast.emit("user:status", { userId: disconnectedUser, status: "offline" });
       }
     });
@@ -95,7 +197,7 @@ const initSocket = (server) => {
 
   registerCallEvents(io, onlineUsers);
 
-  return { io, onlineUsers };
+  return { io, onlineUsers, communityActiveUsers, communityEventsToday };
 };
 
 export { initSocket };
