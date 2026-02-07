@@ -83,6 +83,7 @@ export default function PostCard({ post, onLike, onDelete, initialCommentsOpen =
   const [editedCaption, setEditedCaption] = useState(post.caption || '');
   const [savingCaption, setSavingCaption] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCaptionExpanded, setIsCaptionExpanded] = useState(false);
 
   const optionsRef = useRef<HTMLDivElement>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
