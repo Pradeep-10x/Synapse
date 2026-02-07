@@ -4,7 +4,8 @@ import {
   Search,
   X,
   Loader2,
-  MessageCircle,
+  MessageSquare,
+  Heart,
   MoreHorizontal,
   Users,
   Trash2,
@@ -121,46 +122,67 @@ export default function PersonalPage() {
 
   const displayConnections = searchQuery.trim().length >= 2 && searchResults !== null
     ? searchResults.map((u) => ({
-        user: u,
-        isFollowing: followState[u._id] ?? false,
-      }))
+      user: u,
+      isFollowing: followState[u._id] ?? false,
+    }))
     : filteredConnections.map((c) => ({
-        user: c.user,
-        isFollowing: followState[c.user._id] ?? c.isFollowing,
-      }));
+      user: c.user,
+      isFollowing: followState[c.user._id] ?? c.isFollowing,
+    }));
+
+  const fetchConnections = async (silent = false) => {
+    if (!userId) return;
+    if (!silent) setLoadingConnections(true);
+    try {
+      const [followersRes, followingRes] = await Promise.all([
+        userAPI.getFollowers(userId),
+        userAPI.getFollowing(userId),
+      ]);
+      const f = followersRes.data?.data?.followers ?? [];
+      const g = followingRes.data?.data?.following ?? [];
+      setFollowers(Array.isArray(f) ? f : []);
+      setFollowing(Array.isArray(g) ? g : []);
+      setHasMoreFollowers(followersRes.data?.data?.hasNext === true);
+      setHasMoreFollowing(followingRes.data?.data?.hasNext === true);
+
+      const nextState: Record<string, boolean> = {};
+      (Array.isArray(f) ? f : []).forEach((item: FollowerItem) => {
+        if (item.follower?._id) nextState[item.follower._id] = false;
+      });
+      (Array.isArray(g) ? g : []).forEach((item: FollowingItem) => {
+        if (item.following?._id) nextState[item.following._id] = true;
+      });
+      setFollowState((s) => ({ ...s, ...nextState }));
+    } catch (e) {
+      console.error(e);
+      if (!silent) toast.error('Failed to load connections');
+    } finally {
+      if (!silent) setLoadingConnections(false);
+    }
+  };
 
   useEffect(() => {
-    if (!userId) return;
-    const load = async () => {
-      setLoadingConnections(true);
-      try {
-        const [followersRes, followingRes] = await Promise.all([
-          userAPI.getFollowers(userId),
-          userAPI.getFollowing(userId),
-        ]);
-        const f = followersRes.data?.data?.followers ?? [];
-        const g = followingRes.data?.data?.following ?? [];
-        setFollowers(Array.isArray(f) ? f : []);
-        setFollowing(Array.isArray(g) ? g : []);
-        setHasMoreFollowers(followersRes.data?.data?.hasNext === true);
-        setHasMoreFollowing(followingRes.data?.data?.hasNext === true);
-        const nextState: Record<string, boolean> = {};
-        (Array.isArray(f) ? f : []).forEach((item: FollowerItem) => {
-          if (item.follower?._id) nextState[item.follower._id] = false;
-        });
-        (Array.isArray(g) ? g : []).forEach((item: FollowingItem) => {
-          if (item.following?._id) nextState[item.following._id] = true;
-        });
-        setFollowState((s) => ({ ...s, ...nextState }));
-      } catch (e) {
-        console.error(e);
-        toast.error('Failed to load connections');
-      } finally {
-        setLoadingConnections(false);
-      }
-    };
-    load();
+    fetchConnections();
   }, [userId]);
+
+  const handleFollowToggle = async (targetUserId: string, currentlyFollowing: boolean) => {
+    if (!currentUser || targetUserId === currentUser._id) return;
+
+    // Optimistic update for button state
+    const prev = followState[targetUserId];
+    setFollowState((s) => ({ ...s, [targetUserId]: !currentlyFollowing }));
+
+    try {
+      await userAPI.followUnfollow(targetUserId);
+      toast.success(!currentlyFollowing ? 'Following' : 'Unfollowed');
+
+      // Refresh lists to reflect changes (e.g. remove from following list if unfollowed)
+      await fetchConnections(true);
+    } catch (e: any) {
+      setFollowState((s) => ({ ...s, [targetUserId]: prev }));
+      toast.error(e.response?.data?.message || 'Action failed');
+    }
+  };
 
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
@@ -254,18 +276,7 @@ export default function PersonalPage() {
     }
   };
 
-  const handleFollowToggle = async (targetUserId: string, currentlyFollowing: boolean) => {
-    if (!currentUser || targetUserId === currentUser._id) return;
-    const prev = followState[targetUserId];
-    setFollowState((s) => ({ ...s, [targetUserId]: !currentlyFollowing }));
-    try {
-      await userAPI.followUnfollow(targetUserId);
-      toast.success(!currentlyFollowing ? 'Following' : 'Unfollowed');
-    } catch (e: any) {
-      setFollowState((s) => ({ ...s, [targetUserId]: prev }));
-      toast.error(e.response?.data?.message || 'Action failed');
-    }
-  };
+
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm('Delete this post? This cannot be undone.')) return;
@@ -294,7 +305,7 @@ export default function PersonalPage() {
   const followingCount = currentUser.followingCount ?? 0;
 
   return (
-    <div className="animate-in fade-in duration-300">
+    <div className="animate-in fade-in duration-300 h-full overflow-hidden flex flex-col">
       {/* Search - sharp, modern */}
       <div className="mb-8">
         <div className="relative max-w-xl">
@@ -326,7 +337,7 @@ export default function PersonalPage() {
               Your Posts
             </h2>
           </div>
-          <div className="flex-1 max-h-[calc(100vh-250px)] overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-hide p-4 space-y-4">
             {loadingPosts && posts.length === 0 ? (
               <div className="flex justify-center py-16">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-blue)]" />
@@ -405,12 +416,21 @@ export default function PersonalPage() {
                       />
                     </Link>
                   )}
-                  <div className="flex items-center gap-5 text-sm text-[var(--synapse-text-muted)] pt-1">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <MessageCircle className="w-4 h-4" />
-                      {post.commentsCount ?? 0}
-                    </span>
-                    <span className="font-medium">♥ {post.likesCount ?? 0}</span>
+                  <div className="flex items-center gap-5 pt-1">
+                    <button
+                      className="flex items-center gap-1.5 transition-colors group"
+                      style={{ color: 'var(--synapse-text-secondary)' }}
+                    >
+                      <Heart className="w-5 h-5 group-hover:text-red-500" />
+                      <span className="text-sm font-medium">{post.likesCount ?? 0}</span>
+                    </button>
+                    <button
+                      className="flex items-center gap-1.5 transition-colors hover:text-[var(--synapse-blue)]"
+                      style={{ color: 'var(--synapse-text-secondary)' }}
+                    >
+                      <MessageSquare className="w-5 h-5" />
+                      <span className="text-sm font-medium">{post.commentsCount ?? 0}</span>
+                    </button>
                   </div>
                 </article>
               ))

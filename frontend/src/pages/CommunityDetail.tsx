@@ -1032,64 +1032,63 @@ function PostCard({
     };
 
     return (
-        <div
-            className="rounded-md overflow-hidden"
-            style={{
-                background: 'var(--synapse-surface)',
-                border: '1px solid var(--synapse-border)'
-            }}
-        >
+        <div className="p-4 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] hover:border-[var(--synapse-text-muted)]/20 transition-all duration-200 mb-4">
             {/* Post Header */}
-            <div className="p-4">
-                <div className="flex items-start justify-between">
-                    <Link to={`/profile/${post.user.username}`} className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-2 mb-3">
+                <Link to={`/profile/${post.user.username}`} className="flex items-center gap-3 min-w-0 flex-1 group">
+                    <div className="w-10 h-10 rounded-full border border-[var(--synapse-border)] flex items-center justify-center overflow-hidden ring-1 ring-[var(--synapse-surface)]">
                         <img
                             src={post.user.avatar || '/default-avatar.jpg'}
                             alt={post.user.username}
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="w-full h-full object-cover"
                         />
-                        <div>
-                            <p className="font-medium" style={{ color: 'var(--synapse-text)' }}>
-                                {post.user.username}
-                            </p>
-                            <p className="text-xs" style={{ color: 'var(--synapse-text-secondary)' }}>
-                                {formatTimeAgo(post.createdAt)}
-                            </p>
-                        </div>
-                    </Link>
+                    </div>
+                    <div className="min-w-0">
+                        <p className="font-semibold text-sm text-[var(--synapse-text)] truncate group-hover:text-[var(--synapse-blue)] transition-colors">
+                            {post.user.username}
+                        </p>
+                        <p className="text-xs text-[var(--synapse-text-muted)] font-medium">
+                            {formatTimeAgo(post.createdAt)}
+                        </p>
+                    </div>
+                </Link>
 
-                    {(isOwner || isAdmin) && (
-                        <button
-                            onClick={() => onDelete(post._id)}
-                            className="p-2 rounded-md hover:bg-red-500/10 text-red-400 transition-colors"
-                        >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
-
-                {/* Caption */}
-                {post.caption && (
-                    <p className="mt-3" style={{ color: 'var(--synapse-text)' }}>
-                        {post.caption}
-                    </p>
+                {(isOwner || isAdmin) && (
+                    <button
+                        onClick={() => onDelete(post._id)}
+                        className="p-2 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-red-400 transition-colors"
+                    >
+                        <Trash2 className="w-5 h-5" />
+                    </button>
                 )}
             </div>
 
+            {/* Caption */}
+            {post.caption && (
+                <div className="mb-3">
+                    <p className="text-md text-[var(--synapse-text)] leading-relaxed">
+                        {post.caption}
+                    </p>
+                </div>
+            )}
+
             {/* Media */}
             {post.mediaUrl && (
-                <div className="relative">
+                <div
+                    className="block rounded-md overflow-hidden border mb-3"
+                    style={{ borderColor: 'rgba(83, 81, 81, 0.93)' }}
+                >
                     {post.mediaType === 'video' ? (
                         <video
                             src={post.mediaUrl}
                             controls
-                            className="w-full max-h-96 object-contain bg-black"
+                            className="w-full max-h-[400px] object-cover"
                         />
                     ) : (
                         <img
                             src={post.mediaUrl}
                             alt=""
-                            className="w-full max-h-96 object-contain bg-black"
+                            className="w-full aspect-video object-cover"
                         />
                     )}
                     {post.mediaType === 'image' && (
@@ -1101,40 +1100,36 @@ function PostCard({
             )}
 
             {/* Engagement */}
-            <div className="p-4 pt-2">
+            <div className="pt-1">
                 {/* Like and Comment buttons */}
-                <div className="flex items-center gap-4 mb-3">
+                <div className="flex items-center gap-5 mb-3">
                     <button
                         onClick={() => onLike(post._id)}
-                        className="flex items-center gap-1.5 transition-colors"
+                        className="flex items-center gap-1.5 transition-colors group"
                         style={{ color: post.isLiked ? '#ef4444' : 'var(--synapse-text-secondary)' }}
                     >
-                        <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-red-500' : ''}`} />
-                        <span className="text-sm">{post.likesCount}</span>
+                        <Heart className={`w-5 h-5 ${post.isLiked ? 'fill-red-500' : 'group-hover:text-red-500'}`} />
+                        <span className="text-sm font-medium">{post.likesCount}</span>
                     </button>
                     <button
                         onClick={onToggleComments}
-                        className="flex items-center gap-1.5 transition-colors"
+                        className="flex items-center gap-1.5 transition-colors hover:text-[var(--synapse-blue)]"
                         style={{ color: 'var(--synapse-text-secondary)' }}
                     >
                         <MessageSquare className="w-5 h-5" />
-                        <span className="text-sm">{post.commentsCount}</span>
+                        <span className="text-sm font-medium">{post.commentsCount}</span>
                     </button>
                 </div>
 
-                <p className="text-xs mb-3" style={{ color: 'var(--synapse-text-secondary)' }}>
-                    {formatTimeAgo(post.createdAt)}
-                </p>
-
                 {/* Comment Input */}
-                <div className="flex items-center gap-3 pt-3" style={{ borderTop: '1px solid var(--synapse-border)' }}>
+                <div className="flex items-center gap-3 pt-3 border-t border-[var(--synapse-border)]">
                     <img
                         src={currentUserId ? '/default-avatar.jpg' : '/default-avatar.jpg'}
                         alt=""
                         className="w-8 h-8 rounded-full object-cover"
                     />
                     <div
-                        className="flex-1 flex items-center rounded-md px-4 py-2"
+                        className="flex-1 flex items-center rounded-md px-4 py-2 border border-[var(--synapse-border)]"
                         style={{ background: 'var(--synapse-bg)' }}
                     >
                         <input
@@ -1149,7 +1144,7 @@ function PostCard({
                         <button
                             onClick={onSubmitComment}
                             disabled={submittingComment || !commentInput.trim()}
-                            className="ml-2 disabled:opacity-50"
+                            className="ml-2 disabled:opacity-50 hover:text-[var(--synapse-blue)] transition-colors"
                             style={{ color: 'var(--synapse-primary)' }}
                         >
                             {submittingComment ? (
@@ -1165,7 +1160,7 @@ function PostCard({
                 {post.commentsCount > 0 && (
                     <button
                         onClick={onToggleComments}
-                        className="flex items-center gap-1 mt-3 text-sm"
+                        className="flex items-center gap-1 mt-3 text-sm hover:text-[var(--synapse-text)] transition-colors"
                         style={{ color: 'var(--synapse-text-secondary)' }}
                     >
                         {expanded ? (
@@ -1182,7 +1177,7 @@ function PostCard({
                     </button>
                 )}
 
-                {/* Expanded Comments - Below input */}
+                {/* Expanded Comments */}
                 <AnimatePresence>
                     {expanded && (
                         <motion.div
