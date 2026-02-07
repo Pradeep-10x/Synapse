@@ -8,6 +8,7 @@ import { useCommunityStore } from '@/store/communityStore';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
 import EditCommunityModal from '@/components/community/EditCommunityModal';
+//members box  // webscokets / /redirect to msg  // replt to comnt system 
 
 interface Community {
     _id: string;
