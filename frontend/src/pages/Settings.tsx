@@ -5,54 +5,37 @@ import {
   User,
   Shield,
   AlertTriangle,
-  UploadCloud,
-  LogOut,
-  Trash2,
-  Lock,
+  Upload,
   Settings,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
-import { motion } from 'framer-motion';
 
-type Section = 'account' | 'security' | 'danger';
-
-const sectionNav: Array<{ id: Section; label: string; icon: any; description: string }> = [
-  { id: 'account', label: 'Account', icon: User, description: 'Manage your profile' },
-  { id: 'security', label: 'Security', icon: Shield, description: 'Password & sessions' },
-  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, description: 'Critical actions' },
-];
+type Tab = 'profile' | 'security' | 'danger';
 
 export default function SettingsPage() {
   const { user, isAuthenticated, isCheckingAuth, checkAuth } = useAuthStore();
-  const [activeSection, setActiveSection] = useState<Section>('account');
+  const [activeTab, setActiveTab] = useState<Tab>('profile');
 
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const avatarFileRef = useRef<File | null>(null);
-
-  const [loadingAccount, setLoadingAccount] = useState(false);
-  const [loadingSecurity, setLoadingSecurity] = useState(false);
-  const [loadingDanger, setLoadingDanger] = useState(false);
+  const avatarRef = useRef<File | null>(null);
 
   const [passwords, setPasswords] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    current: '',
+    next: '',
+    confirm: '',
   });
 
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    if (!isAuthenticated && !isCheckingAuth) {
-      checkAuth();
-    }
-  }, [isAuthenticated, isCheckingAuth, checkAuth]);
+    if (!isAuthenticated && !isCheckingAuth) checkAuth();
+  }, [isAuthenticated, isCheckingAuth]);
 
   useEffect(() => {
     if (user) {
-      setUsername(user.username || '');
-      setEmail(user.email || '');
       setBio(user.bio || '');
       setAvatarPreview(user.avatar || null);
     }
@@ -60,408 +43,259 @@ export default function SettingsPage() {
 
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--synapse-text-muted)]">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-[var(--synapse-blue)] border-t-transparent rounded-full animate-spin" />
-          Checking your session...
-        </div>
+      <div className="min-h-screen grid place-items-center text-zinc-400">
+        Checking session…
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  const handleAvatarChange = (file: File | null) => {
-    avatarFileRef.current = file;
-    if (file) {
-      setAvatarPreview(URL.createObjectURL(file));
-    }
-  };
+  /* -------------------------------- handlers -------------------------------- */
 
-  const handleAccountSave = async () => {
+  const saveProfile = async () => {
     try {
-      setLoadingAccount(true);
+      setLoading(true);
       await userAPI.updateDetails({ bio });
 
-      if (avatarFileRef.current) {
-        const formData = new FormData();
-        formData.append('avatar', avatarFileRef.current);
-        await userAPI.updateAvatar(formData);
+      if (avatarRef.current) {
+        const fd = new FormData();
+        fd.append('avatar', avatarRef.current);
+        await userAPI.updateAvatar(fd);
       }
-      toast.success('Account updated');
+
+      toast.success('Profile updated');
       await checkAuth();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update account');
+    } catch {
+      toast.error('Failed to update profile');
     } finally {
-      setLoadingAccount(false);
+      setLoading(false);
     }
   };
 
-  const handlePasswordChange = async () => {
-    if (!passwords.newPassword || passwords.newPassword !== passwords.confirmPassword) {
+  const changePassword = async () => {
+    if (passwords.next !== passwords.confirm) {
       toast.error('Passwords do not match');
       return;
     }
+
     try {
-      setLoadingSecurity(true);
+      setLoading(true);
       await userAPI.changePassword({
-        oldPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword,
+        oldPassword: passwords.current,
+        newPassword: passwords.next,
       });
       toast.success('Password updated');
-      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to change password');
+      setPasswords({ current: '', next: '', confirm: '' });
+    } catch {
+      toast.error('Failed to change password');
     } finally {
-      setLoadingSecurity(false);
+      setLoading(false);
     }
   };
 
-  const handleLogoutAll = async () => {
-    try {
-      setLoadingSecurity(true);
-      await userAPI.logout();
-      toast.success('Logged out from all devices');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to logout all');
-    } finally {
-      setLoadingSecurity(false);
-    }
-  };
+  /* ---------------------------------- UI ---------------------------------- */
 
-  const handleDeactivate = async () => {
-    try {
-      setLoadingDanger(true);
-      await userAPI.deleteAccount();
-      toast.success('Account deactivated');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to deactivate');
-    } finally {
-      setLoadingDanger(false);
-    }
-  };
+  return (
+    <div className="min-h-screen bg-gray text-zinc-200">
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        {/* Header */}
+        <header className="flex items-center gap-3 mb-5">
+          <Settings className="w-6 h-6 text-white-500" />
+          <h1 className="text-3xl font-semibold">Account Settings</h1>
+        </header>
 
-  const handleDelete = async () => {
-    try {
-      setLoadingDanger(true);
-      await userAPI.deleteAccount();
-      toast.success('Account deleted');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete account');
-    } finally {
-      setLoadingDanger(false);
-    }
-  };
+        <div className="grid grid-cols-[240px,1fr] gap-10">
+          {/* Sidebar */}
+          <aside className="bg-[#17171A] rounded-md p-2 h-fit border border-zinc-800">
+            {[
+              { id: 'profile', label: 'My Profile', icon: User },
+              { id: 'security', label: 'Security', icon: Shield },
+              { id: 'danger', label: 'Danger', icon: AlertTriangle },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as Tab)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-md font-medium transition
+                  ${
+                    activeTab === id
+                      ? 'bg-gray-700/50 text-white'
+                      : 'text-zinc-400 hover:bg-gray-700/10'
+                  }`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </button>
+            ))}
+          </aside>
 
-  const renderSection = () => {
-    switch (activeSection) {
-      case 'account':
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
+          {/* Content */}
+          <motion.main
+            key={activeTab}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
+            transition={{ duration: 0.25 }}
           >
-            {/* Profile Card */}
-            <div className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 overflow-hidden">
-              <div className="px-6 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/30">
-                <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Profile Information</h2>
-                <p className="text-sm text-[var(--synapse-text-muted)]">Update your profile details</p>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                {/* Avatar Section */}
-                <div className="flex items-center gap-5">
+            {/* --------------------------- PROFILE --------------------------- */}
+            {activeTab === 'profile' && (
+              <>
+                {/* Profile header */}
+                <div className="flex items-center gap-5 mb-8">
                   <div className="relative">
-                    <img 
-                      src={avatarPreview || "/default-avatar.jpg"} 
-                      alt="avatar" 
-                      className="w-20 h-20 rounded-full object-cover border-2 border-[var(--synapse-border)]" 
+                    <img
+                      src={avatarPreview || '/default-avatar.jpg'}
+                      className="w-16 h-16 rounded-full object-cover"
                     />
-                    <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[var(--synapse-blue)] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity border-2 border-[var(--synapse-bg)]">
-                      <UploadCloud className="w-3.5 h-3.5 text-white" />
+                    <label className="absolute -bottom-1 -right-1 bg-black p-1.5 rounded-full cursor-pointer">
+                      <Upload className="w-3 h-3" />
                       <input
                         type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleAvatarChange(e.target.files?.[0] || null)}
+                        hidden
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            avatarRef.current = f;
+                            setAvatarPreview(URL.createObjectURL(f));
+                          }
+                        }}
                       />
                     </label>
                   </div>
+
                   <div>
-                    <p className="font-medium text-[var(--synapse-text)]">{username}</p>
-                    <p className="text-sm text-[var(--synapse-text-muted)]">Click the icon to update avatar</p>
+                    <h2 className="font-semibold">{user?.fullName}</h2>
+                    <p className="text-sm text-zinc-400">{user?.username}</p>
                   </div>
                 </div>
 
-                {/* Form Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Username</label>
-                    <input
-                      value={username}
-                      disabled
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] opacity-60 cursor-not-allowed"
-                    />
-                    <p className="text-xs text-[var(--synapse-text-muted)] mt-1.5">Username cannot be changed</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Email</label>
-                    <input
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
-                    />
-                  </div>
-                </div>
+                {/* Personal Info */}
+                <section className="bg-[#17171A]/50 rounded-md p-6 mb-6">
+                  <h3 className="font-medium mb-4">Personal Information</h3>
 
-                <div>
-                  <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Bio</label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    rows={3}
-                    placeholder="Write a short bio about yourself..."
-                    className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors resize-none"
+                  <div className="grid grid-cols-2 gap-6">
+                    <Field label="Full Name" value={user?.fullName}  />
+                    <Field label="Username" value={user?.username}  />
+                  </div>
+
+                  <div className="mt-6">
+                    <label className="text-sm text-zinc-400">About</label>
+                    <textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      rows={3}
+                      className="mt-2 w-full rounded-lg border border-zinc-800 bg-[#17171A] p-3 outline-none"
+                    />
+                  </div>
+
+                  <div className="flex justify-end mt-6">
+                    <button
+                      onClick={saveProfile}
+                      disabled={loading}
+                      className="px-5 py-2 bg-blue-800 rounded-md text-sm hover:bg-blue-700"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </section>
+              </>
+            )}
+
+            {/* --------------------------- SECURITY --------------------------- */}
+            {activeTab === 'security' && (
+              <section className="bg-[#17171A]/50 rounded-md p-6">
+                <h3 className="font-semibold mb-6">Change Password</h3>
+
+                <div className="grid grid-cols-3 gap-5">
+                  <PasswordField
+                    label="Current"
+                    value={passwords.current}
+                    onChange={(v) => setPasswords(p => ({ ...p, current: v }))}
+                  />
+                  <PasswordField
+                    label="New"
+                    value={passwords.next}
+                    onChange={(v) => setPasswords(p => ({ ...p, next: v }))}
+                  />
+                  <PasswordField
+                    label="Confirm"
+                    value={passwords.confirm}
+                    onChange={(v) => setPasswords(p => ({ ...p, confirm: v }))}
                   />
                 </div>
 
-                {/* Actions */}
-                <div className="flex justify-end gap-3 pt-2">
+                <div className="flex justify-end mt-6">
                   <button
-                    onClick={() => {
-                      if (user) {
-                        setEmail(user.email || '');
-                        setBio(user.bio || '');
-                        setAvatarPreview(user.avatar || null);
-                        avatarFileRef.current = null;
-                      }
-                    }}
-                    className="px-5 py-2.5 rounded-lg border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
+                    onClick={changePassword}
+                    className="px-5 py-2 bg-blue-800 rounded-md text-sm hover:bg-blue-700"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAccountSave}
-                    disabled={loadingAccount}
-                    className="px-5 py-2.5 rounded-lg bg-[var(--synapse-blue)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {loadingAccount ? 'Saving...' : 'Save Changes'}
+                    Update Password
                   </button>
                 </div>
-              </div>
-            </div>
-          </motion.div>
-        );
+              </section>
+            )}
 
-      case 'security':
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
-            {/* Password Card */}
-            <div className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 overflow-hidden">
-              <div className="px-6 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/30 flex items-center gap-3">
-                <Lock className="w-5 h-5 text-[var(--synapse-blue)]" />
-                <div>
-                  <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Change Password</h2>
-                  <p className="text-sm text-[var(--synapse-text-muted)]">Keep your account secure</p>
-                </div>
-              </div>
-              
-              <div className="p-6 space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Current Password</label>
-                    <input
-                      type="password"
-                      value={passwords.currentPassword}
-                      onChange={(e) => setPasswords(p => ({ ...p, currentPassword: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">New Password</label>
-                    <input
-                      type="password"
-                      value={passwords.newPassword}
-                      onChange={(e) => setPasswords(p => ({ ...p, newPassword: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Confirm Password</label>
-                    <input
-                      type="password"
-                      value={passwords.confirmPassword}
-                      onChange={(e) => setPasswords(p => ({ ...p, confirmPassword: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' })}
-                    className="px-5 py-2.5 rounded-lg border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handlePasswordChange}
-                    disabled={loadingSecurity}
-                    className="px-5 py-2.5 rounded-lg bg-[var(--synapse-blue)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {loadingSecurity ? 'Updating...' : 'Update Password'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Sessions Card */}
-            <div className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 overflow-hidden">
-              <div className="px-6 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/30 flex items-center gap-3">
-                <LogOut className="w-5 h-5 text-[var(--synapse-blue)]" />
-                <div>
-                  <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Active Sessions</h2>
-                  <p className="text-sm text-[var(--synapse-text-muted)]">Manage your logged-in devices</p>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-[var(--synapse-text)]">Logout from all devices</p>
-                    <p className="text-sm text-[var(--synapse-text-muted)]">This will sign you out from all active sessions</p>
-                  </div>
-                  <button
-                    onClick={handleLogoutAll}
-                    disabled={loadingSecurity}
-                    className="px-5 py-2.5 rounded-lg border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors disabled:opacity-50"
-                  >
-                    {loadingSecurity ? 'Working...' : 'Logout All'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-
-      case 'danger':
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
-            <div className="rounded-lg border border-red-500/30 bg-red-500/5 overflow-hidden">
-              <div className="px-6 py-4 border-b border-red-500/30 bg-red-500/10 flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-                <div>
-                  <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Danger Zone</h2>
-                  <p className="text-sm text-[var(--synapse-text-muted)]">Irreversible actions</p>
-                </div>
-              </div>
-              
-              <div className="p-6 space-y-4">
-                {/* Deactivate */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/30">
-                  <div>
-                    <p className="font-medium text-[var(--synapse-text)]">Deactivate Account</p>
-                    <p className="text-sm text-[var(--synapse-text-muted)]">Temporarily disable your profile and hide content</p>
-                  </div>
-                  <button
-                    onClick={handleDeactivate}
-                    disabled={loadingDanger}
-                    className="px-5 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
-                  >
-                    {loadingDanger ? 'Working...' : 'Deactivate'}
-                  </button>
-                </div>
-
-                {/* Delete */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-red-500/30 bg-red-500/5">
-                  <div>
-                    <p className="font-medium text-[var(--synapse-text)]">Delete Account</p>
-                    <p className="text-sm text-[var(--synapse-text-muted)]">Permanently delete your account and all data</p>
-                  </div>
-                  <button
-                    onClick={handleDelete}
-                    disabled={loadingDanger}
-                    className="px-5 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    {loadingDanger ? 'Working...' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[var(--synapse-bg)]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <header className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Settings className="w-7 h-7 text-[var(--synapse-blue)]" />
-            <h1 className="text-2xl font-bold text-[var(--synapse-text)]">Settings</h1>
-          </div>
-          <p className="text-[var(--synapse-text-muted)]">
-            Manage your account settings and preferences
-          </p>
-        </header>
-
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[220px,1fr] gap-6">
-          {/* Navigation Sidebar */}
-          <nav className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 p-3 h-fit">
-            <ul className="space-y-1">
-              {sectionNav.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeSection === item.id;
-                const isDanger = item.id === 'danger';
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
-                        isActive
-                          ? isDanger
-                            ? 'bg-red-500/10 text-red-400 border border-red-500/30'
-                            : 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)] border border-[var(--synapse-border)]'
-                          : 'text-[var(--synapse-text-muted)] hover:bg-[var(--synapse-surface-hover)] border border-transparent'
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${isActive ? (isDanger ? 'text-red-400' : 'text-[var(--synapse-blue)]') : ''}`} />
-                      <div>
-                        <span className="font-medium block">{item.label}</span>
-                        <span className="text-xs opacity-70">{item.description}</span>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          {/* Content Area */}
-          <section>{renderSection()}</section>
+            {/* --------------------------- DANGER --------------------------- */}
+            {activeTab === 'danger' && (
+              <section className="bg-red-500/5 border border-red-500/20 rounded-md p-6">
+                <h3 className="font-semibold text-red-400 mb-2">
+                  Delete Account
+                </h3>
+                <p className="text-sm text-zinc-400 mb-6">
+                  This action is irreversible.
+                </p>
+                <button className="px-5 py-2 bg-red-600 rounded-md text-sm">
+                  Delete Account
+                </button>
+              </section>
+            )}
+          </motion.main>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------- helpers ------------------------------- */
+
+function Field({
+  label,
+  value,
+  disabled,
+}: {
+  label: string;
+  value?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div>
+      <label className="text-sm text-zinc-400">{label}</label>
+      <input
+        disabled={disabled}
+        value={value || ''}
+        className="mt-2 w-full rounded-md bg-[#17171A] border border-zinc-800 p-3 opacity-70"
+      />
+    </div>
+  );
+}
+
+function PasswordField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="text-sm text-zinc-400">{label}</label>
+      <input
+        type="password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-2 w-full rounded-md bg-[#17171A] border border-zinc-800 p-3"
+      />
     </div>
   );
 }
