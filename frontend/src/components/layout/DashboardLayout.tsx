@@ -1,7 +1,7 @@
 
 import { Sidebar } from './Sidebar';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Mail, User, Settings, LogOut, ChevronDown, Send } from 'lucide-react';
+import { Bell, User, Settings, LogOut, ChevronDown, Send } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
