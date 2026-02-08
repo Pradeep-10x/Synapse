@@ -4,7 +4,7 @@ import { messageAPI, communityAPI, communityChatAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
 import { useWebRTC } from '@/hooks/useWebRTC';
-import { Send, Phone, Video, Loader2, Users, MessageCircle, X, PhoneOff, Crown, Shield, Search, Paperclip, MoreHorizontal, Info, Trash2 } from 'lucide-react';
+import { Send, Phone, Video, Loader2, Users, MessageCircle, X, PhoneOff, Crown, Shield, Search, Paperclip, MoreHorizontal, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -810,29 +810,16 @@ export default function MessagesPage() {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center min-h-[400px] bg-gradient-to-b from-transparent to-[var(--synapse-bg)]/50">
+            <div className="flex-1 flex items-center justify-center min-h-[400px]">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
                 className="text-center px-8"
               >
-                {/* Floating animated icon */}
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="relative mx-auto mb-8"
-                >
-                  <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-[var(--synapse-blue)]/20 via-[var(--synapse-surface-hover)] to-[var(--synapse-surface)] border border-[var(--synapse-blue)]/30 flex items-center justify-center shadow-2xl shadow-[var(--synapse-blue)]/10">
-                    <MessageCircle className="w-14 h-14 text-[var(--synapse-blue)]" />
-                  </div>
-                  {/* Decorative rings */}
-                  <div className="absolute inset-0 -z-10 rounded-3xl border border-[var(--synapse-blue)]/10 scale-110 animate-pulse" />
-                  <div className="absolute inset-0 -z-20 rounded-3xl border border-[var(--synapse-blue)]/5 scale-125" />
-                </motion.div>
-                <h2 className="text-2xl font-bold text-[var(--synapse-text)] mb-3">Start a conversation</h2>
-                <p className="text-sm text-[var(--synapse-text-muted)] max-w-sm mx-auto leading-relaxed">
-                  Select a chat from the list or switch to <span className="text-[var(--synapse-blue)] font-medium">Communities</span> to message a group
+                <h2 className="text-5xl font-bold text-[var(--synapse-text)] mb-3">Start a conversation</h2>
+                <p className="text-xl text-[var(--synapse-text-muted)] max-w-sm mx-auto leading-relaxed">
+                  Select a chat from the list or switch to Communities to message a group..
                 </p>
               </motion.div>
             </div>
