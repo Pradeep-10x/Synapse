@@ -375,7 +375,7 @@ export default function PersonalPage() {
               {/* Followers box - card style, ~5 visible */}
               <div className="rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-bg)]/50 overflow-hidden shadow-sm flex flex-col">
                 <div className="px-4 py-3.5 flex items-center gap-2 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
-                  <Users className="w-4 h-4 text-[var(--synapse-blue)]" />
+                  <Users className="w-4 h-4 text-[var(--synapse-white)]" />
                   <h3 className="text-sm font-semibold tracking-wide text-[var(--synapse-text)]">
                     Followers {followers.length > 0 && <span className="text-[var(--synapse-text-muted)] font-medium">({followers.length})</span>}
                   </h3>
@@ -414,7 +414,7 @@ export default function PersonalPage() {
               {/* Following box - card style, ~5 visible */}
               <div className="rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-bg)]/50 overflow-hidden shadow-sm flex flex-col">
                 <div className="px-4 py-3.5 flex items-center gap-2 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
-                  <Users className="w-4 h-4 text-[var(--synapse-blue)]" />
+                  <Users className="w-4 h-4 text-[var(--synapse-white)]" />
                   <h3 className="text-sm font-semibold tracking-wide text-[var(--synapse-text)]">
                     Following {following.length > 0 && <span className="text-[var(--synapse-text-muted)] font-medium">({following.length})</span>}
                   </h3>

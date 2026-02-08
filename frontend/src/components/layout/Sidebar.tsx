@@ -43,11 +43,11 @@ export function Sidebar() {
                             key={item.label}
                             onClick={() => navigate(item.path)}
                             className={`w-full flex items-center gap-3 px-5 py-3.5 text-lg font-medium rounded-sm transition-all duration-200 ${isActive
-                                ? 'bg-[var(--synapse-surface)] text-[var(--synapse-blue)] border border-[var(--synapse-border)] shadow-sm'
+                                ? 'bg-[var(--synapse-surface)] text-[var(--synapse-text)] border border-transparent'
                                 : 'text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface)] border border-transparent'
                                 }`}
                         >
-                            <item.icon className={`w-6 h-6 ${isActive ? 'text-[var(--synapse-blue)]' : 'text-current'}`} />
+                            <item.icon className={`w-6 h-6 ${isActive ? 'text-[var(--synapse-text)]' : 'text-current'}`} />
                             {item.label}
                         </button>
                     );

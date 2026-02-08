@@ -670,7 +670,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {messages.length > 0 && (
                   <p className="text-center text-xs text-[var(--synapse-text-muted)] py-2">{new Date(messages[0].createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                 )}
@@ -684,10 +684,12 @@ export default function MessagesPage() {
                       transition={{ duration: 0.2, delay: idx < 10 ? idx * 0.03 : 0 }}
                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[75%] lg:max-w-md px-4 py-2.5 rounded-2xl shadow-sm ${isOwn ? 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)]' : 'bg-[var(--synapse-surface)]/80 backdrop-blur-sm border border-[var(--synapse-border)]/60 text-[var(--synapse-text)]'}`}>
-                        {!isOwn && <p className="text-xs font-semibold text-gray-500 mb-0.5">{message.sender.username}</p>}
-                        <p className="text-sm break-words leading-relaxed">{message.content}</p>
-                        <p className="text-[10px] mt-1.5 text-[var(--synapse-text-muted)] opacity-70">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[75%] lg:max-w-md px-4 py-2.5 rounded-2xl shadow-sm ${isOwn ? 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)]' : 'bg-[var(--synapse-surface)]/80 backdrop-blur-sm border-2 border-[var(--synapse-border)] text-[var(--synapse-text)]'}`}>
+                          {!isOwn && <p className="text-xs font-semibold text-gray-500 mb-0.5">{message.sender.username}</p>}
+                          <p className="text-base break-words leading-relaxed">{message.content}</p>
+                        </div>
+                        <p className="text-[10px] mt-1 text-[var(--synapse-text-muted)] px-1">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                     </motion.div>
                   );
@@ -753,7 +755,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Community Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full min-h-[200px]">
                     <div className="text-center text-[var(--synapse-text-muted)]">
@@ -772,10 +774,12 @@ export default function MessagesPage() {
                           {!isOwn && (
                             <img src={message.sender.avatar || '/default-avatar.jpg'} alt="" className="w-8 h-8 rounded-full object-cover border border-[var(--synapse-border)] mr-2 shrink-0 self-end" />
                           )}
-                          <div className={`max-w-[75%] lg:max-w-md px-4 py-2.5 rounded-xl ${isOwn ? 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)]' : 'bg-[var(--synapse-surface)] border border-[var(--synapse-border)] text-[var(--synapse-text)]'}`}>
-                            {!isOwn && <p className="text-xs font-semibold text-gray-500 mb-0.5">{message.sender.username}</p>}
-                            <p className="text-sm break-words">{message.content}</p>
-                            <p className="text-[10px] mt-1 text-[var(--synapse-text-muted)]">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                            <div className={`max-w-[75%] lg:max-w-md px-4 py-2.5 rounded-xl ${isOwn ? 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)]' : 'bg-[var(--synapse-surface)] border-2 border-[var(--synapse-border)] text-[var(--synapse-text)]'}`}>
+                              {!isOwn && <p className="text-xs font-semibold text-gray-500 mb-0.5">{message.sender.username}</p>}
+                              <p className="text-base break-words">{message.content}</p>
+                            </div>
+                            <p className="text-[10px] mt-1 text-[var(--synapse-text-muted)] px-1">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                           </div>
                         </div>
                       );
