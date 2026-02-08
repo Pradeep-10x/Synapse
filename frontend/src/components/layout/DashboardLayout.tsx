@@ -1,7 +1,7 @@
 
 import { Sidebar } from './Sidebar';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, Mail, User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Bell, Mail, User, Settings, LogOut, ChevronDown, Send } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
@@ -75,7 +75,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         onClick={() => navigate('/messages')}
                         className="relative p-2 rounded-xl hover:bg-[var(--synapse-surface)] transition-colors group"
                     >
-                        <Mail className="w-6 h-6 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)] transition-colors" />
+                        <Send className="w-6 h-6 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)] transition-colors" />
                         {unreadMessagesCount > 0 && (
                             <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#7c3aed] rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
                                 {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
@@ -114,7 +114,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                 {/* Menu Items */}
                                 <div className="py-1">
                                     <button
-                                        onClick={() => { navigate('/profile'); setIsProfileOpen(false); }}
+                                        onClick={() => { navigate('/personal'); setIsProfileOpen(false); }}
                                         className="w-full flex items-center gap-3 px-4 py-2 text-md text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
                                     >
                                         <User className="w-4 h-4" />

@@ -1,52 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
   User,
   Shield,
-  Eye,
-  Sparkles,
-  Bell,
-  Palette,
   AlertTriangle,
-  CheckCircle2,
   UploadCloud,
+  LogOut,
+  Trash2,
+  Lock,
+  Settings,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
+import { motion } from 'framer-motion';
 
-type Section =
-  | 'account'
-  | 'security'
-  | 'privacy'
-  | 'verification'
-  | 'notifications'
-  | 'appearance'
-  | 'danger';
+type Section = 'account' | 'security' | 'danger';
 
-type PrivacyState = {
-  privateAccount: boolean;
-  messagePolicy: 'everyone' | 'followers';
-  allowMentions: boolean;
-  allowTagging: boolean;
-};
-
-type NotificationState = {
-  likes: boolean;
-  comments: boolean;
-  followers: boolean;
-  messages: boolean;
-  calls: boolean;
-};
-
-const sectionNav: Array<{ id: Section; label: string; icon: any }> = [
-  { id: 'account', label: 'Account', icon: User },
-  { id: 'security', label: 'Security', icon: Shield },
-  { id: 'privacy', label: 'Privacy', icon: Eye },
-  { id: 'verification', label: 'Verification', icon: Sparkles },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'appearance', label: 'Appearance', icon: Palette },
-  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
+const sectionNav: Array<{ id: Section; label: string; icon: any; description: string }> = [
+  { id: 'account', label: 'Account', icon: User, description: 'Manage your profile' },
+  { id: 'security', label: 'Security', icon: Shield, description: 'Password & sessions' },
+  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, description: 'Critical actions' },
 ];
 
 export default function SettingsPage() {
@@ -59,27 +33,8 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const avatarFileRef = useRef<File | null>(null);
 
-  const [privacy, setPrivacy] = useState<PrivacyState>({
-    privateAccount: false,
-    messagePolicy: 'everyone',
-    allowMentions: true,
-    allowTagging: true,
-  });
-
-  const [notifications, setNotifications] = useState<NotificationState>({
-    likes: true,
-    comments: true,
-    followers: true,
-    messages: true,
-    calls: true,
-  });
-
-  const [appearance, setAppearance] = useState<'dark' | 'system'>('dark');
-
   const [loadingAccount, setLoadingAccount] = useState(false);
   const [loadingSecurity, setLoadingSecurity] = useState(false);
-  const [loadingPrivacy, setLoadingPrivacy] = useState(false);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [loadingDanger, setLoadingDanger] = useState(false);
 
   const [passwords, setPasswords] = useState({
@@ -100,19 +55,16 @@ export default function SettingsPage() {
       setEmail(user.email || '');
       setBio(user.bio || '');
       setAvatarPreview(user.avatar || null);
-      // Default privacy/notification values could come from user profile in a real integration
     }
-  }, [user]);
-
-  const verificationStatus = useMemo(() => {
-    if (!user?.isVerified) return null;
-    return user.VerificationBadge || 'Standard';
   }, [user]);
 
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[#9ca3af]">
-        Checking your session...
+      <div className="min-h-screen flex items-center justify-center text-[var(--synapse-text-muted)]">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-[var(--synapse-blue)] border-t-transparent rounded-full animate-spin" />
+          Checking your session...
+        </div>
       </div>
     );
   }
@@ -131,17 +83,15 @@ export default function SettingsPage() {
   const handleAccountSave = async () => {
     try {
       setLoadingAccount(true);
-      // Update user details
       await userAPI.updateDetails({ bio });
 
-      // Update avatar if changed
       if (avatarFileRef.current) {
         const formData = new FormData();
         formData.append('avatar', avatarFileRef.current);
         await userAPI.updateAvatar(formData);
       }
       toast.success('Account updated');
-      await checkAuth(); // Refresh user data
+      await checkAuth();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update account');
     } finally {
@@ -166,54 +116,6 @@ export default function SettingsPage() {
       toast.error(error.response?.data?.message || 'Failed to change password');
     } finally {
       setLoadingSecurity(false);
-    }
-  };
-
-  const handlePrivacySave = async () => {
-    try {
-      setLoadingPrivacy(true);
-      await userAPI.updatePrivacy(privacy);
-      toast.success('Privacy updated');
-      await checkAuth(); // Refresh user data
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update privacy');
-    } finally {
-      setLoadingPrivacy(false);
-    }
-  };
-
-  useEffect(() => {
-    // Load privacy settings
-    const loadPrivacy = async () => {
-      try {
-        const response = await userAPI.getPrivacy();
-        if (response.data.data) {
-          setPrivacy({
-            privateAccount: response.data.data.privateAccount || false,
-            messagePolicy: response.data.data.messagePolicy || 'everyone',
-            allowMentions: response.data.data.allowMentions !== false,
-            allowTagging: response.data.data.allowTagging !== false,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load privacy settings:', error);
-      }
-    };
-    if (isAuthenticated) {
-      loadPrivacy();
-    }
-  }, [isAuthenticated]);
-
-  const handleNotificationsSave = async () => {
-    try {
-      setLoadingNotifications(true);
-      // Note: This endpoint may not exist in backend yet
-      // await api.patch('/user/notifications', notifications);
-      toast.success('Notifications settings saved locally');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update notifications');
-    } finally {
-      setLoadingNotifications(false);
     }
   };
 
@@ -257,47 +159,30 @@ export default function SettingsPage() {
     switch (activeSection) {
       case 'account':
         return (
-          <div className="space-y-6">
-            <Card title="Account" description="Manage your identity and profile basics.">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm text-[#9ca3af]">Username</label>
-                  <input
-                    value={username}
-                    disabled
-                    className="w-full mt-2 glass-card rounded-lg px-4 py-3 text-[#e5e7eb] disabled:opacity-60"
-                  />
-                  <p className="text-xs text-[#9ca3af] mt-2">Username changes are restricted.</p>
-                </div>
-                <div>
-                  <label className="text-sm text-[#9ca3af]">Email</label>
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full mt-2 glass-card rounded-lg px-4 py-3 text-[#e5e7eb] focus:outline-none focus:border-[rgba(168,85,247,0.4)]"
-                  />
-                </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
+            {/* Profile Card */}
+            <div className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 overflow-hidden">
+              <div className="px-6 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/30">
+                <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Profile Information</h2>
+                <p className="text-sm text-[var(--synapse-text-muted)]">Update your profile details</p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                <div className="md:col-span-2">
-                  <label className="text-sm text-[#9ca3af]">Bio</label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    rows={3}
-                    className="w-full mt-2 glass-card rounded-lg px-4 py-3 text-[#e5e7eb] focus:outline-none focus:border-[rgba(168,85,247,0.4)]"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-[#9ca3af]">Profile picture</label>
-                  <div className="mt-2 glass-card rounded-lg p-3 flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-full bg-[#a855f7] overflow-hidden flex items-center justify-center">
-                      <img src={avatarPreview || "/default-avatar.jpg"} alt="avatar preview" className="w-full h-full object-cover" />
-                    </div>
-                    <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[rgba(168,85,247,0.3)] text-[#e5e7eb] cursor-pointer hover:bg-[rgba(168,85,247,0.1)]">
-                      <UploadCloud className="w-4 h-4" />
-                      <span className="text-sm font-semibold">Upload</span>
+              
+              <div className="p-6 space-y-6">
+                {/* Avatar Section */}
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <img 
+                      src={avatarPreview || "/default-avatar.jpg"} 
+                      alt="avatar" 
+                      className="w-20 h-20 rounded-full object-cover border-2 border-[var(--synapse-border)]" 
+                    />
+                    <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[var(--synapse-blue)] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity border-2 border-[var(--synapse-bg)]">
+                      <UploadCloud className="w-3.5 h-3.5 text-white" />
                       <input
                         type="file"
                         accept="image/*"
@@ -306,292 +191,219 @@ export default function SettingsPage() {
                       />
                     </label>
                   </div>
+                  <div>
+                    <p className="font-medium text-[var(--synapse-text)]">{username}</p>
+                    <p className="text-sm text-[var(--synapse-text-muted)]">Click the icon to update avatar</p>
+                  </div>
+                </div>
+
+                {/* Form Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Username</label>
+                    <input
+                      value={username}
+                      disabled
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] opacity-60 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-[var(--synapse-text-muted)] mt-1.5">Username cannot be changed</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Email</label>
+                    <input
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Bio</label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    rows={3}
+                    placeholder="Write a short bio about yourself..."
+                    className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors resize-none"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      if (user) {
+                        setEmail(user.email || '');
+                        setBio(user.bio || '');
+                        setAvatarPreview(user.avatar || null);
+                        avatarFileRef.current = null;
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-lg border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAccountSave}
+                    disabled={loadingAccount}
+                    className="px-5 py-2.5 rounded-lg bg-[var(--synapse-blue)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {loadingAccount ? 'Saving...' : 'Save Changes'}
+                  </button>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    if (user) {
-                      setEmail(user.email || '');
-                      setBio(user.bio || '');
-                      setAvatarPreview(user.avatar || null);
-                      avatarFileRef.current = null;
-                    }
-                  }}
-                  className="px-4 py-2 glass-card rounded-lg text-[#e5e7eb] hover:border-[rgba(168,85,247,0.3)]"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAccountSave}
-                  disabled={loadingAccount}
-                  className="px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors disabled:opacity-50"
-                >
-                  {loadingAccount ? 'Saving...' : 'Save changes'}
-                </button>
-              </div>
-            </Card>
-          </div>
+            </div>
+          </motion.div>
         );
 
       case 'security':
         return (
-          <div className="space-y-6">
-            <Card title="Change password" description="Keep your account secure with a strong password.">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <InputField
-                  label="Current password"
-                  type="password"
-                  value={passwords.currentPassword}
-                  onChange={(v) => setPasswords((p) => ({ ...p, currentPassword: v }))}
-                />
-                <InputField
-                  label="New password"
-                  type="password"
-                  value={passwords.newPassword}
-                  onChange={(v) => setPasswords((p) => ({ ...p, newPassword: v }))}
-                />
-                <InputField
-                  label="Confirm new password"
-                  type="password"
-                  value={passwords.confirmPassword}
-                  onChange={(v) => setPasswords((p) => ({ ...p, confirmPassword: v }))}
-                />
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' })}
-                  className="px-4 py-2 glass-card rounded-lg text-[#e5e7eb] hover:border-[rgba(168,85,247,0.3)]"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePasswordChange}
-                  disabled={loadingSecurity}
-                  className="px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors disabled:opacity-50"
-                >
-                  {loadingSecurity ? 'Updating...' : 'Update password'}
-                </button>
-              </div>
-            </Card>
-
-            <Card title="Sessions" description="Control active sessions across devices.">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
+            {/* Password Card */}
+            <div className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 overflow-hidden">
+              <div className="px-6 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/30 flex items-center gap-3">
+                <Lock className="w-5 h-5 text-[var(--synapse-blue)]" />
                 <div>
-                  <p className="text-[#e5e7eb] font-semibold">Logout from all devices</p>
-                  <p className="text-sm text-[#9ca3af]">Revokes tokens on all active sessions.</p>
-                </div>
-                <button
-                  onClick={handleLogoutAll}
-                  disabled={loadingSecurity}
-                  className="px-4 py-2 glass-card rounded-lg text-[#e5e7eb] hover:border-[rgba(168,85,247,0.3)] disabled:opacity-50"
-                >
-                  {loadingSecurity ? 'Working...' : 'Logout all'}
-                </button>
-              </div>
-            </Card>
-          </div>
-        );
-
-      case 'privacy':
-        return (
-          <div className="space-y-6">
-            <Card title="Privacy" description="Control who can see and interact with you.">
-              <ToggleRow
-                label="Private account"
-                description="Only approved followers can see your content."
-                value={privacy.privateAccount}
-                onChange={(v) => setPrivacy((p) => ({ ...p, privateAccount: v }))}
-              />
-              <div className="mt-4">
-                <label className="text-sm text-[#9ca3af]">Allow messages from</label>
-                <div className="mt-2 flex gap-3">
-                  {['everyone', 'followers'].map((option) => (
-                    <button
-                      key={option}
-                      onClick={() => setPrivacy((p) => ({ ...p, messagePolicy: option as PrivacyState['messagePolicy'] }))}
-                      className={`px-4 py-2 rounded-lg border ${privacy.messagePolicy === option
-                        ? 'border-[rgba(168,85,247,0.4)] text-[#e5e7eb]'
-                        : 'border-transparent text-[#9ca3af] hover:border-[rgba(168,85,247,0.2)]'
-                        } glass-card`}
-                    >
-                      {option === 'everyone' ? 'Everyone' : 'Followers only'}
-                    </button>
-                  ))}
+                  <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Change Password</h2>
+                  <p className="text-sm text-[var(--synapse-text-muted)]">Keep your account secure</p>
                 </div>
               </div>
-              <ToggleRow
-                label="Allow mentions"
-                description="Others can @mention you in posts and comments."
-                value={privacy.allowMentions}
-                onChange={(v) => setPrivacy((p) => ({ ...p, allowMentions: v }))}
-              />
-              <ToggleRow
-                label="Allow tagging"
-                description="Others can tag you in photos and reels."
-                value={privacy.allowTagging}
-                onChange={(v) => setPrivacy((p) => ({ ...p, allowTagging: v }))}
-              />
-              <div className="flex justify-end">
-                <button
-                  onClick={handlePrivacySave}
-                  disabled={loadingPrivacy}
-                  className="px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors disabled:opacity-50"
-                >
-                  {loadingPrivacy ? 'Saving...' : 'Save privacy'}
-                </button>
-              </div>
-            </Card>
-          </div>
-        );
-
-      case 'verification':
-        return (
-          <div className="space-y-6">
-            <Card title="Verification" description="Prove your identity and reduce spam.">
-              {!user?.isVerified ? (
-                <div className="space-y-4">
-                  <p className="text-[#e5e7eb]">
-                    Verification confirms your identity and adds trust to your profile.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="glass-card rounded-xl p-4 border border-[rgba(168,85,247,0.2)]">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-[#a855f7]" />
-                        <p className="font-semibold text-[#e5e7eb]">Blue badge</p>
-                      </div>
-                      <p className="text-sm text-[#9ca3af]">Standard verification for creators and members.</p>
-                    </div>
-                    <div className="glass-card rounded-xl p-4 border border-[rgba(168,85,247,0.2)]">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-[#c084fc]" />
-                        <p className="font-semibold text-[#e5e7eb]">Gold badge</p>
-                      </div>
-                      <p className="text-sm text-[#9ca3af]">Priority support and enhanced trust signals.</p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors w-fit">
-                    Get verified
-                  </button>
-                </div>
-              ) : (
-                <div className="glass-card rounded-xl p-4 flex items-center justify-between">
+              
+              <div className="p-6 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-[#06b6d4]" />
-                      <p className="text-[#e5e7eb] font-semibold">Verified</p>
-                    </div>
-                    <p className="text-sm text-[#9ca3af]">
-                      Badge: {verificationStatus} • Renewal handled via billing.
-                    </p>
+                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Current Password</label>
+                    <input
+                      type="password"
+                      value={passwords.currentPassword}
+                      onChange={(e) => setPasswords(p => ({ ...p, currentPassword: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
+                    />
                   </div>
-                  <button className="px-4 py-2 glass-card rounded-lg text-[#e5e7eb] hover:border-[rgba(168,85,247,0.3)]">
-                    Manage plan
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">New Password</label>
+                    <input
+                      type="password"
+                      value={passwords.newPassword}
+                      onChange={(e) => setPasswords(p => ({ ...p, newPassword: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--synapse-text-muted)] mb-2">Confirm Password</label>
+                    <input
+                      type="password"
+                      value={passwords.confirmPassword}
+                      onChange={(e) => setPasswords(p => ({ ...p, confirmPassword: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 border border-[var(--synapse-border)] text-[var(--synapse-text)] focus:outline-none focus:border-[var(--synapse-blue)] transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' })}
+                    className="px-5 py-2.5 rounded-lg border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePasswordChange}
+                    disabled={loadingSecurity}
+                    className="px-5 py-2.5 rounded-lg bg-[var(--synapse-blue)] text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {loadingSecurity ? 'Updating...' : 'Update Password'}
                   </button>
                 </div>
-              )}
-            </Card>
-          </div>
-        );
-
-      case 'notifications':
-        return (
-          <div className="space-y-6">
-            <Card title="Notifications" description="Control which events reach you.">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ToggleRow
-                  label="Likes"
-                  value={notifications.likes}
-                  onChange={(v) => setNotifications((p) => ({ ...p, likes: v }))}
-                />
-                <ToggleRow
-                  label="Comments"
-                  value={notifications.comments}
-                  onChange={(v) => setNotifications((p) => ({ ...p, comments: v }))}
-                />
-                <ToggleRow
-                  label="New followers"
-                  value={notifications.followers}
-                  onChange={(v) => setNotifications((p) => ({ ...p, followers: v }))}
-                />
-                <ToggleRow
-                  label="Messages"
-                  value={notifications.messages}
-                  onChange={(v) => setNotifications((p) => ({ ...p, messages: v }))}
-                />
-                <ToggleRow
-                  label="Calls"
-                  value={notifications.calls}
-                  onChange={(v) => setNotifications((p) => ({ ...p, calls: v }))}
-                />
               </div>
-              <div className="flex justify-end">
-                <button
-                  onClick={handleNotificationsSave}
-                  disabled={loadingNotifications}
-                  className="px-4 py-2 bg-[#a855f7] rounded-lg text-white font-semibold hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
-                >
-                  {loadingNotifications ? 'Saving...' : 'Save notifications'}
-                </button>
-              </div>
-            </Card>
-          </div>
-        );
+            </div>
 
-      case 'appearance':
-        return (
-          <div className="space-y-6">
-            <Card title="Appearance" description="Keep it simple—just pick your theme.">
-              <div className="flex gap-3 flex-wrap">
-                {['dark', 'system'].map((mode) => (
+            {/* Sessions Card */}
+            <div className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 overflow-hidden">
+              <div className="px-6 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/30 flex items-center gap-3">
+                <LogOut className="w-5 h-5 text-[var(--synapse-blue)]" />
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Active Sessions</h2>
+                  <p className="text-sm text-[var(--synapse-text-muted)]">Manage your logged-in devices</p>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-[var(--synapse-text)]">Logout from all devices</p>
+                    <p className="text-sm text-[var(--synapse-text-muted)]">This will sign you out from all active sessions</p>
+                  </div>
                   <button
-                    key={mode}
-                    onClick={() => setAppearance(mode as 'dark' | 'system')}
-                    className={`px-4 py-3 rounded-lg glass-card border ${appearance === mode
-                      ? 'border-[rgba(168,85,247,0.4)] text-[#e5e7eb]'
-                      : 'border-transparent text-[#9ca3af] hover:border-[rgba(168,85,247,0.2)]'
-                      }`}
+                    onClick={handleLogoutAll}
+                    disabled={loadingSecurity}
+                    className="px-5 py-2.5 rounded-lg border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)] transition-colors disabled:opacity-50"
                   >
-                    {mode === 'dark' ? 'Dark (default)' : 'System'}
+                    {loadingSecurity ? 'Working...' : 'Logout All'}
                   </button>
-                ))}
+                </div>
               </div>
-              <p className="text-sm text-[#9ca3af]">
-                We keep it clean—no noisy themes. Changes apply immediately.
-              </p>
-            </Card>
-          </div>
+            </div>
+          </motion.div>
         );
 
       case 'danger':
         return (
-          <div className="space-y-6">
-            <Card
-              title="Danger Zone"
-              description="Permanent actions. Proceed carefully."
-              tone="danger"
-            >
-              <div className="space-y-4">
-                <ActionRow
-                  title="Deactivate account"
-                  description="Temporarily disable your profile and hide your content."
-                  actionLabel="Deactivate"
-                  onAction={handleDeactivate}
-                  loading={loadingDanger}
-                  tone="warn"
-                />
-                <ActionRow
-                  title="Delete account"
-                  description="This permanently deletes your account and data."
-                  actionLabel="Delete"
-                  onAction={handleDelete}
-                  loading={loadingDanger}
-                  tone="danger"
-                />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6"
+          >
+            <div className="rounded-lg border border-red-500/30 bg-red-500/5 overflow-hidden">
+              <div className="px-6 py-4 border-b border-red-500/30 bg-red-500/10 flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--synapse-text)]">Danger Zone</h2>
+                  <p className="text-sm text-[var(--synapse-text-muted)]">Irreversible actions</p>
+                </div>
               </div>
-            </Card>
-          </div>
+              
+              <div className="p-6 space-y-4">
+                {/* Deactivate */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/30">
+                  <div>
+                    <p className="font-medium text-[var(--synapse-text)]">Deactivate Account</p>
+                    <p className="text-sm text-[var(--synapse-text-muted)]">Temporarily disable your profile and hide content</p>
+                  </div>
+                  <button
+                    onClick={handleDeactivate}
+                    disabled={loadingDanger}
+                    className="px-5 py-2.5 rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
+                  >
+                    {loadingDanger ? 'Working...' : 'Deactivate'}
+                  </button>
+                </div>
+
+                {/* Delete */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-red-500/30 bg-red-500/5">
+                  <div>
+                    <p className="font-medium text-[var(--synapse-text)]">Delete Account</p>
+                    <p className="text-sm text-[var(--synapse-text-muted)]">Permanently delete your account and all data</p>
+                  </div>
+                  <button
+                    onClick={handleDelete}
+                    disabled={loadingDanger}
+                    className="px-5 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {loadingDanger ? 'Working...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         );
 
       default:
@@ -600,35 +412,45 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-10">
-        <header className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm text-[#9ca3af] uppercase tracking-[0.12em]">Orbit — Settings</p>
-            <h1 className="text-3xl font-bold text-[#e5e7eb] mt-1">System Control Center</h1>
-            <p className="text-[#9ca3af] mt-2">
-              You control your identity. Everything here maps to real backend actions.
-            </p>
+    <div className="min-h-screen bg-[var(--synapse-bg)]">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <header className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Settings className="w-7 h-7 text-[var(--synapse-blue)]" />
+            <h1 className="text-2xl font-bold text-[var(--synapse-text)]">Settings</h1>
           </div>
+          <p className="text-[var(--synapse-text-muted)]">
+            Manage your account settings and preferences
+          </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[240px,1fr] gap-6 items-start">
-          <nav className="glass-card rounded-xl p-3 border border-[rgba(168,85,247,0.12)]">
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[220px,1fr] gap-6">
+          {/* Navigation Sidebar */}
+          <nav className="rounded-lg border border-[var(--synapse-border)] bg-[var(--synapse-surface)]/50 p-3 h-fit">
             <ul className="space-y-1">
               {sectionNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeSection === item.id;
+                const isDanger = item.id === 'danger';
                 return (
                   <li key={item.id}>
                     <button
                       onClick={() => setActiveSection(item.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all ${isActive
-                        ? 'bg-[#a855f7]/15 text-[#e5e7eb] border border-[rgba(168,85,247,0.3)]'
-                        : 'text-[#9ca3af] hover:bg-[rgba(168,85,247,0.08)] hover:text-[#e5e7eb]'
-                        }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
+                        isActive
+                          ? isDanger
+                            ? 'bg-red-500/10 text-red-400 border border-red-500/30'
+                            : 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)] border border-[var(--synapse-border)]'
+                          : 'text-[var(--synapse-text-muted)] hover:bg-[var(--synapse-surface-hover)] border border-transparent'
+                      }`}
                     >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#a855f7]' : ''}`} />
-                      <span className="font-semibold">{item.label}</span>
+                      <Icon className={`w-5 h-5 ${isActive ? (isDanger ? 'text-red-400' : 'text-[var(--synapse-blue)]') : ''}`} />
+                      <div>
+                        <span className="font-medium block">{item.label}</span>
+                        <span className="text-xs opacity-70">{item.description}</span>
+                      </div>
                     </button>
                   </li>
                 );
@@ -636,126 +458,10 @@ export default function SettingsPage() {
             </ul>
           </nav>
 
-          <section className="space-y-6">{renderSection()}</section>
+          {/* Content Area */}
+          <section>{renderSection()}</section>
         </div>
       </div>
     </div>
   );
 }
-
-function Card({
-  title,
-  description,
-  children,
-  tone = 'default',
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-  tone?: 'default' | 'danger';
-}) {
-  const border =
-    tone === 'danger' ? 'border-red-500/30 bg-[rgba(239,68,68,0.05)]' : 'border-[rgba(168,85,247,0.15)]';
-  return (
-    <div className={`glass-card rounded-xl p-6 border ${border}`}>
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-[#e5e7eb]">{title}</h2>
-        {description && <p className="text-sm text-[#9ca3af] mt-1">{description}</p>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function InputField({
-  label,
-  type = 'text',
-  value,
-  onChange,
-}: {
-  label: string;
-  type?: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div>
-      <label className="text-sm text-[#9ca3af]">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full mt-2 glass-card rounded-lg px-4 py-3 text-[#e5e7eb] focus:outline-none focus:border-[rgba(168,85,247,0.4)]"
-      />
-    </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  description,
-  value,
-  onChange,
-}: {
-  label: string;
-  description?: string;
-  value: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-3 py-2">
-      <div>
-        <p className="text-[#e5e7eb] font-medium">{label}</p>
-        {description && <p className="text-sm text-[#9ca3af]">{description}</p>}
-      </div>
-      <label className="relative inline-flex cursor-pointer items-center">
-        <input
-          type="checkbox"
-          className="sr-only peer"
-          checked={value}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-        <div className="w-11 h-6 bg-[#1f2937] peer-focus:outline-none rounded-full peer peer-checked:bg-[#a855f7] transition-colors" />
-        <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow" />
-      </label>
-    </div>
-  );
-}
-
-function ActionRow({
-  title,
-  description,
-  actionLabel,
-  onAction,
-  loading,
-  tone = 'warn',
-}: {
-  title: string;
-  description: string;
-  actionLabel: string;
-  onAction: () => void;
-  loading: boolean;
-  tone?: 'warn' | 'danger';
-}) {
-  const color =
-    tone === 'danger'
-      ? 'bg-red-600 hover:bg-red-700'
-      : 'bg-amber-600 hover:bg-amber-700';
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 glass-card rounded-lg border border-[rgba(168,85,247,0.1)]">
-      <div>
-        <p className="text-[#e5e7eb] font-semibold">{title}</p>
-        <p className="text-sm text-[#9ca3af]">{description}</p>
-      </div>
-      <button
-        onClick={onAction}
-        disabled={loading}
-        className={`px-4 py-2 rounded-lg text-white font-semibold hover:scale-105 transition-transform disabled:opacity-60 disabled:hover:scale-100 ${color}`}
-      >
-        {loading ? 'Working...' : actionLabel}
-      </button>
-    </div>
-  );
-}
-
-
