@@ -1091,11 +1091,7 @@ function PostCard({
                             className="w-full aspect-video object-cover"
                         />
                     )}
-                    {post.mediaType === 'image' && (
-                        <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded text-xs bg-black/60 text-white">
-                            JPG
-                        </div>
-                    )}
+                    
                 </div>
             )}
 

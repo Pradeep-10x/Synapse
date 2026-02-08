@@ -195,92 +195,69 @@ export default function ProfilePage() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
           
-          {/* Left Side - Profile Card */}
+          {/* Left Side - Followers & Following Card */}
           <div className="bg-[var(--synapse-surface)]/80 backdrop-blur-sm border border-[var(--synapse-border)] rounded-md p-6 h-fit">
-            {/* Avatar Section */}
-            <div className="flex flex-col items-center mb-6">
-              <div className="relative mb-4">
-                <div className="w-36 h-36 rounded-full bg-gradient-to-br from-[#1a1a2e] to-[#16213e] border-2 border-[var(--synapse-border)] overflow-hidden shadow-lg">
-                  <img 
-                    src={profileUser.avatar || "/default-avatar.jpg"} 
-                    alt={profileUser.username} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                {/* Active Status Indicator */}
-                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-[var(--synapse-surface)] px-1 py-0.5 rounded-full border border-[var(--synapse-border)]">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span className="text-[10px] text-emerald-400 font-medium">Active</span>
-                </div>
+            {/* Header with Avatar */}
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[var(--synapse-border)]">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1a1a2e] to-[#16213e] border-2 border-[var(--synapse-border)] overflow-hidden">
+                <img 
+                  src={profileUser.avatar || "/default-avatar.jpg"} 
+                  alt={profileUser.username} 
+                  className="w-full h-full object-cover"
+                />
               </div>
-
-              {/* Name & Username */}
-              <h2 className="text-xl font-bold text-[var(--synapse-text)] mb-1">
-                {profileUser.fullName || profileUser.username}
-                {profileUser.isVerified && (
-                  <span className="ml-2 text-[#6366f1]">✓</span>
-                )}
-              </h2>
-              <p className="text-[var(--synapse-text-muted)] text-sm">@{profileUser.username}</p>
+              <div>
+                <h2 className="text-lg font-bold text-[var(--synapse-text)]">
+                  {profileUser.fullName || profileUser.username}
+                  {profileUser.isVerified && (
+                    <span className="ml-2 text-[#6366f1]">✓</span>
+                  )}
+                </h2>
+                <p className="text-[var(--synapse-text-muted)] text-sm">@{profileUser.username}</p>
+              </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="text-center">
+            {/* Followers Section */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-[var(--synapse-text)]">Followers</h3>
+                <span className="text-2xl font-bold text-[var(--synapse-text)]">{profileUser.followersCount}</span>
+              </div>
+              <div className="h-1 rounded-full bg-[var(--synapse-surface-hover)]">
+                <div className="h-1 rounded-full bg-gradient-to-r from-[#6366f1] to-[#8b5cf6]" style={{ width: `${Math.min(profileUser.followersCount * 2, 100)}%` }} />
+              </div>
+            </div>
+
+            {/* Following Section */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-[var(--synapse-text)]">Following</h3>
+                <span className="text-2xl font-bold text-[var(--synapse-text)]">{profileUser.followingCount}</span>
+              </div>
+              <div className="h-1 rounded-full bg-[var(--synapse-surface-hover)]">
+                <div className="h-1 rounded-full bg-gradient-to-r from-[#10b981] to-[#34d399]" style={{ width: `${Math.min(profileUser.followingCount * 2, 100)}%` }} />
+              </div>
+            </div>
+
+            {/* Stats Summary */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="text-center p-3 rounded-lg bg-[var(--synapse-surface-hover)]/50">
                 <p className="text-[var(--synapse-text-muted)] text-xs uppercase tracking-wider mb-1">Communities</p>
-                <p className="text-2xl font-bold text-[var(--synapse-text)]">{domainsCount}</p>
+                <p className="text-xl font-bold text-[var(--synapse-text)]">{domainsCount}</p>
               </div>
-              <div className="text-center">
+              <div className="text-center p-3 rounded-lg bg-[var(--synapse-surface-hover)]/50">
                 <p className="text-[var(--synapse-text-muted)] text-xs uppercase tracking-wider mb-1">Posts</p>
-                <p className="text-2xl font-bold text-[var(--synapse-text)]">{postsCount}</p>
+                <p className="text-xl font-bold text-[var(--synapse-text)]">{postsCount}</p>
               </div>
             </div>
 
-            {/* Connections */}
-            <div className="border-t border-[var(--synapse-border)] pt-4 mb-6">
-              
-                <div className="text-[var(--synapse-text-muted)] text-sm pb-2">Connections</div>
-               
-              
-              {/* Followers & Following */}
-             
-                <span>
-                  <span className="text-lg font-semibold text-[var(--synapse-text)]">{profileUser.followersCount}</span>
-                  <span className="text-[var(--synapse-text-muted)] text-sm ml-1 mr-10">Followers</span>
-                </span>
-                <span>
-                  <span className="text-lg font-semibold text-[var(--synapse-text)]">{profileUser.followingCount}</span>
-                  <span className="text-[var(--synapse-text-muted)] text-sm ml-1">Following</span>
-                </span>
-             
-            </div>
-
-            {/* Mini Profile Cards */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-[var(--synapse-surface-hover)] rounded-md">
-                <img 
-                  src={profileUser.avatar || "/default-avatar.jpg"} 
-                  alt="" 
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="text-sm text-[var(--synapse-text)]">Communities: {domainsCount}</p>
-                  <p className="text-sm text-[var(--synapse-text)]">Posts: {postsCount}</p>
-                </div>
+            {/* Bio if exists */}
+            {profileUser.bio && (
+              <div className="border-t border-[var(--synapse-border)] pt-4">
+                <p className="text-[var(--synapse-text-muted)] text-xs uppercase tracking-wider mb-2">About</p>
+                <p className="text-[var(--synapse-text)] text-sm leading-relaxed">{profileUser.bio}</p>
               </div>
-              
-              {/* <div className="flex items-center gap-3 p-3 bg-[var(--synapse-surface-hover)] rounded-md">
-                <img 
-                  src={profileUser.avatar || "/default-avatar.jpg"} 
-                  alt="" 
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                {/* <div>
-                  <p className="text-sm text-[var(--synapse-text)]">Connections: {connectionsCount}</p>
-                  <p className="text-xs text-[var(--synapse-text-muted)]">in.{profileUser.followingCount}.</p>
-                </div> */}
-              
-            </div>
+            )}
           </div>
 
           {/* Right Side - Identity Overview */}

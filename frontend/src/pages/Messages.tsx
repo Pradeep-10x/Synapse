@@ -481,7 +481,7 @@ export default function MessagesPage() {
 
       <div className="flex-1 flex overflow-hidden p-4 gap-4">
         {/* Conversation list - left card */}
-        <div className="w-full md:w-[420px] h-[78vh] flex-shrink-0 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col">
+        <div className="w-full md:w-[420px] h-[70vh] flex-shrink-0 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col">
           <div className="p-4 bg-gradient-to-b from-[var(--synapse-surface-hover)]/40 to-transparent">
             <div className="flex gap-4 mb-4">
               <button
@@ -617,7 +617,7 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Window - right card */}
-        <div className="flex-1 h-[78vh] flex flex-col rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden">
+        <div className="flex-1 h-[70vh] flex flex-col rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden">
           {selectedConversation ? (
             <>
               {/* Chat Header - Direct */}

@@ -7,8 +7,9 @@ import {
   MessageSquare,
   Heart,
   MoreHorizontal,
-  Users,
   Trash2,
+  Users,
+  Pencil,
 } from 'lucide-react';
 import { userAPI, communityPostAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -73,18 +74,19 @@ export default function PersonalPage() {
 
 
 
-  const [loadingConnections, setLoadingConnections] = useState(true);
+
 
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [postsPage, setPostsPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
+  const [modalType, setModalType] = useState<'followers' | 'following' | null>(null);
 
 
 
-  const [followState, setFollowState] = useState<Record<string, boolean>>({});
   const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [followState, setFollowState] = useState<Record<string, boolean>>({});
   const menuRef = useRef<HTMLDivElement>(null);
 
   const userId = currentUser?._id;
@@ -99,9 +101,8 @@ export default function PersonalPage() {
 
 
 
-  const fetchConnections = async (silent = false) => {
+  const fetchConnections = async () => {
     if (!userId) return;
-    if (!silent) setLoadingConnections(true);
     try {
       const [followersRes, followingRes] = await Promise.all([
         userAPI.getFollowers(userId),
@@ -111,21 +112,9 @@ export default function PersonalPage() {
       const g = followingRes.data?.data?.following ?? [];
       setFollowers(Array.isArray(f) ? f : []);
       setFollowing(Array.isArray(g) ? g : []);
-
-
-      const nextState: Record<string, boolean> = {};
-      (Array.isArray(f) ? f : []).forEach((item: FollowerItem) => {
-        if (item.follower?._id) nextState[item.follower._id] = false;
-      });
-      (Array.isArray(g) ? g : []).forEach((item: FollowingItem) => {
-        if (item.following?._id) nextState[item.following._id] = true;
-      });
-      setFollowState((s) => ({ ...s, ...nextState }));
     } catch (e) {
       console.error(e);
-      if (!silent) toast.error('Failed to load connections');
-    } finally {
-      if (!silent) setLoadingConnections(false);
+      toast.error('Failed to load connections');
     }
   };
 
@@ -133,24 +122,7 @@ export default function PersonalPage() {
     fetchConnections();
   }, [userId]);
 
-  const handleFollowToggle = async (targetUserId: string, currentlyFollowing: boolean) => {
-    if (!currentUser || targetUserId === currentUser._id) return;
 
-    // Optimistic update for button state
-    const prev = followState[targetUserId];
-    setFollowState((s) => ({ ...s, [targetUserId]: !currentlyFollowing }));
-
-    try {
-      await userAPI.followUnfollow(targetUserId);
-      toast.success(!currentlyFollowing ? 'Following' : 'Unfollowed');
-
-      // Refresh lists to reflect changes (e.g. remove from following list if unfollowed)
-      await fetchConnections(true);
-    } catch (e: any) {
-      setFollowState((s) => ({ ...s, [targetUserId]: prev }));
-      toast.error(e.response?.data?.message || 'Action failed');
-    }
-  };
 
 
 
@@ -244,7 +216,7 @@ export default function PersonalPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_400px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_390px] gap-6">
         {/* Posts - left panel */}
         <div className={`bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-md overflow-hidden flex flex-col shadow-sm ${activeTab === 'connections' ? 'hidden lg:flex' : ''}`}>
           <div className="px-5 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
@@ -364,95 +336,184 @@ export default function PersonalPage() {
           </div>
         </div>
 
-        {/* Followers & Following - two separate boxes like post cards */}
-        <div className={`flex flex-col gap-6 ${activeTab === 'posts' ? 'hidden lg:flex' : ''}`}>
-          {loadingConnections ? (
-            <div className="flex justify-center py-16 rounded-xl border border-[var(--synapse-border)] bg-[var(--synapse-surface)] p-8">
-              <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-blue)]" />
-            </div>
-          ) : (
-            <>
-              {/* Followers box - card style, ~5 visible */}
-              <div className="rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-bg)]/50 overflow-hidden shadow-sm flex flex-col">
-                <div className="px-4 py-3.5 flex items-center gap-2 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
-                  <Users className="w-4 h-4 text-[var(--synapse-white)]" />
-                  <h3 className="text-sm font-semibold tracking-wide text-[var(--synapse-text)]">
-                    Followers {followers.length > 0 && <span className="text-[var(--synapse-text-muted)] font-medium">({followers.length})</span>}
-                  </h3>
+        {/* Profile Card - right side */}
+        <div className={`${activeTab === 'posts' ? 'hidden lg:block' : ''}`}>
+          <div className="relative bg-[var(--synapse-surface)]/80 backdrop-blur-sm border border-[var(--synapse-border)] rounded-md p-6 h-fit sticky top-4">
+            {/* Edit Profile Link - Top Right */}
+            <Link 
+              to="/settings" 
+              className="absolute top-4 right-4 flex items-center gap-1.5 text-xs text-[var(--synapse-text-muted)] hover:text-[var(--synapse-blue)] transition-colors"
+            >
+              <Pencil className="w-5 h-5" />
+            </Link>
+            {/* Avatar Section */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative mb-4">
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#1a1a2e] to-[#16213e] border-2 border-[var(--synapse-border)] overflow-hidden shadow-lg">
+                  <img 
+                    src={currentUser?.avatar || "/default-avatar.jpg"} 
+                    alt={currentUser?.username} 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <div className="max-h-[320px] overflow-y-auto scrollbar-hide min-h-[250px]">
-                  {followers.length === 0 ? (
-                    <p className="px-4 py-8 text-center text-[var(--synapse-text-muted)] text-sm font-medium">No followers yet</p>
-                  ) : (
-                    <ul className="divide-y divide-[var(--synapse-border)]">
-                      {followers.map((item) => {
-                        const user = item.follower;
-                        if (!user?._id) return null;
-                        const isFollowing = followState[user._id] ?? false;
-                        return (
-                          <li key={user._id} className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--synapse-surface-hover)]/50 transition-colors">
-                            <Link to={`/profile/${user.username}`} className="flex items-center gap-3 flex-1 min-w-0">
-                              <img src={user.avatar || '/default-avatar.jpg'} alt={user.username} className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)] flex-shrink-0" />
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-[var(--synapse-text)] truncate text-sm">{user.fullName || user.username}</p>
-                                <p className="text-xs text-[var(--synapse-text-muted)] truncate font-medium">@{user.username}</p>
-                              </div>
-                            </Link>
-                            {user._id !== currentUser._id && (
-                              <button onClick={() => handleFollowToggle(user._id, isFollowing)} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${isFollowing ? 'bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] cursor-pointer' : 'bg-[var(--synapse-blue)] text-white hover:opacity-90'}`}>
-                                {isFollowing ? 'Following' : 'Follow'}
-                              </button>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+                {/* Active Status */}
+                <div className="absolute bottom-1 right-1 flex items-center gap-1 bg-[var(--synapse-surface)] px-1.5 py-0.5 rounded-full border border-[var(--synapse-border)]">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-[10px] text-emerald-400 font-medium">Online</span>
                 </div>
               </div>
 
-              {/* Following box - card style, ~5 visible */}
-              <div className="rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-bg)]/50 overflow-hidden shadow-sm flex flex-col">
-                <div className="px-4 py-3.5 flex items-center gap-2 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
-                  <Users className="w-4 h-4 text-[var(--synapse-white)]" />
-                  <h3 className="text-sm font-semibold tracking-wide text-[var(--synapse-text)]">
-                    Following {following.length > 0 && <span className="text-[var(--synapse-text-muted)] font-medium">({following.length})</span>}
-                  </h3>
-                </div>
-                <div className="max-h-[320px] overflow-y-auto scrollbar-hide min-h-[250px]">
-                  {following.length === 0 ? (
-                    <p className="px-4 py-8 text-center text-[var(--synapse-text-muted)] text-sm font-medium">Not following anyone yet</p>
-                  ) : (
-                    <ul className="divide-y divide-[var(--synapse-border)]">
-                      {following.map((item) => {
-                        const user = item.following;
-                        if (!user?._id) return null;
-                        const isFollowing = followState[user._id] ?? true;
-                        return (
-                          <li key={user._id} className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--synapse-surface-hover)]/50 transition-colors">
-                            <Link to={`/profile/${user.username}`} className="flex items-center gap-3 flex-1 min-w-0">
-                              <img src={user.avatar || '/default-avatar.jpg'} alt={user.username} className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)] flex-shrink-0" />
-                              <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-[var(--synapse-text)] truncate text-sm">{user.fullName || user.username}</p>
-                                <p className="text-xs text-[var(--synapse-text-muted)] truncate font-medium">@{user.username}</p>
-                              </div>
-                            </Link>
-                            {user._id !== currentUser._id && (
-                              <button onClick={() => handleFollowToggle(user._id, isFollowing)} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${isFollowing ? 'bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] cursor-pointer' : 'bg-[var(--synapse-blue)] text-white hover:opacity-90'}`}>
-                                {isFollowing ? 'Following' : 'Follow'}
-                              </button>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
+              <h2 className="text-xl font-bold text-[var(--synapse-text)] mb-1">
+                {currentUser?.fullName || currentUser?.username}
+              </h2>
+              <p className="text-[var(--synapse-text-muted)] text-sm">@{currentUser?.username}</p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <button
+                onClick={() => setModalType('followers')}
+                className="text-center p-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 hover:bg-[var(--synapse-surface-hover)] transition-colors cursor-pointer"
+              >
+                <p className="text-[var(--synapse-text)] text-md font-medium mb-1">Followers</p>
+                <p className="text-2xl font-bold text-[var(--synapse-text)]">{followers.length}</p>
+              </button>
+              <button
+                onClick={() => setModalType('following')}
+                className="text-center p-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 hover:bg-[var(--synapse-surface-hover)] transition-colors cursor-pointer"
+              >
+                <p className="text-[var(--synapse-text)] text-md font-medium mb-1">Following</p>
+                <p className="text-2xl font-bold text-[var(--synapse-text)]">{following.length}</p>
+              </button>
+            </div>
+
+            {/* Bio */}
+            {currentUser?.bio && (
+              <div className="border-t border-[var(--synapse-border)] pt-4 mb-4">
+                <p className="text-[var(--synapse-text)] text-md font-semibold mb-2">About</p>
+                <p className="text-[var(--synapse-text-muted)] text-sm leading-relaxed">-{currentUser.bio}</p>
               </div>
-            </>
-          )}
+            )}
+
+            {/* Stats */}
+            <div className="border-t border-[var(--synapse-border)] pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--synapse-text)] text-md font-semibold">Communities</span>
+                <span className="text-[var(--synapse-text)] font-semibold">3</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--synapse-text)] text-md font-semibold">Total Posts</span>
+                <span className="text-[var(--synapse-text)] font-semibold">{posts.length}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Followers/Following Modal */}
+      {modalType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setModalType(null)}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-md w-full max-w-md max-h-[70vh] overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-[var(--synapse-white)]" />
+                <h3 className="text-lg font-semibold text-[var(--synapse-text)]">
+                  {modalType === 'followers' ? 'Followers' : 'Following'}
+                </h3>
+                <span className="text-sm text-[var(--synapse-text-muted)]">
+                  ({modalType === 'followers' ? followers.length : following.length})
+                </span>
+              </div>
+              <button
+                onClick={() => setModalType(null)}
+                className="p-1.5 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* List */}
+            <div className="overflow-y-auto max-h-[calc(70vh-60px)] scrollbar-hide">
+              {(modalType === 'followers' ? followers : following).length === 0 ? (
+                <p className="px-5 py-10 text-center text-[var(--synapse-text-muted)] text-sm">
+                  {modalType === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
+                </p>
+              ) : (
+                <ul className="divide-y divide-[var(--synapse-border)]">
+                  {(modalType === 'followers' ? followers : following).map((item) => {
+                    const user = modalType === 'followers' 
+                      ? (item as FollowerItem).follower 
+                      : (item as FollowingItem).following;
+                    if (!user?._id) return null;
+                    
+                    // For followers tab, check if we're following them back (check if they're in our following list)
+                    // For following tab, they are always "following" by default (user IS following them)
+                    const followingIds = following.map(f => f.following?._id);
+                    const defaultFollowState = modalType === 'following' ? true : followingIds.includes(user._id);
+                    const isFollowingUser = followState[user._id] ?? defaultFollowState;
+                    const isCurrentUser = user._id === currentUser?._id;
+                    
+                    const handleFollowClick = async () => {
+                      if (!currentUser || isCurrentUser) return;
+                      const prevState = followState[user._id];
+                      setFollowState(s => ({ ...s, [user._id]: !isFollowingUser }));
+                      try {
+                        await userAPI.followUnfollow(user._id);
+                        toast.success(!isFollowingUser ? 'Following' : 'Unfollowed');
+                        // Refresh connections
+                        fetchConnections();
+                      } catch (e: any) {
+                        setFollowState(s => ({ ...s, [user._id]: prevState }));
+                        toast.error(e.response?.data?.message || 'Action failed');
+                      }
+                    };
+                    
+                    return (
+                      <li key={user._id} className="flex items-center gap-3 px-5 py-3 hover:bg-[var(--synapse-surface-hover)]/50 transition-colors">
+                        <Link 
+                          to={`/profile/${user.username}`} 
+                          className="flex items-center gap-3 flex-1 min-w-0"
+                          onClick={() => setModalType(null)}
+                        >
+                          <img 
+                            src={user.avatar || '/default-avatar.jpg'} 
+                            alt={user.username} 
+                            className="w-11 h-11 rounded-full object-cover border-2 border-[var(--synapse-border)] flex-shrink-0" 
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-[var(--synapse-text)] truncate">{user.fullName || user.username}</p>
+                            <p className="text-sm text-[var(--synapse-text-muted)] truncate">@{user.username}</p>
+                          </div>
+                        </Link>
+                        {!isCurrentUser && (
+                          <button
+                            onClick={handleFollowClick}
+                            className={`flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                              isFollowingUser 
+                                ? 'bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:border-red-500/50 hover:text-red-400'
+                                : 'bg-[var(--synapse-blue)] text-white hover:opacity-90' 
+                            }`}
+                          >
+                            {isFollowingUser ? 'Following' : 'Follow'}
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
