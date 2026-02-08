@@ -459,35 +459,65 @@ export default function MessagesPage() {
     <div className="h-full flex flex-col overflow-hidden bg-[var(--synapse-bg)] animate-in fade-in duration-500">
       {/* Page Header - Glass panel with subtle gradient */}
       <div className="px-6 py-5 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-[var(--synapse-surface)]/40 via-transparent to-[var(--synapse-surface)]/40" />
+        <div className="absolute inset-0  border border-gray-500/30
+    bg-gradient-to-r
+    from-[var(--synapse-surface)]/40
+    via-transparent
+    to-[var(--synapse-surface)]/40
+    shadow-[0_0_16px_rgba(0,0,0,0.35)]" />
         <div className="relative flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-[var(--synapse-text)] tracking-tight">Messages</h1>
-            <p className="text-xs text-[var(--synapse-text-muted)] mt-0.5">Your conversations, synced in real-time</p>
+            <h1 className="text-xl font-bold text-[var(--synapse-text)] tracking-tight">Messages</h1>
+            <p className="text-sm text-[var(--synapse-text-muted)] mt-0.5">Your conversations, synced in real-time</p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-xs text-emerald-400 font-medium">LIVE</span>
-          </div>
+
         </div>
         {/* Bottom gradient border */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent" />
+        {/* <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent" /> */}
       </div>
 
-      <div className="flex-1 flex overflow-hidden p-4 gap-4">
+      <div className="flex-1 flex overflow-hidden p-6 gap-4">
         {/* Conversation list - left card */}
-        <div className="w-full md:w-[380px] flex-shrink-0 rounded-2xl border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col">
+        <div className="w-full md:w-[380px] h-[78vh] flex-shrink-0 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col">
           <div className="p-4 bg-gradient-to-b from-[var(--synapse-surface-hover)]/40 to-transparent">
             <div className="flex gap-4 mb-4">
               <button
                 onClick={() => setActiveTab('direct')}
-                className={`relative px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 ${activeTab === 'direct' ? 'bg-[var(--synapse-blue)]/10 text-[var(--synapse-blue)] border border-[var(--synapse-blue)]/30' : 'text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)]'}`}
+                className={`
+  relative px-5 py-2 text-sm font-semibold rounded-md
+  transition-colors duration-150 cursor-pointer
+  ${activeTab === 'direct'
+                    ? `
+        text-white
+        bg-white/[0.04]
+        border border-white/10
+      `
+                    : `
+        text-[var(--synapse-text-muted)]
+        hover:text-white
+      `
+                  }
+`}
               >
                 Individuals
               </button>
               <button
                 onClick={() => setActiveTab('community')}
-                className={`relative px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 ${activeTab === 'community' ? 'bg-[var(--synapse-blue)]/10 text-[var(--synapse-blue)] border border-[var(--synapse-blue)]/30' : 'text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface-hover)]'}`}
+                className={`
+  relative px-5 py-2 text-sm font-semibold rounded-md
+  transition-colors duration-150 cursor-pointer
+  ${activeTab === 'community'
+                    ? `
+        text-white
+        bg-white/[0.04]
+        border border-white/10
+      `
+                    : `
+        text-[var(--synapse-text-muted)]
+        hover:text-white
+      `
+                  }
+`}
               >
                 Communities
               </button>
@@ -499,13 +529,13 @@ export default function MessagesPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={activeTab === 'community' ? 'Search communities...' : 'Search conversations...'}
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-[var(--synapse-bg)] border border-[var(--synapse-border)] text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--synapse-blue)]/40 focus:border-[var(--synapse-blue)] transition-all duration-200"
+                className="w-full pl-11 pr-4 py-3 rounded-md bg-[var(--synapse-bg)] border border-[var(--synapse-border)] text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--synapse-blue)]/40 focus:border-[var(--synapse-blue)] transition-all duration-200"
               />
             </div>
           </div>
           {/* Divider */}
           <div className="h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent mx-4" />
-          <div className="flex-1 overflow-y-auto scrollbar-hide p-3">
+          <div className="flex-1 overflow-y-auto scrollbar-hide p-2">
             {activeTab === 'direct' ? (
               filteredConversations.length === 0 ? (
                 <div className="p-8 text-center text-[var(--synapse-text-muted)] text-sm">
@@ -524,7 +554,7 @@ export default function MessagesPage() {
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       transition={{ duration: 0.15 }}
-                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-xl border ${isSelected ? 'bg-gradient-to-r from-[var(--synapse-blue)]/10 to-transparent border-[var(--synapse-blue)]/30 shadow-md' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
+                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-sm border ${isSelected ? 'bg-gradient-to-r from-[var(--synapse-blue)]/10 to-transparent border-[var(--synapse-blue)]/30 shadow-md' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
                     >
                       <div className="relative flex-shrink-0">
                         <img src={otherUser?.avatar || '/default-avatar.jpg'} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-[var(--synapse-border)] ring-2 ring-[var(--synapse-surface)]" />
@@ -558,9 +588,9 @@ export default function MessagesPage() {
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       transition={{ duration: 0.15 }}
-                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-xl border ${isSelected ? 'bg-gradient-to-r from-[var(--synapse-blue)]/10 to-transparent border-[var(--synapse-blue)]/30 shadow-md' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
+                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-md border ${isSelected ? 'bg-gradient-to-r from-[var(--synapse-blue)]/10 to-transparent border-[var(--synapse-blue)]/30 shadow-md' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
                     >
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--synapse-blue)]/20 to-[var(--synapse-surface-hover)] flex items-center justify-center flex-shrink-0 border border-[var(--synapse-blue)]/30 shadow-sm">
+                      <div className="w-12 h-13 rounded-md bg-gradient-to-br from-[var(--synapse-blue)]/20 to-[var(--synapse-surface-hover)] flex items-center justify-center flex-shrink-0 border border-[var(--synapse-blue)]/30 shadow-sm">
                         <Users className="w-6 h-6 text-[var(--synapse-blue)]" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -569,10 +599,7 @@ export default function MessagesPage() {
                           <span className="text-[10px] text-[var(--synapse-text-muted)] flex-shrink-0 font-medium">{formatListTime(chat.updatedAt)}</span>
                         </div>
                         <p className="text-sm text-[var(--synapse-text-muted)] truncate mt-0.5">{chat.lastMessage || 'No messages yet'}</p>
-                        <span className="inline-flex items-center gap-1 mt-1.5 text-xs text-[var(--synapse-text-muted)] bg-[var(--synapse-surface-hover)] px-2 py-0.5 rounded-full">
-                          <Users className="w-3 h-3" />
-                          {chat.memberCount}
-                        </span>
+                       
                       </div>
                     </motion.button>
                   );
@@ -583,7 +610,7 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Window - right card */}
-        <div className="flex-1 flex flex-col rounded-2xl border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden">
+        <div className="flex-1 h-[78vh] flex flex-col rounded-2xl border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden">
           {selectedConversation ? (
             <>
               {/* Chat Header - Direct */}
