@@ -4,7 +4,7 @@ import { messageAPI, communityAPI, communityChatAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
 import { useWebRTC } from '@/hooks/useWebRTC';
-import { Send, Phone, Video, Loader2, Users, MessageCircle, X, PhoneOff, Crown, Shield, Search, Paperclip, MoreHorizontal, Info } from 'lucide-react';
+import { Send, Phone, Video, Loader2, Users, MessageCircle, X, PhoneOff, Crown, Shield, Search, Paperclip, MoreHorizontal, Info, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -36,6 +36,7 @@ interface Conversation {
 interface CommunityChat {
   _id: string;
   name: string;
+  avatar?: string;
   memberCount: number;
   lastMessage?: string;
   updatedAt: string;
@@ -85,6 +86,7 @@ export default function MessagesPage() {
   const [activeTab, setActiveTab] = useState<'direct' | 'community'>('direct');
   const [searchQuery, setSearchQuery] = useState('');
   const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showChatOptions, setShowChatOptions] = useState(false);
   const [communityDetails, setCommunityDetails] = useState<any>(null);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -200,6 +202,7 @@ export default function MessagesPage() {
       const chats: CommunityChat[] = joinedCommunities.map((c: any) => ({
         _id: c._id,
         name: c.name,
+        avatar: c.avatar,
         memberCount: c.membersCount || 0,
         lastMessage: undefined,
         updatedAt: c.updatedAt || new Date().toISOString()
@@ -476,9 +479,9 @@ export default function MessagesPage() {
         {/* <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent" /> */}
       </div>
 
-      <div className="flex-1 flex overflow-hidden p-6 gap-4">
+      <div className="flex-1 flex overflow-hidden p-4 gap-4">
         {/* Conversation list - left card */}
-        <div className="w-full md:w-[380px] h-[78vh] flex-shrink-0 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col">
+        <div className="w-full md:w-[420px] h-[78vh] flex-shrink-0 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col">
           <div className="p-4 bg-gradient-to-b from-[var(--synapse-surface-hover)]/40 to-transparent">
             <div className="flex gap-4 mb-4">
               <button
@@ -493,7 +496,7 @@ export default function MessagesPage() {
         border border-white/10
       `
                     : `
-        text-[var(--synapse-text-muted)]
+        text-[var(--synapse-text)]
         hover:text-white
       `
                   }
@@ -513,7 +516,7 @@ export default function MessagesPage() {
         border border-white/10
       `
                     : `
-        text-[var(--synapse-text-muted)]
+        text-[var(--synapse-text)]
         hover:text-white
       `
                   }
@@ -554,7 +557,7 @@ export default function MessagesPage() {
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       transition={{ duration: 0.15 }}
-                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-sm border ${isSelected ? 'bg-gradient-to-r from-[var(--synapse-blue)]/10 to-transparent border-[var(--synapse-blue)]/30 shadow-md' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
+                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-sm border ${isSelected ? 'bg-[var(--synapse-surface-hover)] border-[var(--synapse-border)]' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
                     >
                       <div className="relative flex-shrink-0">
                         <img src={otherUser?.avatar || '/default-avatar.jpg'} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-[var(--synapse-border)] ring-2 ring-[var(--synapse-surface)]" />
@@ -588,11 +591,15 @@ export default function MessagesPage() {
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       transition={{ duration: 0.15 }}
-                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-md border ${isSelected ? 'bg-gradient-to-r from-[var(--synapse-blue)]/10 to-transparent border-[var(--synapse-blue)]/30 shadow-md' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
+                      className={`w-full p-4 flex items-center gap-4 text-left transition-all duration-200 rounded-md border ${isSelected ? 'bg-[var(--synapse-surface-hover)] border-[var(--synapse-border)]' : 'border-transparent hover:bg-[var(--synapse-surface-hover)] hover:border-[var(--synapse-border)]'}`}
                     >
-                      <div className="w-12 h-13 rounded-md bg-gradient-to-br from-[var(--synapse-blue)]/20 to-[var(--synapse-surface-hover)] flex items-center justify-center flex-shrink-0 border border-[var(--synapse-blue)]/30 shadow-sm">
-                        <Users className="w-6 h-6 text-[var(--synapse-blue)]" />
-                      </div>
+                      {chat.avatar ? (
+                        <img src={chat.avatar} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-[var(--synapse-border)] flex-shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--synapse-surface-hover)] to-[var(--synapse-surface)] border-2 border-[var(--synapse-border)] flex items-center justify-center flex-shrink-0">
+                          <Users className="w-6 h-6 text-white" />
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-semibold text-[var(--synapse-text)] truncate">{chat.name}</p>
@@ -610,25 +617,25 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Window - right card */}
-        <div className="flex-1 h-[78vh] flex flex-col rounded-2xl border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden">
+        <div className="flex-1 h-[78vh] flex flex-col rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden">
           {selectedConversation ? (
             <>
               {/* Chat Header - Direct */}
-              <div className="p-4 bg-[var(--synapse-surface)]/80 backdrop-blur-sm flex items-center justify-between relative">
-                <div className="flex items-center gap-3">
+              <div className="px-5 py-4 bg-gradient-to-b from-[var(--synapse-surface)] to-[var(--synapse-surface)]/80 backdrop-blur-sm flex items-center justify-between relative border-b border-[var(--synapse-border)]/50">
+                <div className="flex items-center gap-4">
                   <div className="relative">
                     <img
                       src={getOtherParticipant(selectedConversation)?.avatar || '/default-avatar.jpg'}
                       alt=""
-                      className="w-12 h-12 rounded-full object-cover border-2 border-[var(--synapse-border)] shadow-md"
+                      className="w-11 h-11 rounded-full object-cover border-2 border-[var(--synapse-border)] ring-2 ring-[var(--synapse-surface)]"
                     />
                     {getOtherParticipant(selectedConversation)?._id && onlineUsers.has(getOtherParticipant(selectedConversation)!._id) && (
-                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[var(--synapse-surface)] shadow-sm" />
+                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[var(--synapse-surface)] shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                     )}
                   </div>
                   <div>
-                    <p className="font-semibold text-[var(--synapse-text)]">{getOtherParticipant(selectedConversation)?.username}</p>
-                    <p className="text-xs text-[var(--synapse-text-muted)] flex items-center gap-1">
+                    <p className="font-semibold text-[var(--synapse-text)] text-[15px]">{getOtherParticipant(selectedConversation)?.username}</p>
+                    <p className="text-xs text-[var(--synapse-text-muted)] flex items-center gap-1.5 mt-0.5">
                       <span className={`w-1.5 h-1.5 rounded-full ${getOtherParticipant(selectedConversation)?._id && onlineUsers.has(getOtherParticipant(selectedConversation)!._id) ? 'bg-emerald-500' : 'bg-gray-500'}`} />
                       {getOtherParticipant(selectedConversation)?._id && onlineUsers.has(getOtherParticipant(selectedConversation)!._id) ? 'Active now' : 'Offline'}
                     </p>
@@ -639,19 +646,31 @@ export default function MessagesPage() {
                     const otherUser = getOtherParticipant(selectedConversation);
                     return otherUser ? (
                       <>
-                        <button type="button" onClick={() => startCall(otherUser._id, 'audio')} disabled={isCallActive || isCallIncoming} className="p-2.5 rounded-xl hover:bg-[var(--synapse-surface-hover)]/80 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200 disabled:opacity-50" title="Voice call"><Phone className="w-5 h-5" /></button>
-                        <button type="button" onClick={() => startCall(otherUser._id, 'video')} disabled={isCallActive || isCallIncoming} className="p-2.5 rounded-xl hover:bg-[var(--synapse-surface-hover)]/80 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200 disabled:opacity-50" title="Video call"><Video className="w-5 h-5" /></button>
+                        <button type="button" onClick={() => startCall(otherUser._id, 'audio')} className="p-2.5 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-blue)] transition-all duration-200" title="Voice call"><Phone className="w-5 h-5" /></button>
+                        
                       </>
                     ) : null;
                   })()}
-                  <button type="button" className="p-2.5 rounded-xl hover:bg-[var(--synapse-surface-hover)]/80 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200" aria-label="More"><MoreHorizontal className="w-5 h-5" /></button>
+                  <div className="relative">
+                    <button type="button" onClick={() => setShowChatOptions(!showChatOptions)} className="p-2.5 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200" aria-label="More options"><MoreHorizontal className="w-5 h-5" /></button>
+                    {showChatOptions && (
+                      <div className="absolute right-0 top-full mt-2 w-48 py-1.5 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-xl shadow-xl z-20">
+                        <button
+                          type="button"
+                          onClick={() => { setShowChatOptions(false); toast.error('Delete conversation feature coming soon'); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete conversation
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {/* Gradient bottom border */}
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent" />
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {messages.length > 0 && (
                   <p className="text-center text-xs text-[var(--synapse-text-muted)] py-2">{new Date(messages[0].createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                 )}
@@ -665,8 +684,8 @@ export default function MessagesPage() {
                       transition={{ duration: 0.2, delay: idx < 10 ? idx * 0.03 : 0 }}
                       className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[75%] lg:max-w-md px-4 py-2.5 rounded-2xl shadow-sm ${isOwn ? 'bg-gradient-to-br from-[var(--synapse-blue)]/20 to-[var(--synapse-surface-hover)] text-[var(--synapse-text)]' : 'bg-[var(--synapse-surface)]/80 backdrop-blur-sm border border-[var(--synapse-border)]/60 text-[var(--synapse-text)]'}`}>
-                        {!isOwn && <p className="text-xs font-semibold text-[var(--synapse-blue)] mb-0.5">{message.sender.username}</p>}
+                      <div className={`max-w-[75%] lg:max-w-md px-4 py-2.5 rounded-2xl shadow-sm ${isOwn ? 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)]' : 'bg-[var(--synapse-surface)]/80 backdrop-blur-sm border border-[var(--synapse-border)]/60 text-[var(--synapse-text)]'}`}>
+                        {!isOwn && <p className="text-xs font-semibold text-gray-500 mb-0.5">{message.sender.username}</p>}
                         <p className="text-sm break-words leading-relaxed">{message.content}</p>
                         <p className="text-[10px] mt-1.5 text-[var(--synapse-text-muted)] opacity-70">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
@@ -688,21 +707,18 @@ export default function MessagesPage() {
               </div>
 
               {/* Input */}
-              <form onSubmit={handleSendMessage} className="p-4 bg-[var(--synapse-surface)]/80 backdrop-blur-sm relative">
-                {/* Gradient top border */}
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent" />
-                <div className="flex items-center gap-2">
-                  <button type="button" className="p-2.5 rounded-xl hover:bg-[var(--synapse-surface-hover)]/80 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200" aria-label="Attach"><Paperclip className="w-5 h-5" /></button>
+              <form onSubmit={handleSendMessage} className="px-5 py-4 bg-[var(--synapse-surface)] border-t border-[var(--synapse-border)]/50">
+                <div className="flex items-center gap-3">
+                  <button type="button" className="p-2.5 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200" aria-label="Attach file"><Paperclip className="w-5 h-5" /></button>
                   <input
                     type="text"
                     value={messageInput}
                     onChange={(e) => { setMessageInput(e.target.value); if (selectedConversation) handleTyping(); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (messageInput.trim() && !sending) handleSendMessage(e as any); } }}
-                    placeholder={`Message ${getOtherParticipant(selectedConversation)?.username || '...'}...`}
-                    className="flex-1 px-4 py-3 rounded-2xl bg-[var(--synapse-surface-hover)]/60 border border-[var(--synapse-border)]/60 text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--synapse-blue)]/40 focus:border-[var(--synapse-blue)] transition-all duration-200"
+                    placeholder={`Message ${getOtherParticipant(selectedConversation)?.username || ''}...`}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--synapse-bg)] border border-[var(--synapse-border)] text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)]/60 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--synapse-blue)]/30 focus:border-[var(--synapse-blue)]/50 transition-all duration-200"
                   />
-                  <button type="button" className="p-2.5 rounded-xl hover:bg-[var(--synapse-surface-hover)]/80 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200" aria-label="Info"><Info className="w-5 h-5" /></button>
-                  <button type="submit" disabled={!messageInput.trim() || sending} className="p-2.5 rounded-xl bg-gradient-to-r from-[var(--synapse-blue)] to-blue-500 text-white hover:opacity-90 disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg">
+                  <button type="submit" disabled={!messageInput.trim() || sending} className="p-2.5 rounded-lg bg-[var(--synapse-blue)] text-white hover:bg-[var(--synapse-blue)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200">
                     {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                   </button>
                 </div>
@@ -713,13 +729,17 @@ export default function MessagesPage() {
               {/* Chat Header - Community */}
               <div className="p-4 bg-[var(--synapse-surface)]/80 backdrop-blur-sm flex items-center justify-between relative">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--synapse-surface-hover)] to-[var(--synapse-surface)] border border-[var(--synapse-border)] flex items-center justify-center shadow-sm">
-                    <Users className="w-6 h-6 text-[var(--synapse-blue)]" />
-                  </div>
+                  {selectedCommunityChat.avatar ? (
+                    <img src={selectedCommunityChat.avatar} alt="" className="w-11 h-11 rounded-full object-cover border-2 border-[var(--synapse-border)]" />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[var(--synapse-surface-hover)] to-[var(--synapse-surface)] border-2 border-[var(--synapse-border)] flex items-center justify-center">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+                  )}
                   <div>
                     <p className="font-semibold text-[var(--synapse-text)]">{selectedCommunityChat.name}</p>
                     <p className="text-xs text-[var(--synapse-text-muted)] flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      
                       {selectedCommunityChat.memberCount.toLocaleString()} members
                     </p>
                   </div>
@@ -753,7 +773,7 @@ export default function MessagesPage() {
                             <img src={message.sender.avatar || '/default-avatar.jpg'} alt="" className="w-8 h-8 rounded-full object-cover border border-[var(--synapse-border)] mr-2 shrink-0 self-end" />
                           )}
                           <div className={`max-w-[75%] lg:max-w-md px-4 py-2.5 rounded-xl ${isOwn ? 'bg-[var(--synapse-surface-hover)] text-[var(--synapse-text)]' : 'bg-[var(--synapse-surface)] border border-[var(--synapse-border)] text-[var(--synapse-text)]'}`}>
-                            {!isOwn && <p className="text-xs font-semibold text-[var(--synapse-blue)] mb-0.5">{message.sender.username}</p>}
+                            {!isOwn && <p className="text-xs font-semibold text-gray-500 mb-0.5">{message.sender.username}</p>}
                             <p className="text-sm break-words">{message.content}</p>
                             <p className="text-[10px] mt-1 text-[var(--synapse-text-muted)]">{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                           </div>
@@ -776,10 +796,10 @@ export default function MessagesPage() {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     placeholder={`Message ${selectedCommunityChat.name}...`}
-                    className="flex-1 px-4 py-3 rounded-2xl bg-[var(--synapse-surface-hover)]/60 border border-[var(--synapse-border)]/60 text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--synapse-blue)]/40 focus:border-[var(--synapse-blue)] transition-all duration-200"
+                    className="flex-1 px-4 py-3 rounded-lg bg-[var(--synapse-surface-hover)]/60 border border-[var(--synapse-border)]/60 text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--synapse-blue)]/40 focus:border-[var(--synapse-blue)] transition-all duration-200"
                   />
-                  <button type="button" className="p-2.5 rounded-xl hover:bg-[var(--synapse-surface-hover)]/80 text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-all duration-200" aria-label="Info"><Info className="w-5 h-5" /></button>
-                  <button type="submit" disabled={!messageInput.trim() || sending} className="p-2.5 rounded-xl bg-gradient-to-r from-[var(--synapse-blue)] to-blue-500 text-white hover:opacity-90 disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg">
+                  
+                  <button type="submit" disabled={!messageInput.trim() || sending} className="p-2.5 rounded-lg bg-gradient-to-r from-[var(--synapse-blue)] to-blue-500 text-white hover:opacity-90 disabled:opacity-50 transition-all duration-200 shadow-md hover:shadow-lg">
                     {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                   </button>
                 </div>
@@ -873,14 +893,14 @@ export default function MessagesPage() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative z-10 max-h-[80vh] flex flex-col"
+              className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] w-full max-w-md rounded-md overflow-hidden shadow-2xl relative z-10 max-h-[80vh] flex flex-col"
             >
-              <div className="p-6 border-b border-[var(--synapse-border)] flex items-center justify-between bg-[var(--synapse-surface-hover)]/40">
+              <div className="p-3 border-b border-[var(--synapse-border)] flex items-center justify-between bg-[var(--synapse-surface-hover)]/40">
                 <h2 className="text-lg font-semibold text-[var(--synapse-text)] flex items-center gap-2">
-                  <Users className="w-5 h-5 text-[var(--synapse-blue)]" />
+                  <Users className="w-5 h-5 text-[var(--synapse-white)]" />
                   Members ({communityDetails.membersCount || 0})
                 </h2>
-                <button onClick={() => setShowMembersModal(false)} className="p-2 hover:bg-[var(--synapse-surface-hover)] rounded-lg text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors">
+                <button onClick={() => setShowMembersModal(false)} className="p-2 hover:bg-[var(--synapse-surface-hover)] rounded-md text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -894,7 +914,7 @@ export default function MessagesPage() {
                     {communityDetails.creator && (
                       <div className="space-y-2">
                         <div className="text-xs font-semibold text-[var(--synapse-text-muted)] uppercase tracking-wider px-2">Owner</div>
-                        <div className="p-3 rounded-xl bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] flex items-center gap-3">
+                        <div className="p-3 rounded-md bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] flex items-center gap-3">
                           <div className="relative">
                             <img src={communityDetails.creator.avatar || '/default-avatar.jpg'} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)]" />
                             {onlineUsers.has(communityDetails.creator._id) && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[var(--synapse-surface)]" />}
@@ -913,7 +933,7 @@ export default function MessagesPage() {
                       <div className="space-y-2">
                         <div className="text-xs font-semibold text-[var(--synapse-text-muted)] uppercase tracking-wider px-2">Admins</div>
                         {communityDetails.admins.filter((admin: any) => admin._id !== communityDetails.creator?._id).map((admin: any) => (
-                          <div key={admin._id} className="p-3 rounded-xl bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] flex items-center gap-3">
+                          <div key={admin._id} className="p-3 rounded-md bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] flex items-center gap-3">
                             <div className="relative">
                               <img src={admin.avatar || '/default-avatar.jpg'} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)]" />
                               {onlineUsers.has(admin._id) && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[var(--synapse-surface)]" />}
@@ -933,7 +953,7 @@ export default function MessagesPage() {
                       <div className="space-y-2">
                         <div className="text-xs font-semibold text-[var(--synapse-text-muted)] uppercase tracking-wider px-2">Members</div>
                         {communityDetails.members.filter((member: any) => member._id !== communityDetails.creator?._id && !communityDetails.admins?.some((a: any) => a._id === member._id)).map((member: any) => (
-                          <div key={member._id} className="p-3 rounded-xl bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] flex items-center gap-3">
+                          <div key={member._id} className="p-3 rounded-md bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] flex items-center gap-3">
                             <div className="relative">
                               <img src={member.avatar || '/default-avatar.jpg'} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-[var(--synapse-border)]" />
                               {onlineUsers.has(member._id) && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[var(--synapse-surface)]" />}
