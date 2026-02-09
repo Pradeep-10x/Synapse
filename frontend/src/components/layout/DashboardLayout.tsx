@@ -87,7 +87,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                 />
                             </div>
                             <div className="hidden md:block text-left mr-1">
-                                <p className="text-lg font-semibold text-[var(--synapse-text)] leading-none tracking-tight">{user?.username}</p>
+                                <p className="text-lg font-semibold text-[var(--synapse-text)] leading-none tracking-tight">{user?.fullName}</p>
                             </div>
                             <ChevronDown className={`w-4 h-4 text-[var(--synapse-text-muted)] transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -97,7 +97,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-md shadow-xl py-2 z-50">
                                 {/* User Info */}
                                 <div className="px-4 py-3 border-b border-[var(--synapse-border)]">
-                                    <p className="text-md font-medium text-[var(--synapse-text)] truncate">{user?.fullName || user?.username || 'Guest User'}</p>
+                                    <p className="text-md font-medium text-[var(--synapse-text)] truncate">{user?.username || 'Guest User'}</p>
                                     <p className="text-sm text-[var(--synapse-text-muted)] truncate">{user?.email || 'guest@example.com'}</p>
                                 </div>
 

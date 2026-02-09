@@ -41,10 +41,10 @@ export default function HeroSection() {
           <img
             src="/logo.png"
             alt="Synapse logo"
-            className="block w-[350px]"
+            className="block w-[120px]"
             decoding="async"
             fetchPriority="high"
-            style={{  marginBottom: "-70px",marginTop:"-35px" }}
+            style={{  marginBottom: "20px",marginTop:"35px" }}
           />
         </span>
 

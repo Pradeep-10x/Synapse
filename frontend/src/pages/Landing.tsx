@@ -32,7 +32,7 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-black">
+    <div className="min-h-dvh  flex flex-col bg-black">
       <Header />
       <main className="flex-1">
         <HeroSection />

@@ -107,7 +107,7 @@ export function DiscoverCommunityCard({ community, onJoin, isJoining, onView }: 
                                 Joining...
                             </>
                         ) : (
-                            'Join Domain'
+                            'Join Community'
                         )}
                     </button>
                 </div>

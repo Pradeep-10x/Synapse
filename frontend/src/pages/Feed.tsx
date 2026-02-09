@@ -289,7 +289,7 @@ export default function FeedPage() {
             </div>
           </div>
 
-          <div className="py-2 px-6 space-y-2">
+          <div className="py-2 px-6 pb-10 space-y-2">
             {loading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-text-muted)]" />

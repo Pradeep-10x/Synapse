@@ -4,14 +4,14 @@ export default function Header() {
   return (
     <header className="fixed top-0 inset-x-0 z-50">
       <div className="h-16 bg-black/50 backdrop-blur-md border-b border-white/10" >
-        <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto h-full px-1 flex items-center justify-between">
 
         <Link to="/" className="flex items-center">
   <img
     src="/logo.png"
     alt="Synapse Logo"
-    className="w-35 shrink-0"
-    style={{ marginRight: "-45px", marginTop: "7px" }}
+    className="w-[35px] shrink-0"
+    style={{ marginRight: "10px", marginTop: "1px" }}
   />
   <span className="text-white text-lg font-medium tracking-wide">
     SYNAPSE

@@ -35,7 +35,7 @@ export default function AuthPage() {
     
     <div className="min-h-screen w-full bg-[#18181B] flex flex-col items-center justify-center p-4">
       <div>
-      <img src="logo.png" alt="Logo" width={250} style={{marginTop: '-60px',}}/>
+      <img src="logo.png" alt="Logo" width={80} style={{marginTop: '20px',marginBottom: '30px'}}/>
       </div>
       <AuthCard />
     </div>
