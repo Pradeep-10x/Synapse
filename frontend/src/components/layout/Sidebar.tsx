@@ -25,10 +25,10 @@ export function Sidebar() {
                         alt="Synapse Logo"
 
 
-                        className="w-43 shrink-0"
-                        style={{ marginRight: "-105px", marginTop: "7px", marginLeft: "-60px" }}
+                        className="w-10 shrink-0"
+                        style={{ marginRight: "-35px", marginTop: "1px", marginLeft: "-5px" }}
                     />
-                    <span className="text-[var(--synapse-text)] text-3xl font-semibold tracking-wide ml-12">
+                    <span className="text-[var(--synapse-text)] text-3xl font-semibold tracking-wide ml-12 mt-1">
                         SYNAPSE
                     </span>
                 </div>
