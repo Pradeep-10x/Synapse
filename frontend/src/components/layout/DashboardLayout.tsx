@@ -15,17 +15,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const profileRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
-    // Assuming we will add unreadMessagesCount to store soon, or use unreadNotifs for now? User asked for both.
-    // I need to update store first to have `unreadMessagesCount`.
-    // For now I will use `unreadNotifs` for notifications. For messages, I'll temporarily use 0 or a placeholder state if not in store yet.
-    // Wait, the store I viewed had `unreadCount` which seemed to serve notifications.
-    // I'll stick to `unreadNotifs` for the bell.
-    // For Mail icon, I will use a local state or `unreadMessages` if I add it to store.
-    // Let's assume I will add `unreadMessagesCount` to store in the next step. So I'll destructure it here even if it errors TS momentarily (I will fix store immediately).
-    // actually, let's just use 0 for now and fix store, then update this file.
-    // Or better, I update the store FIRST.
-    // But I'm already in this tool call.
-    // Okay, I will reference `unreadMessagesCount` and trust I update the store in the next step.
+    
     const { unreadCount, unreadMessagesCount } = useSocketStore();
 
     // Close dropdown when clicking outside

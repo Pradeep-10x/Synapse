@@ -91,13 +91,13 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="bg-[#0a0a12] border border-[rgba(168,85,247,0.3)] rounded-2xl p-6 w-full max-w-md shadow-xl overflow-y-auto max-h-[90vh] no-scrollbar"
+                        className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-lg)] p-6 w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar"
                     >
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-[#e5e7eb]">Create Community</h2>
+                            <h2 className="text-xl font-bold text-[var(--synapse-text)]">Create Community</h2>
                             <button
                                 onClick={onClose}
-                                className="text-[#9ca3af] hover:text-[#e5e7eb]"
+                                className="text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors p-1 hover:bg-[var(--synapse-surface-hover)] rounded-full"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -108,17 +108,22 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                             <div className="space-y-4">
                                 {/* Cover Photo */}
                                 <div className="relative">
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Cover Banner</label>
+                                    <label className="block text-xs font-semibold text-[var(--synapse-text-muted)] mb-2 uppercase tracking-wider">Cover Banner</label>
                                     <div
                                         onClick={() => coverInputRef.current?.click()}
-                                        className="aspect-[3/1] rounded-xl border-2 border-dashed border-[rgba(168,85,247,0.2)] flex items-center justify-center cursor-pointer hover:border-[rgba(168,85,247,0.4)] transition-all overflow-hidden bg-[rgba(168,85,247,0.02)]"
+                                        className="aspect-[3/1] rounded-[var(--radius-md)] border-2 border-dashed border-[var(--synapse-border)] flex items-center justify-center cursor-pointer hover:border-[var(--synapse-blue)]/50 transition-all overflow-hidden bg-[var(--synapse-bg)] hover:bg-[var(--synapse-surface-hover)] group relative"
                                     >
                                         {coverPreview ? (
-                                            <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                                            <>
+                                                <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <Upload className="w-6 h-6 text-white" />
+                                                </div>
+                                            </>
                                         ) : (
                                             <div className="text-center">
-                                                <Upload className="w-6 h-6 text-[#9ca3af] mx-auto mb-1" />
-                                                <p className="text-xs text-[#6b7280]">Upload Banner</p>
+                                                <Upload className="w-6 h-6 text-[var(--synapse-text-muted)] mx-auto mb-1 group-hover:text-[var(--synapse-blue)] transition-colors" />
+                                                <p className="text-xs text-[var(--synapse-text-muted)]">Upload Banner</p>
                                             </div>
                                         )}
                                     </div>
@@ -131,20 +136,20 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                                     />
 
                                     {/* Avatar/Profile Photo Overlay */}
-                                    <div className="absolute -bottom-4 left-6">
+                                    <div className="absolute -bottom-6 left-6">
                                         <div
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 avatarInputRef.current?.click();
                                             }}
-                                            className="w-20 h-20 rounded-2xl border-4 border-[#0a0a12] bg-[#1a1a2e] flex items-center justify-center cursor-pointer hover:bg-[#252545] transition-all shadow-xl overflow-hidden group"
+                                            className="w-20 h-20 rounded-[var(--radius-md)] border-4 border-[var(--synapse-surface)] bg-[var(--synapse-bg)] flex items-center justify-center cursor-pointer hover:bg-[var(--synapse-surface-hover)] transition-all shadow-xl overflow-hidden group/avatar relative"
                                         >
                                             {avatarPreview ? (
                                                 <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                                             ) : (
-                                                <Camera className="w-8 h-8 text-[#9ca3af] group-hover:text-[#a855f7] transition-colors" />
+                                                <Camera className="w-8 h-8 text-[var(--synapse-text-muted)] group-hover/avatar:text-[var(--synapse-blue)] transition-colors" />
                                             )}
-                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                                                 <Upload className="w-5 h-5 text-white" />
                                             </div>
                                         </div>
@@ -159,83 +164,59 @@ export default function CreateCommunityModal({ isOpen, onClose, onSuccess }: Cre
                                 </div>
                             </div>
 
-                            <div className="pt-4 space-y-4">
+                            <div className="pt-6 space-y-4">
                                 {/* Name */}
                                 <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Community Name</label>
+                                    <label className="block text-xs font-semibold text-[var(--synapse-text-muted)] mb-2 uppercase tracking-wider">Community Name</label>
                                     <input
                                         type="text"
                                         value={newCommunity.name}
                                         onChange={(e) => setNewCommunity({ ...newCommunity, name: e.target.value })}
-                                        placeholder="Name your orbit.."
-                                        className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] transition-all"
+                                        placeholder="Name your Community.."
+                                        className="w-full bg-[var(--synapse-bg)] border border-[var(--synapse-border)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-focus-ring)] focus:ring-1 focus:ring-[var(--synapse-focus-ring)] transition-all"
                                     />
                                 </div>
 
                                 {/* Description */}
                                 <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Objectives/Description</label>
+                                    <label className="block text-xs font-semibold text-[var(--synapse-text-muted)] mb-2 uppercase tracking-wider">Objectives/Description</label>
                                     <textarea
                                         value={newCommunity.description}
                                         onChange={(e) => setNewCommunity({ ...newCommunity, description: e.target.value })}
-                                        placeholder="Describe the mission of this orbit..."
+                                        placeholder="Describe the community purpose."
                                         rows={3}
-                                        className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] resize-none transition-all"
+                                        className="w-full bg-[var(--synapse-bg)] border border-[var(--synapse-border)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-focus-ring)] focus:ring-1 focus:ring-[var(--synapse-focus-ring)] resize-none transition-all"
                                     />
                                 </div>
 
                                 {/* Rules */}
                                 <div>
-                                    <label className="block text-sm font-medium text-[#9ca3af] mb-2 font-mono uppercase tracking-wider">Orbit Rules (One per line)</label>
+                                    <label className="block text-xs font-semibold text-[var(--synapse-text-muted)] mb-2 uppercase tracking-wider">Community Rules (One per line)</label>
                                     <textarea
                                         value={newCommunity.rules}
                                         onChange={(e) => setNewCommunity({ ...newCommunity, rules: e.target.value })}
-                                        placeholder="1. High signal\n2. No orbital debris..."
+                                        placeholder="Rules for the community."
                                         rows={3}
-                                        className="w-full glass-card rounded-xl px-4 py-3 text-[#e5e7eb] placeholder-[#4b5563] focus:outline-none focus:border-[rgba(168,85,247,0.4)] resize-none transition-all"
+                                        className="w-full bg-[var(--synapse-bg)] border border-[var(--synapse-border)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--synapse-text)] placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-focus-ring)] focus:ring-1 focus:ring-[var(--synapse-focus-ring)] resize-none transition-all"
                                     />
                                 </div>
 
-                                {/* Privacy Choice */}
-                                <div className="flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setNewCommunity({ ...newCommunity, isPublic: true })}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${newCommunity.isPublic
-                                            ? 'bg-[#a855f7] text-white'
-                                            : 'glass-card text-[#9ca3af] hover:text-[#e5e7eb]'
-                                            }`}
-                                    >
-                                        <Globe className="w-4 h-4" />
-                                        Public
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setNewCommunity({ ...newCommunity, isPublic: false })}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${!newCommunity.isPublic
-                                            ? 'bg-[#a855f7] text-white'
-                                            : 'glass-card text-[#9ca3af] hover:text-[#e5e7eb]'
-                                            }`}
-                                    >
-                                        <Lock className="w-4 h-4" />
-                                        Private
-                                    </button>
-                                </div>
+                                
                             </div>
 
                             {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={creating || !newCommunity.name.trim()}
-                                className="w-full py-4 bg-[#a855f7] hover:bg-[#9333ea] rounded-xl text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="w-full py-3.5 bg-[var(--synapse-blue)] hover:bg-[var(--synapse-blue)]/90 rounded-[var(--radius-md)] text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40"
                             >
                                 {creating ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                        Synchronizing...
+                                        Creating...
                                     </>
                                 ) : (
-                                    'Launch Community'
+                                    'Create Community'
                                 )}
                             </button>
                         </form>

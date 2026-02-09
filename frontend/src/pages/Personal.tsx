@@ -218,10 +218,10 @@ export default function PersonalPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_390px] gap-6">
         {/* Posts - left panel */}
-        <div className={`bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-md overflow-hidden flex flex-col shadow-sm ${activeTab === 'connections' ? 'hidden lg:flex' : ''}`}>
+        <div className={`bg-[var(--synapse-surface)] h-[80vh] border border-[var(--synapse-border)] rounded-md overflow-hidden flex flex-col shadow-sm ${activeTab === 'connections' ? 'hidden lg:flex' : ''}`}>
           <div className="px-5 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
             <h2 className="text-md font-semibold tracking-wide text-[var(--synapse-text)]">
-              Your Posts
+              Your Posts  {posts.length > 0 && <span className="text-sm text-[var(--synapse-text)]">({posts.length})</span>}
             </h2>
           </div>
           <div className="flex-1 max-h-[calc(100vh-250px)] overflow-y-auto scrollbar-hide p-4 space-y-4">
@@ -230,14 +230,14 @@ export default function PersonalPage() {
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-blue)]" />
               </div>
             ) : posts.length === 0 ? (
-              <div className="py-16 text-center">
-                <p className="text-[var(--synapse-text-muted)] text-sm font-medium">No posts from your communities yet</p>
+              <div className="flex justify-center py-72 text-center">
+                <p className=" text-lg font-semibold">You have no Posts </p>
               </div>
             ) : (
               posts.map((post) => (
                 <article
                   key={post._id}
-                  className="p-4 rounded-xl border border-[var(--synapse-border)] bg-[var(--synapse-bg)]/50 hover:border-[var(--synapse-text-muted)]/20 transition-all duration-200"
+                  className="p-3 rounded-md border border-gray-700 bg-[var(--synapse-bg)]/50 hover:border-[var(--synapse-text-muted)]/20 transition-all duration-200"
                 >
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <Link
