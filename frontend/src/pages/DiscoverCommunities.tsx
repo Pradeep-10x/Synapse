@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Globe, Search, Loader2, ArrowLeft, Eye } from 'lucide-react';
+import { Search, Loader2, ArrowLeft, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { communityAPI, communityPostAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useCommunityStore } from '@/store/communityStore';
 import CommunityPostCard from '@/components/feed/CommunityPostCard';
+import { DiscoverCommunityCard } from '@/components/community/DiscoverCommunityCard';
+import CreateCommunityModal from '@/components/community/CreateCommunityModal';
 
 interface Community {
   _id: string;
@@ -58,6 +60,7 @@ export default function DiscoverCommunities() {
   const [joining, setJoining] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -233,143 +236,121 @@ export default function DiscoverCommunities() {
   );
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 py-8">
+    <div className="animate-in fade-in duration-500 min-h-screen">
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!selectedCommunity ? (
           <>
-            {/* Header */}
-            <div className="mb-6 pb-4 border-b border-[rgba(168,85,247,0.2)]">
-              <div className="flex items-center gap-4 mb-2">
-                <button
-                  onClick={() => navigate('/communities')}
-                  className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
-                <h1 className="text-3xl font-bold text-[#e5e7eb]">Discover Communities</h1>
-              </div>
-              <p className="text-[#9ca3af]">Explore public communities and find your interests</p>
+            {/* Header Section matching Community.tsx */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-[var(--synapse-border)]">
+                <div>
+                   <div className="flex items-center gap-4 mb-1">
+                        <button
+                        onClick={() => navigate('/communities')}
+                        className="text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors p-1 -ml-1 hover:bg-[var(--synapse-surface-hover)] rounded-full"
+                        >
+                        <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <h1 className="text-2xl font-bold text-[var(--synapse-text)] tracking-tight uppercase">Discover Domains</h1>
+                   </div>
+                    <p className="text-[var(--synapse-text-muted)] text-sm ml-9">
+                        Explore <span className="text-[var(--synapse-text)] font-semibold">{filteredCommunities.length}</span> public communities and find your interests.
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--synapse-text-muted)]" />
+                        <input
+                        type="text"
+                        placeholder="Search domains..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            searchCommunities(e.target.value);
+                        }}
+                        className="w-full pl-9 pr-4 py-2 bg-[var(--synapse-surface)] hover:bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] rounded-[var(--radius-md)] text-[var(--synapse-text)] text-sm placeholder-[var(--synapse-text-muted)] focus:outline-none focus:border-[var(--synapse-focus-ring)] transition-all"
+                        />
+                    </div>
+                    {/* Create Button (Optional here, but kept for consistency if user wants to create from search) */}
+                     <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-[var(--synapse-blue)] hover:bg-[var(--synapse-blue)]/90 text-white rounded-[var(--radius-md)] text-sm font-medium transition-all shadow-lg shadow-purple-900/20 whitespace-nowrap"
+                    >
+                        Create Domain
+                    </button>
+                </div>
             </div>
 
-            {/* Search */}
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#9ca3af]" />
-                <input
-                  type="text"
-                  placeholder="Search communities..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    searchCommunities(e.target.value);
-                  }}
-                  className="w-full pl-10 pr-4 py-3 glass-card rounded-lg text-[#e5e7eb] placeholder-[#9ca3af] focus:outline-none focus:border-[rgba(168,85,247,0.4)] focus:ring-2 focus:ring-[rgba(168,85,247,0.2)] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Communities List */}
+            {/* Communities Grid */}
             {loadingCommunities ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />
               </div>
             ) : filteredCommunities.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                 {filteredCommunities.map((community, index) => (
                   <motion.div
                     key={community._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="glass-card rounded-xl p-5 hover:border-[rgba(168,85,247,0.3)] transition-all"
                   >
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-[#1a1a2e] border border-[rgba(168,85,247,0.1)] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {community.avatar ? (
-                            <img src={community.avatar || "/default-avatar.jpg"} alt={community.name} className="w-full h-full object-cover" />
-                          ) : community.coverImage ? (
-                            <img src={community.coverImage} alt={community.name} className="w-full h-full object-cover opacity-50" />
-                          ) : (
-                            <Users className="w-7 h-7 text-[#a855f7]" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-[#e5e7eb] text-lg">o/{community.name}</h3>
-                            <Globe className="w-4 h-4 text-[#9ca3af]" />
-                          </div>
-                          <p className="text-[#9ca3af] text-sm line-clamp-2">{community.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-auto">
-                        <span className="text-sm text-[#9ca3af]">
-                          {(community.membersCount || 0).toLocaleString()} members
-                        </span>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleViewPosts(community)}
-                            className="px-3 py-1.5 glass-card rounded-lg text-[#e5e7eb] text-sm font-medium hover:border-[rgba(168,85,247,0.3)] transition-colors flex items-center gap-1"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleJoinCommunity(community._id)}
-                            disabled={joining === community._id}
-                            className="px-3 py-1.5 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-1"
-                          >
-                            {joining === community._id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              'Join'
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                      <DiscoverCommunityCard 
+                        community={community}
+                        onJoin={handleJoinCommunity}
+                        isJoining={joining === community._id}
+                        onView={handleViewPosts}
+                      />
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-[#9ca3af] mx-auto mb-4" />
-                <p className="text-[#9ca3af] mb-2">No communities found</p>
-                <p className="text-sm text-[#6b7280]">Try adjusting your search or create your own!</p>
+                <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-[var(--synapse-border)] rounded-[var(--radius-lg)] bg-[var(--synapse-surface)]/30">
+                <Users className="w-12 h-12 text-[var(--synapse-text-muted)] mb-4 opacity-50" />
+                <h3 className="text-lg font-medium text-[var(--synapse-text)] mb-2">No communities found</h3>
+                <p className="text-[var(--synapse-text-muted)] max-w-sm mb-6">
+                    Try adjusting your search terms or be the first to start a new domain.
+                </p>
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-6 py-2 bg-[var(--synapse-blue)] text-white font-medium rounded-[var(--radius-md)] hover:bg-[var(--synapse-blue)]/90 transition-colors shadow-lg shadow-purple-900/20"
+                >
+                    Create New Domain
+                </button>
               </div>
             )}
           </>
         ) : (
           <>
-            {/* Community Posts View */}
-            <div className="mb-6 pb-4 border-b border-[rgba(168,85,247,0.2)]">
-              <div className="flex items-center gap-4 mb-2">
+            {/* Community Posts View - Keeping consistent with original but themed */}
+             <div className="mb-6 pb-4 border-b border-[var(--synapse-border)]">
+              <div className="flex items-center gap-4 mb-4">
                 <button
                   onClick={handleBackToDiscover}
-                  className="text-[#9ca3af] hover:text-[#e5e7eb] transition-colors"
+                  className="text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors p-2 hover:bg-[var(--synapse-surface)] rounded-full"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="flex items-center gap-3">
-                  {selectedCommunity.avatar ? (
-                    <img src={selectedCommunity.avatar || "/default-avatar.jpg"} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover" />
-                  ) : selectedCommunity.coverImage ? (
-                    <img src={selectedCommunity.coverImage} alt={selectedCommunity.name} className="w-10 h-10 rounded-lg object-cover opacity-50" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-[#1a1a2e] flex items-center justify-center">
-                      <Users className="w-5 h-5 text-[#a855f7]" />
-                    </div>
-                  )}
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[var(--radius-md)] bg-[var(--synapse-bg)] border border-[var(--synapse-border)] overflow-hidden flex items-center justify-center">
+                    {selectedCommunity.avatar ? (
+                      <img src={selectedCommunity.avatar || "/default-avatar.jpg"} alt={selectedCommunity.name} className="w-full h-full object-cover" />
+                    ) : selectedCommunity.coverImage ? (
+                      <img src={selectedCommunity.coverImage} alt={selectedCommunity.name} className="w-full h-full object-cover opacity-50" />
+                    ) : (
+                      <Users className="w-6 h-6 text-[var(--synapse-blue)]" />
+                    )}
+                  </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-[#e5e7eb]">o/{selectedCommunity.name}</h1>
-                    <p className="text-sm text-[#9ca3af]">{(selectedCommunity.membersCount || 0).toLocaleString()} members</p>
+                    <h1 className="text-2xl font-bold text-[var(--synapse-text)]">o/{selectedCommunity.name}</h1>
+                    <p className="text-sm text-[var(--synapse-text-muted)]">{(selectedCommunity.membersCount || 0).toLocaleString()} members</p>
                   </div>
                 </div>
                 {!joinedCommunityIds.includes(selectedCommunity._id) && (
                   <button
                     onClick={() => handleJoinCommunity(selectedCommunity._id)}
                     disabled={joining === selectedCommunity._id}
-                    className="ml-auto px-4 py-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="ml-auto px-6 py-2.5 bg-[var(--synapse-blue)] hover:bg-[var(--synapse-blue)]/90 rounded-[var(--radius-md)] text-white font-semibold transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-purple-900/20"
                   >
                     {joining === selectedCommunity._id ? (
                       <>
@@ -382,17 +363,19 @@ export default function DiscoverCommunities() {
                   </button>
                 )}
               </div>
-              <p className="text-[#9ca3af] mt-2">{selectedCommunity.description}</p>
+              <div className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-md)] p-4">
+                <p className="text-[var(--synapse-text-muted)]">{selectedCommunity.description}</p>
+              </div>
             </div>
 
             {/* Posts */}
             <div className="max-w-2xl mx-auto">
               {loadingPosts && communityPosts.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#a855f7]" />
+                  <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-blue)]" />
                 </div>
               ) : communityPosts.length > 0 ? (
-                <>
+                <div className="space-y-6">
                   {communityPosts.map((post) => (
                     <CommunityPostCard
                       key={post._id}
@@ -401,25 +384,35 @@ export default function DiscoverCommunities() {
                   ))}
                   {hasNext && (
                     <div ref={observerTarget} className="flex items-center justify-center py-8">
-                      {loadingPosts && <Loader2 className="w-6 h-6 animate-spin text-[#a855f7]" />}
+                      {loadingPosts && <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-blue)]" />}
                     </div>
                   )}
                   {!hasNext && communityPosts.length > 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-[#9ca3af] text-sm">No more posts</p>
+                    <div className="text-center py-8 border-t border-[var(--synapse-border)] mt-8">
+                      <p className="text-[var(--synapse-text-muted)] text-sm">No more posts to load</p>
                     </div>
                   )}
-                </>
+                </div>
               ) : (
-                <div className="text-center py-12">
-                  <Users className="w-12 h-12 text-[#9ca3af] mx-auto mb-4" />
-                  <p className="text-[#9ca3af]">No posts in this community yet</p>
+                <div className="text-center py-20 border border-dashed border-[var(--synapse-border)] rounded-[var(--radius-lg)] bg-[var(--synapse-surface)]/30">
+                  <Users className="w-12 h-12 text-[var(--synapse-text-muted)] mx-auto mb-4 opacity-50" />
+                  <p className="text-[var(--synapse-text)] font-medium mb-1">No posts yet</p>
+                  <p className="text-[var(--synapse-text-muted)] text-sm">Be the first to post in this community!</p>
                 </div>
               )}
             </div>
           </>
         )}
       </div>
+
+       <CreateCommunityModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+             fetchCommunities();
+             fetchJoinedCommunities();
+        }}
+      />
     </div>
   );
 }

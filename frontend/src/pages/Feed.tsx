@@ -289,7 +289,7 @@ export default function FeedPage() {
             </div>
           </div>
 
-          <div className="p-6 space-y-2">
+          <div className="py-2 px-6 space-y-2">
             {loading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-text-muted)]" />
@@ -325,7 +325,7 @@ export default function FeedPage() {
                       </div>
                     )}
                   </div>
-                  <div className="min-h-[30px]">
+                  <div className="min-h-[50px]">
                     {realtimeNotifications.length > 0 ? (
                       <AnimatePresence mode="wait">
                         <motion.div
@@ -339,7 +339,7 @@ export default function FeedPage() {
                         </motion.div>
                       </AnimatePresence>
                     ) : (
-                      <div className="flex items-center justify-center h-[20px] text-[var(--synapse-text-muted)] italic text-md">
+                      <div className="flex items-center justify-center h-[30px] text-[var(--synapse-text-muted)] italic text-md">
                         No real-time activity
                       </div>
                     )}
@@ -386,7 +386,7 @@ export default function FeedPage() {
                         </motion.div>
                       </AnimatePresence>
                     ) : (
-                      <div className="flex items-center justify-center h-[50px] text-[var(--synapse-text-muted)] italic text-md">
+                      <div className="flex items-center justify-center h-[30px] text-[var(--synapse-text-muted)] italic text-md">
                         No recent notifications
                       </div>
                     )}
