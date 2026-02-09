@@ -103,6 +103,7 @@ dotenv.config();
   return res.status(200).json(
     new ApiResponse(200, {
       posts,
+      totalPosts: totalCount,
       page,
       totalPages,
       hasNext,

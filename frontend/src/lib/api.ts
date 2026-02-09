@@ -129,6 +129,7 @@ export const storyAPI = {
 export const communityAPI = {
   getAll: () => api.get('/community'),
   getJoined: () => api.get('/community/joined'),
+  getUserJoined: (userId: string) => api.get(`/community/user/${userId}/joined`),
   getCreated: () => api.get('/community/created'),
   search: (query: string) => api.get('/community/search', { params: { query } }),
   searchCommunities: (query: string) => api.get('/community/search', { params: { query } }),
