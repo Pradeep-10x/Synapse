@@ -26,7 +26,7 @@ export default function CommunityPage() {
   useEffect(() => {
     fetchJoinedCommunities();
   }, []);
-
+  
   // Request active counts when communities are loaded and socket is connected
   useEffect(() => {
     if (joinedCommunities.length > 0 && isConnected) {
@@ -56,7 +56,7 @@ export default function CommunityPage() {
         <div>
           <h1 className="text-2xl font-bold text-[var(--synapse-text)] tracking-tight mb-2 uppercase">Communities</h1>
           <p className="text-[var(--synapse-text-muted)] text-sm">
-            You are part of <span className="text-[var(--synapse-text)] font-semibold">{joinedCommunities.length}</span> active domains.
+            You are part of <span className="text-[var(--synapse-text)] font-semibold">{joinedCommunities.length}</span> active Communities.
           </p>
         </div>
 
@@ -66,14 +66,14 @@ export default function CommunityPage() {
             className="flex items-center gap-2 px-4 py-2 bg-[var(--synapse-surface)] hover:bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] rounded-[var(--radius-md)] text-sm font-medium transition-all"
           >
             <Plus className="w-4 h-4 text-[var(--synapse-text-muted)]" />
-            Create Domain
+            Create Community
           </button>
           <button
             onClick={() => navigate('/discover-communities')}
             className="flex items-center gap-2 px-4 py-2 bg-[var(--synapse-surface)] hover:bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] rounded-[var(--radius-md)] text-sm font-medium transition-all"
           >
             <Search className="w-4 h-4 text-[var(--synapse-text-muted)]" />
-            Discover Domains
+            Discover Communities
           </button>
         </div>
       </div>
@@ -98,15 +98,15 @@ export default function CommunityPage() {
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center border border-dashed border-[var(--synapse-border)] rounded-[var(--radius-lg)] bg-[var(--synapse-surface)]/30">
           <Layers className="w-12 h-12 text-[var(--synapse-text-muted)] mb-4 opacity-50" />
-          <h3 className="text-lg font-medium text-[var(--synapse-text)] mb-2">No active domains</h3>
+          <h3 className="text-lg font-medium text-[var(--synapse-text)] mb-2">No active communities</h3>
           <p className="text-[var(--synapse-text-muted)] max-w-sm mb-6">
-            You haven't joined any communities yet. Discover existing domains or initialize a new one.
+            You haven't joined any communities yet. Discover existing communities or initialize a new one.
           </p>
           <button
             onClick={() => navigate('/discover-communities')}
             className="px-6 py-2 bg-[var(--synapse-blue)] text-white font-medium rounded-[var(--radius-md)] hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20"
           >
-            Browse Directory
+            Browse Community
           </button>
         </div>
       )}

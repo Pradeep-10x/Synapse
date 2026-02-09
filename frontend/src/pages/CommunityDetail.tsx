@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Loader2, ArrowLeft, Image as ImageIcon, X, Send, Settings, Trash2, MessageSquare, LogOut, ChevronDown, ChevronUp, Heart, Users, Info, Crown, Shield } from 'lucide-react';
+import { Loader2, ArrowLeft, Image as ImageIcon, X, Send, Settings, Trash2, MessageSquare, LogOut, ChevronDown, ChevronUp, Heart, Users, Info, Crown, Shield, UserMinus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { communityAPI, communityPostAPI, communityCommentAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
@@ -234,10 +234,12 @@ export default function CommunityDetail() {
                 setIsJoined(false);
                 setCommunity(prev => prev ? { ...prev, membersCount: prev.membersCount - 1 } : null);
                 toast.success('Left community');
+                navigate('/communities');
             } else {
                 await communityAPI.joinCommunity(community._id);
                 setIsJoined(true);
                 setCommunity(prev => prev ? { ...prev, membersCount: prev.membersCount + 1 } : null);
+                // toast.success('Joined community!'); // Toast handled by join action usually, but good feedback here
                 toast.success('Joined community!');
             }
             triggerRefresh();
@@ -245,6 +247,27 @@ export default function CommunityDetail() {
             toast.error(error.response?.data?.message || 'Action failed');
         } finally {
             setJoining(false);
+        }
+    };
+
+    const handleRemoveMember = async (memberId: string) => {
+        if (!community) return;
+        if (!confirm('Are you sure you want to remove this member?')) return;
+
+        try {
+            await communityAPI.removeUser(community._id, memberId);
+            setCommunity(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    members: prev.members.filter((m: any) => m._id !== memberId),
+                    admins: prev.admins.filter((a: any) => a._id !== memberId),
+                    membersCount: Math.max(0, prev.membersCount - 1)
+                };
+            });
+            toast.success('Member removed successfully');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to remove member');
         }
     };
 
@@ -619,7 +642,7 @@ export default function CommunityDetail() {
                                             <Link
                                                 key={member._id}
                                                 to={`/profile/${member.username}`}
-                                                className="flex items-center gap-2 p-2 rounded-md hover:bg-white/5 transition-colors"
+                                                className="flex items-center gap-2 p-2 rounded-md hover:bg-white/5 transition-colors group"
                                             >
                                                 <div className="relative">
                                                     <img
@@ -638,6 +661,19 @@ export default function CommunityDetail() {
                                                 )}
                                                 {member.role === 'admin' && (
                                                     <Shield className="w-4 h-4 text-blue-400" />
+                                                )}
+                                                {isAdmin && member.role !== 'owner' && member._id !== currentUser?._id && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            handleRemoveMember(member._id);
+                                                        }}
+                                                        className="p-1 rounded hover:bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all ml-auto"
+                                                        title="Remove member"
+                                                    >
+                                                        <UserMinus className="w-4 h-4" />
+                                                    </button>
                                                 )}
                                             </Link>
                                         ));
@@ -919,7 +955,7 @@ export default function CommunityDetail() {
                                                         key={admin._id}
                                                         to={`/profile/${admin.username}`}
                                                         onClick={() => setShowMembersModal(false)}
-                                                        className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors"
+                                                        className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors group"
                                                     >
                                                         <img
                                                             src={admin.avatar || '/default-avatar.jpg'}
@@ -932,6 +968,19 @@ export default function CommunityDetail() {
                                                             </p>
                                                         </div>
                                                         <Shield className="w-4 h-4 text-blue-400" />
+                                                        {isCreator && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    handleRemoveMember(admin._id);
+                                                                }}
+                                                                className="p-1 rounded hover:bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all ml-auto"
+                                                                title="Remove admin"
+                                                            >
+                                                                <UserMinus className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </Link>
                                                 ))}
                                         </div>
@@ -956,7 +1005,7 @@ export default function CommunityDetail() {
                                                             key={member._id}
                                                             to={`/profile/${member.username}`}
                                                             onClick={() => setShowMembersModal(false)}
-                                                            className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors"
+                                                            className="flex items-center gap-3 p-2 rounded-md hover:bg-white/5 transition-colors group"
                                                         >
                                                             <img
                                                                 src={member.avatar || '/default-avatar.jpg'}
@@ -968,6 +1017,19 @@ export default function CommunityDetail() {
                                                                     {member.username}
                                                                 </p>
                                                             </div>
+                                                            {isAdmin && member._id !== currentUser?._id && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        handleRemoveMember(member._id);
+                                                                    }}
+                                                                    className="p-1 rounded hover:bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-all ml-auto"
+                                                                    title="Remove member"
+                                                                >
+                                                                    <UserMinus className="w-4 h-4" />
+                                                                </button>
+                                                            )}
                                                         </Link>
                                                     ))}
                                             </div>

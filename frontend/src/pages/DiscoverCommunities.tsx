@@ -211,6 +211,7 @@ export default function DiscoverCommunities() {
         setSelectedCommunity(null);
         setCommunityPosts([]);
       }
+      navigate(`/community/${communityId}`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to join community');
     } finally {
@@ -250,7 +251,7 @@ export default function DiscoverCommunities() {
                         >
                         <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <h1 className="text-2xl font-bold text-[var(--synapse-text)] tracking-tight uppercase">Discover Domains</h1>
+                        <h1 className="text-2xl font-bold text-[var(--synapse-text)] tracking-tight uppercase">Discover Communities</h1>
                    </div>
                     <p className="text-[var(--synapse-text-muted)] text-sm ml-9">
                         Explore <span className="text-[var(--synapse-text)] font-semibold">{filteredCommunities.length}</span> public communities and find your interests.
@@ -262,7 +263,7 @@ export default function DiscoverCommunities() {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--synapse-text-muted)]" />
                         <input
                         type="text"
-                        placeholder="Search domains..."
+                        placeholder="Search community..."
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value);
@@ -276,7 +277,7 @@ export default function DiscoverCommunities() {
                         onClick={() => setShowCreateModal(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-[var(--synapse-blue)] hover:bg-[var(--synapse-blue)]/90 text-white rounded-[var(--radius-md)] text-sm font-medium transition-all shadow-lg shadow-purple-900/20 whitespace-nowrap"
                     >
-                        Create Domain
+                        Create Community
                     </button>
                 </div>
             </div>
