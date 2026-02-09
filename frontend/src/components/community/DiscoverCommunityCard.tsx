@@ -1,5 +1,5 @@
 import { BarChart2, Users, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+
 
 interface DiscoverCommunityCardProps {
     community: {
@@ -16,7 +16,7 @@ interface DiscoverCommunityCardProps {
 }
 
 export function DiscoverCommunityCard({ community, onJoin, isJoining, onView }: DiscoverCommunityCardProps) {
-    const navigate = useNavigate();
+   
     const { _id, name, membersCount, coverImage } = community;
 
     // Generate a predictable gradient based on name char codes if no image

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Globe, Lock, Loader2, Camera } from 'lucide-react';
+import { X, Upload, Loader2, Camera } from 'lucide-react';
 import { communityAPI } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useCommunityStore } from '@/store/communityStore';
