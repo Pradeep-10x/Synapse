@@ -789,7 +789,7 @@ export default function MessagesPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Community Input */}
+              {/* Community Input   */}
               <form onSubmit={handleSendMessage} className="p-4 bg-[var(--synapse-surface)]/80 backdrop-blur-sm relative">
                 {/* Gradient top border */}
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent" />
