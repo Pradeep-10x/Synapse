@@ -51,6 +51,32 @@ export const createCommunity = asyncHandler(async (req, res) => {
     .populate("creator", "username avatar")
     .populate("admins", "username avatar");
 
+  // Notify followers that their friend created a community
+  await emitToFollowers(req, req.user._id, "friend:created:community", {
+    user: {
+      _id: req.user._id,
+      username: req.user.username,
+      avatar: req.user.avatar
+    },
+    community: {
+      _id: community._id,
+      name: community.name
+    },
+    activity: {
+      type: 'community_created',
+      user: {
+        username: req.user.username,
+        avatar: req.user.avatar
+      },
+      community: {
+        name: community.name,
+        id: community._id.toString()
+      },
+      message: 'created a new community',
+      createdAt: new Date().toISOString()
+    }
+  });
+
   return res.status(201).json(new ApiResponse(201, populatedCommunity, "Community created successfully"));
 });
 

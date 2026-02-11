@@ -11,18 +11,19 @@ export default function AppLayout() {
   // Initialize socket connection when user is authenticated
   useEffect(() => {
     if (user?._id && !isConnected) {
+      console.log('AppLayout: Initializing socket connection for user:', user.username);
       connect({
         _id: user._id,
         username: user.username,
         avatar: user.avatar
       });
-    }
-
-    return () => {
-      // Cleanup on unmount (logout)
+    } else if (!user && isConnected) {
+      // Handle logout case
       disconnect();
-    };
-  }, [user?._id]);
+    }
+  }, [user, isConnected, connect, disconnect]);
+
+
 
   return (
     <DashboardLayout>

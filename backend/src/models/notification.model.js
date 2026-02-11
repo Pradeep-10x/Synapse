@@ -16,7 +16,7 @@ const notificationSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["like", "comment", "follow", "message" , "post", "reel" , "story"],
+      enum: ["like", "comment", "follow", "message", "post", "reel", "story", "community_like", "community_comment", "community_post", "community_create"],
       required: true
     },
     post: {
@@ -32,6 +32,20 @@ const notificationSchema = new Schema(
     story: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Story",
+      default: null
+    },
+    communityPost: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CommunityPost",
+      default: null
+    },
+    community: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Community",
+      default: null
+    },
+    message: {
+      type: String,
       default: null
     },
     isRead: {

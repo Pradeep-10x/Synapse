@@ -15,10 +15,13 @@ export interface ActivityProps {
         highlight?: string; // For key terms like "Tech Talk"
     };
     postId?: string;
+    communityId?: string;
+    id?: string;
 }
 
-export function ActivityItem({ type, user, timestamp, content, postId }: ActivityProps) {
-    const isClickable = !!postId && (type === 'post' || type === 'event');
+export function ActivityItem({ type, user, timestamp, content, postId, communityId }: ActivityProps) {
+    const isClickable = !!postId && (type === 'post' || type === 'event' || type === 'join');
+    const linkTo = `/community/${communityId}`;
 
     const activityContent = (
         <div className="flex flex-col gap-3">
@@ -66,7 +69,7 @@ export function ActivityItem({ type, user, timestamp, content, postId }: Activit
             <div className={`absolute left-[-6px] top-4 w-3 h-3 rounded-full border-2 border-[var(--synapse-bg)] ${type === 'system' ? 'bg-amber-500' : 'bg-[var(--synapse-text-muted)] group-hover:bg-[var(--synapse-blue)]'} transition-colors duration-200`} />
 
             {isClickable ? (
-                <Link to={`/post/${postId}`}>
+                <Link to={linkTo}>
                     {activityContent}
                 </Link>
             ) : (

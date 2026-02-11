@@ -59,43 +59,15 @@ export const emitToFollowers = async (req, userId, event, payload) => {
   }
 };
 
-// Emit to all members of a community
+// Emit to community room
 export const emitToCommunity = async (req, communityId, event, payload) => {
   try {
     const io = req.app.get("io");
-    const onlineUsers = req.app.get("onlineUsers");
-    const { Community } = await import("../models/community.model.js");
-
-    // Get community members
-    const community = await Community.findById(communityId).select("members admins creator");
-    if (!community) {
-      console.warn(`Community ${communityId} not found for emitToCommunity`);
-      return;
+    if (io) {
+      console.log(`Broadcasting event ${event} to room community:${communityId}`);
+      io.to(`community:${communityId}`).emit(event, payload);
+      console.log(`Emitted ${event} to community room community:${communityId} with payload keys:`, Object.keys(payload));
     }
-
-    // Combine members, admins, and creator
-    const allMembers = new Set();
-    if (community.members && Array.isArray(community.members)) {
-      community.members.forEach(m => allMembers.add(m.toString()));
-    }
-    if (community.admins && Array.isArray(community.admins)) {
-      community.admins.forEach(a => allMembers.add(a.toString()));
-    }
-    if (community.creator) {
-      allMembers.add(community.creator.toString());
-    }
-
-    // Emit to all online members
-    let emittedCount = 0;
-    allMembers.forEach(userId => {
-      const userData = onlineUsers.get(userId);
-      if (userData?.socketId) {
-        io.to(userData.socketId).emit(event, payload);
-        emittedCount++;
-      }
-    });
-    
-    console.log(`Emitted ${event} to ${emittedCount} online members of community ${communityId}`);
   } catch (error) {
     console.error('Error in emitToCommunity:', error);
   }

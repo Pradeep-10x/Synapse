@@ -1,10 +1,11 @@
 import { CommunityPost } from "../models/communityPost.model.js";
 import { CommunityComment } from "../models/communityComment.model.js";
 import { Community } from "../models/community.model.js";
+import { Notification } from "../models/notification.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { emitCommunityEvent } from "../utils/socketEmitters.js";
+import { emitCommunityEvent, emitToUser } from "../utils/socketEmitters.js";
 
 export const addCommunityComment = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -34,6 +35,62 @@ export const addCommunityComment = asyncHandler(async (req, res) => {
 
   // Increment community events counter
   emitCommunityEvent(req, post.community.toString());
+
+  // Fetch community name for notifications
+  const community = await Community.findById(post.community).select('name');
+
+  // Emit real-time event to community room
+  const eventPayload = {
+    comment: {
+      _id: populatedComment._id,
+      user: {
+        _id: populatedComment.author._id,
+        username: populatedComment.author.username,
+        avatar: populatedComment.author.avatar
+      },
+      content: populatedComment.text,
+      createdAt: populatedComment.createdAt,
+      post: post._id
+    },
+    activity: {
+      type: 'comment',
+      user: {
+        username: populatedComment.author.username,
+        avatar: populatedComment.author.avatar
+      },
+      community: {
+        id: post.community.toString(),
+        name: community?.name || 'a community'
+      },
+      message: 'commented on a post',
+      createdAt: new Date().toISOString(),
+      postId: post._id
+    }
+  };
+
+  if (community) {
+    const io = req.app.get("io");
+    io.to(`community:${post.community.toString()}`).emit("community:comment:new", eventPayload);
+  }
+
+  // Create persistent notification for the post author (if not self)
+  if (post.author.toString() !== req.user._id.toString()) {
+    try {
+      const notification = await Notification.create({
+        user: post.author,
+        fromUser: req.user._id,
+        type: 'community_comment',
+        communityPost: post._id,
+        community: post.community,
+        message: `commented on a post in ${community?.name || 'a community'}`
+      });
+      const populatedNotif = await Notification.findById(notification._id)
+        .populate('fromUser', 'username avatar');
+      emitToUser(req, post.author, "notification:new", populatedNotif);
+    } catch (err) {
+      console.error("Error creating community comment notification:", err);
+    }
+  }
 
   return res.status(201).json(new ApiResponse(201, {
     _id: populatedComment._id,
