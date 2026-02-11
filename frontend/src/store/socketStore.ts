@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 
 export interface Notification {
   _id: string;
-  type: 'like' | 'comment' | 'follow' | 'mention' | 'post' | 'reel' | 'story';
+  type: 'like' | 'comment' | 'follow' | 'mention' | 'post' | 'reel' | 'story' | 'community_like' | 'community_comment' | 'community_post';
   fromUser: {
     _id: string;
     username: string;
@@ -12,6 +12,8 @@ export interface Notification {
   post?: string;
   reel?: string;
   story?: string;
+  communityPost?: string;
+  community?: string;
   message?: string;
   isRead: boolean;
   createdAt: string;
@@ -66,14 +68,23 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   communityEventsCounts: new Map(),
 
   connect: (user) => {
+    console.log("DEBUG: socketStore.connect called for user", user);
     const { socket: existingSocket } = get();
 
     // Don't create duplicate connections
-    if (existingSocket?.connected) {
+    if (existingSocket) {
+      if (existingSocket.connected) {
+        console.log("DEBUG: Socket already connected");
+        return;
+      }
+      console.log("DEBUG: Socket instance exists but not connected yet. detailed check might be needed but avoiding overwriting for now.");
+      // If it's existing but not connected, it might be connecting. 
+      // Rely on auto-reconnect from socket.io, don't create new instance which would kill the previous one.
       return;
     }
 
     const socketUrl = getSocketUrl();
+    console.log("DEBUG: Connecting to socket URL:", socketUrl);
     const socket = io(socketUrl, {
       query: {
         userId: user._id,

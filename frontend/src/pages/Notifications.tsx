@@ -9,7 +9,8 @@ import {
   Loader2,
   CheckCheck,
   Trash2,
-  ChevronDown
+  ChevronDown,
+  Users
 } from 'lucide-react';
 import { notificationAPI } from '@/lib/api';
 import { useSocketStore, Notification } from '@/store/socketStore';
@@ -18,13 +19,17 @@ import { toast } from 'react-hot-toast';
 const getNotificationBadgeColor = (type: string) => {
   switch (type) {
     case 'like':
+    case 'community_like':
       return 'bg-rose-500';
     case 'comment':
+    case 'community_comment':
       return 'bg-blue-500';
     case 'follow':
       return 'bg-emerald-500';
     case 'reel':
       return 'bg-violet-500';
+    case 'community_post':
+      return 'bg-amber-500';
     default:
       return 'bg-gray-500';
   }
@@ -42,6 +47,12 @@ const getActionLabel = (type: string) => {
       return 'New post';
     case 'reel':
       return 'New reel';
+    case 'community_like':
+      return 'Community Like';
+    case 'community_comment':
+      return 'Community Comment';
+    case 'community_post':
+      return 'Community Post';
     default:
       return 'Notification';
   }
@@ -221,6 +232,27 @@ function NotificationRow({ notification }: { notification: Notification }) {
             <span className="text-[var(--synapse-text-muted)]"> shared a new {notification.type}</span>
           </>
         );
+      case 'community_like':
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{username}</span>
+            <span className="text-[var(--synapse-text-muted)]"> {notification.message || 'liked a community post'}</span>
+          </>
+        );
+      case 'community_comment':
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{username}</span>
+            <span className="text-[var(--synapse-text-muted)]"> {notification.message || 'commented on a community post'}</span>
+          </>
+        );
+      case 'community_post':
+        return (
+          <>
+            <span className="font-medium text-[var(--synapse-text)]">{username}</span>
+            <span className="text-[var(--synapse-text-muted)]"> {notification.message || 'posted in a community'}</span>
+          </>
+        );
       default:
         return (
           <>
@@ -233,13 +265,17 @@ function NotificationRow({ notification }: { notification: Notification }) {
   const getIcon = () => {
     switch (notification.type) {
       case 'like':
+      case 'community_like':
         return <Heart className="w-3.5 h-3.5 text-white" fill="currentColor" />;
       case 'comment':
+      case 'community_comment':
         return <MessageCircle className="w-3.5 h-3.5 text-white" />;
       case 'follow':
         return <UserPlus className="w-3.5 h-3.5 text-white" />;
       case 'reel':
         return <Play className="w-3.5 h-3.5 text-white" fill="currentColor" />;
+      case 'community_post':
+        return <Users className="w-3.5 h-3.5 text-white" />;
       default:
         return <Bell className="w-3.5 h-3.5 text-white" />;
     }

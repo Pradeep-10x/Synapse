@@ -69,6 +69,8 @@ dotenv.config();
         if (notification) {
           emitToUser(req, followerId, "notification:new", notification);
         }
+        // Emit new post event to followers for real-time feed update
+        emitToUser(req, followerId, "post:new", { post: post });
       });
     }
     

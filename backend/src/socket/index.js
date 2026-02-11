@@ -1,8 +1,10 @@
 import { Server } from "socket.io";
 import registerCallEvents from "./call.socket.js";
 import { User } from "../models/user.model.js";
+import { Community } from "../models/community.model.js";
 
 const initSocket = (server) => {
+  console.log("Initializing Socket.IO server...");
   const io = new Server(server, {
     cors: {
       origin: "*",
@@ -42,8 +44,9 @@ const initSocket = (server) => {
     return current + 1;
   };
 
-  io.on("connection", (socket) => {
-    // ... (existing connection logic) ...
+  io.on("connection", async (socket) => {
+    console.log("DEBUG: Socket connection attempt", socket.id);
+    console.log("DEBUG: Handshake query:", socket.handshake.query);
     // Note: I will only replace the top imports and the disconnect handler part to avoid replacing the whole file if possible, 
     // but replace_file_content works with contiguous blocks.
     // Since I need to add an import at the top AND change the bottom, I might need two calls or one big one.
@@ -61,6 +64,19 @@ const initSocket = (server) => {
       onlineUsers.set(userId, { socketId: socket.id, username, avatar });
       console.log(`User ${userId} registered with socket ${socket.id}`);
 
+      // Join user to all their community rooms
+      try {
+        console.log(`Attempting to join community rooms for user: ${userId}`);
+        const communities = await Community.find({ members: userId }).select('_id');
+        console.log(`Found ${communities.length} communities for user ${userId}`);
+        communities.forEach(community => {
+          socket.join(`community:${community._id}`);
+          console.log(`Socket ${socket.id} joined room community:${community._id}`);
+        });
+      } catch (error) {
+        console.error("Error joining community rooms:", error);
+      }
+
       // Notify others that user is online
       socket.broadcast.emit("user:status", { userId, status: "online", username, avatar });
 
@@ -73,7 +89,8 @@ const initSocket = (server) => {
       socket.emit("online:users", onlineUsersList);
     }
 
-    socket.on("user:online", (data) => {
+    socket.on("user:online", async (data) => {
+      console.log("DEBUG: user:online event received", data);
       // Handle legacy just-ID or new object
       const uid = typeof data === 'string' ? data : data.userId;
       const uName = typeof data === 'string' ? username : data.username;
@@ -81,6 +98,17 @@ const initSocket = (server) => {
 
       onlineUsers.set(uid, { socketId: socket.id, username: uName, avatar: uAvatar });
       console.log(`User ${uid} explicitly registered socket ${socket.id}`);
+
+      // Join user to all their community rooms
+      try {
+        const communities = await Community.find({ members: uid }).select('_id');
+        communities.forEach(community => {
+          socket.join(`community:${community._id}`);
+          console.log(`Socket ${socket.id} joined room community:${community._id}`);
+        });
+      } catch (error) {
+        console.error("Error joining community rooms in user:online:", error);
+      }
 
       // Re-broadcast with details if updated
       socket.broadcast.emit("user:status", { userId: uid, status: "online", username: uName, avatar: uAvatar });
@@ -99,6 +127,7 @@ const initSocket = (server) => {
 
     // Handle community room join (for tracking active users)
     socket.on("community:join", (data) => {
+      console.log("DEBUG: community:join event received", data);
       const { communityId } = data;
       const uid = socket.handshake.query.userId;
       

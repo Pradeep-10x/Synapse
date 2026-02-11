@@ -1,10 +1,11 @@
 import { Community } from "../models/community.model.js";
 import { CommunityPost } from "../models/communityPost.model.js";
+import { Notification } from "../models/notification.model.js";
 import { uploadonCloudinary } from "../utils/cloudinary.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { emitToCommunity, emitCommunityEvent } from "../utils/socketEmitters.js";
+import { emitToCommunity, emitCommunityEvent, emitToUser } from "../utils/socketEmitters.js";
 
 export const createCommunityPost = asyncHandler(async (req, res) => {
   const { text, caption } = req.body;
@@ -81,6 +82,29 @@ export const createCommunityPost = asyncHandler(async (req, res) => {
 
   // Increment community events counter
   emitCommunityEvent(req, communityId);
+
+  // Create notifications for community members (not self)
+  try {
+    const memberIds = community.members
+      .map(m => m.toString())
+      .filter(id => id !== req.user._id.toString());
+    
+    for (const memberId of memberIds) {
+      const notification = await Notification.create({
+        user: memberId,
+        fromUser: req.user._id,
+        type: 'community_post',
+        communityPost: post._id,
+        community: communityId,
+        message: `posted in ${populatedPost.community.name}`
+      });
+      const populatedNotif = await Notification.findById(notification._id)
+        .populate('fromUser', 'username avatar');
+      emitToUser(req, memberId, "notification:new", populatedNotif);
+    }
+  } catch (err) {
+    console.error("Error creating community post notifications:", err);
+  }
 
   return res.status(201).json(new ApiResponse(201, transformedPost, "Post created successfully"));
 });
@@ -194,6 +218,25 @@ export const likeCommunityPost = asyncHandler(async (req, res) => {
         createdAt: new Date().toISOString()
       }
     });
+  }
+
+  // Create persistent notification for the post author on like (not self, not unlike)
+  if (!isLiked && post.author._id.toString() !== req.user._id.toString()) {
+    try {
+      const notification = await Notification.create({
+        user: post.author._id,
+        fromUser: req.user._id,
+        type: 'community_like',
+        communityPost: post._id,
+        community: post.community,
+        message: `liked your post in ${community?.name || 'a community'}`
+      });
+      const populatedNotif = await Notification.findById(notification._id)
+        .populate('fromUser', 'username avatar');
+      emitToUser(req, post.author._id, "notification:new", populatedNotif);
+    } catch (err) {
+      console.error("Error creating community like notification:", err);
+    }
   }
 
   return res.status(200).json(new ApiResponse(200, {
