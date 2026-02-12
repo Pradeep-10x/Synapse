@@ -11,15 +11,34 @@ const MENU_ITEMS = [
     { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const navigate = useNavigate();
     const location = useLocation();
 
     return (
-        <aside className="w-[260px] flex-shrink-0 bg-[var(--synapse-bg)] border-r border-[var(--synapse-border)] flex flex-col h-screen fixed left-0 top-0 z-50">
-            {/* Brand Header */}
-            <div className="h-16 flex items-center px-6 py-12  border-b border-[var(--synapse-border)]">
-                <div className="flex items-center ">
+        <>
+             {/* Backdrop for mobile */}
+            {isOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+                    onClick={onClose}
+                />
+            )}
+            
+            <aside className={`
+                fixed top-0 left-0 z-50 h-screen w-[260px] 
+                bg-[var(--synapse-bg)] border-r border-[var(--synapse-border)]
+                flex flex-col transition-transform duration-300 ease-in-out
+                ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            `}>
+                {/* Brand Header */}
+                <div className="h-16 flex items-center px-6 py-12  border-b border-[var(--synapse-border)]">
+                    <div className="flex items-center ">
                     <img
                         src="/logo.png"
                         alt="Synapse Logo"
@@ -41,7 +60,10 @@ export function Sidebar() {
                     return (
                         <button
                             key={item.label}
-                            onClick={() => navigate(item.path)}
+                            onClick={() => {
+                                navigate(item.path);
+                                onClose(); // Close sidebar on mobile when item clicked
+                            }}
                             className={`w-full flex items-center gap-3 px-5 py-3.5 text-lg font-medium rounded-sm transition-all duration-200 ${isActive
                                 ? 'bg-[var(--synapse-surface)] text-[var(--synapse-text)] border border-transparent'
                                 : 'text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] hover:bg-[var(--synapse-surface)] border border-transparent'
@@ -62,5 +84,6 @@ export function Sidebar() {
                 </div>
             </div>
         </aside>
+        </>
     );
 }
