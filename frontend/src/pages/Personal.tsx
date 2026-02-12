@@ -68,6 +68,57 @@ export default function PersonalPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab] = useState<Tab>('connections'); // Fixed: Removed unused setActiveTab
 
+  /* Search State */
+  const [searchResults, setSearchResults] = useState<ConnectionUser[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Debounced search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim()) {
+        setIsSearching(true);
+        try {
+          const response = await userAPI.searchUsers(searchQuery);
+          const results = response.data.data || [];
+          setSearchResults(Array.isArray(results) ? results : []);
+          setShowSearchResults(true);
+        } catch (error) {
+          console.error("Search failed:", error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  // Handle follow from search results
+  const handleSearchFollow = async (user: ConnectionUser) => {
+       if (!currentUser || user._id === currentUser._id) return;
+       
+       const isAlreadyFollowing = following.some(f => f.following && f.following._id === user._id);
+       const currentStatus = followState[user._id] ?? isAlreadyFollowing;
+       const newStatus = !currentStatus;
+       
+       setFollowState(prev => ({ ...prev, [user._id]: newStatus }));
+       
+       try {
+           await userAPI.followUnfollow(user._id);
+           toast.success(newStatus ? 'Following' : 'Unfollowed');
+           fetchConnections();
+       } catch (error: any) {
+           setFollowState(prev => ({ ...prev, [user._id]: currentStatus })); // Revert
+           toast.error(error.response?.data?.message || 'Action failed');
+       }
+  };
+
+
 
   const [followers, setFollowers] = useState<FollowerItem[]>([]);
   const [following, setFollowing] = useState<FollowingItem[]>([]);
@@ -206,27 +257,92 @@ export default function PersonalPage() {
   }
 
   return (
-
     <div className="animate-in fade-in duration-300 h-full overflow-hidden flex flex-col">
       {/* Search - sharp, modern */}
-      <div className="mb-8">
+      <div className="mb-8 relative z-50">
         <div className="relative max-w-xl">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--synapse-text-muted)]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by usernames..."
+            onFocus={() => searchQuery && setShowSearchResults(true)}
+            placeholder="Search communities or users..." // Updated placeholder logic if needed, but keeping simple
             className="w-full pl-11 pr-11 py-3.5 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-md text-[var(--synapse-text)] placeholder:text-[var(--synapse-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--synapse-blue)]/40 focus:border-[var(--synapse-blue)] transition-all text-sm"
           />
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setShowSearchResults(false);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
+          )}
+
+          {/* Search Results Dropdown */}
+          {showSearchResults && searchQuery && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-lg shadow-xl overflow-hidden max-h-[400px] overflow-y-auto">
+                  {isSearching ? (
+                      <div className="p-4 flex justify-center">
+                          <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-blue)]" />
+                      </div>
+                  ) : searchResults.length > 0 ? (
+                      <ul>
+                          {searchResults.map(user => {
+                              const isMe = user._id === currentUser?._id;
+                              // Check follow status
+                              // We verify against the 'following' list we fetched
+                              const isFollowingThisUser = followState[user._id] ?? following.some(f => f.following._id === user._id);
+                              
+                              return (
+                                  <li key={user._id} className="flex items-center justify-between p-3 hover:bg-[var(--synapse-surface-hover)] transition-colors border-b border-[var(--synapse-border)] last:border-0">
+                                      <Link 
+                                        to={`/profile/${user.username}`}
+                                        className="flex items-center gap-3 flex-1 min-w-0"
+                                        onClick={() => setShowSearchResults(false)}
+                                      >
+                                          <img 
+                                            src={user.avatar || "/default-avatar.jpg"} 
+                                            alt={user.username}
+                                            className="w-10 h-10 rounded-full object-cover border border-[var(--synapse-border)]"
+                                          />
+                                          <div className="min-w-0">
+                                              <p className="text-sm font-semibold text-[var(--synapse-text)] truncate">{user.fullName || user.username}</p>
+                                              <p className="text-xs text-[var(--synapse-text-muted)] truncate">@{user.username}</p>
+                                          </div>
+                                      </Link>
+                                      
+                                      {!isMe && (
+                                          <button
+                                              onClick={(e) => {
+                                                  e.preventDefault();
+                                                  e.stopPropagation();
+                                                  handleSearchFollow(user);
+                                              }}
+                                              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                                                  isFollowingThisUser
+                                                  ? 'bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] hover:border-red-500/50 hover:text-red-400'
+                                                  : 'bg-[var(--synapse-blue)] text-white hover:opacity-90'
+                                              }`}
+                                          >
+                                              {isFollowingThisUser ? 'Following' : 'Follow'}
+                                          </button>
+                                      )}
+                                  </li>
+                              );
+                          })}
+                      </ul>
+                  ) : (
+                      <div className="p-4 text-center text-sm text-[var(--synapse-text-muted)]">
+                          No users found.
+                      </div>
+                  )}
+              </div>
           )}
         </div>
       </div>

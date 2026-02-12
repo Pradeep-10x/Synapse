@@ -329,14 +329,22 @@ const getPrivacy = asyncHandler(async (req, res) => {
 });
 
 const getRecentlyActiveUsers = asyncHandler(async (req, res) => {
+    // 1. Get list of users the current user follows
+    const { Follow } = await import('../models/follow.model.js');
+    const following = await Follow.find({ follower: req.user._id }).select('following');
+    
+    // Extract user IDs
+    const followingIds = following.map(f => f.following);
+
+    // 2. Find users in that list who are recently active
     const users = await User.find({
-        _id: { $ne: req.user._id }
+        _id: { $in: followingIds } // Only show followed users
     })
         .sort({ lastActive: -1 })
         .limit(10)
         .select("username fullName avatar lastActive");
 
-    return res.status(200).json(new ApiResponse(200, users, "Recently active users fetched successfully"));
+    return res.status(200).json(new ApiResponse(200, users, "Recently active followed users fetched successfully"));
 });
 
 export { registerUser, loginUser, logoutUser, deleteUser, refreshaccessToken, changePassword, GetCurrentUser, updateUserDetails, UpdateAvatar, getUserProfile, searchUsers, updatePrivacy, getPrivacy, getRecentlyActiveUsers };
