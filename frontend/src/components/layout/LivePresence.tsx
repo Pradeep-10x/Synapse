@@ -11,14 +11,52 @@ export function LivePresence() {
     const { onlineUsers, recentlyActive, setRecentlyActive } = useSocketStore();
     const { user: currentUser } = useAuthStore();
     const [, setTick] = useState(0); // Force re-render for time updates
+    const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+
+    // Fetch followed users on mount
+    useEffect(() => {
+        const fetchFollowing = async () => {
+            if (!currentUser?._id) return;
+            try {
+                const response = await userAPI.getFollowing(currentUser._id, 1, 1000);
+                
+                const data = response.data.data;
+                const followingList = data.following || [];
+                const ids = new Set<string>();
+                
+                if (Array.isArray(followingList)) {
+                     followingList.forEach((item: any) => {
+                         // item is a Follow document with populated 'following' field
+                         if (item.following?._id) {
+                              ids.add(item.following._id);
+                         } else if (item.following && typeof item.following === 'string') {
+                             ids.add(item.following);
+                         }
+                     });
+                }
+                setFollowedIds(ids);
+
+            } catch (error) {
+                console.error('Failed to fetch following list:', error);
+            }
+        };
+
+        fetchFollowing();
+    }, [currentUser?._id]);
 
     // Convert Map to array, exclude current user, and take first 5
+    // FILTER: Only show users present in "followedIds"
     const onlineUsersList = Array.from(onlineUsers.entries())
         .map(([id, data]) => ({ id, ...data }))
-        .filter(user => user.id !== currentUser?._id)
+        .filter(user => user.id !== currentUser?._id && followedIds.has(user.id))
         .slice(0, 5);
 
-    const onlineCount = Math.max(0, onlineUsers.size - (onlineUsers.has(currentUser?._id || '') ? 1 : 0));
+    // Filter count as well
+    const onlineFollowedCount = Array.from(onlineUsers.keys())
+        .filter(id => id !== currentUser?._id && followedIds.has(id))
+        .length;
+
+    const onlineCount = onlineFollowedCount;
 
     useEffect(() => {
         const fetchRecentlyActive = async () => {
@@ -45,6 +83,7 @@ export function LivePresence() {
     }, []);
 
     // Convert Map to array and sort by lastActive
+    // Backend now already filters recently active by followed, so we just filter specific online dupes
     const recentlyActiveList = Array.from(recentlyActive.values())
         .filter((user: RecentlyActiveUser) => user._id !== currentUser?._id && !onlineUsers.has(user._id))
         .sort((a: RecentlyActiveUser, b: RecentlyActiveUser) => new Date(b.lastActive || 0).getTime() - new Date(a.lastActive || 0).getTime())

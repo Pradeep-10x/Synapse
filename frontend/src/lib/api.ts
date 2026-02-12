@@ -32,7 +32,7 @@ export const userAPI = {
   // Follow
   followUnfollow: (userId: string) => api.post(`/user/${userId}/follow`),
   getFollowers: (userId: string) => api.get(`/user/${userId}/followers`),
-  getFollowing: (userId: string) => api.get(`/user/${userId}/following`),
+  getFollowing: (userId: string, page = 1, limit = 1000) => api.get(`/user/${userId}/following`, { params: { page, limit } }),
 
   // Privacy
   getPrivacy: () => api.get('/user/privacy'),
