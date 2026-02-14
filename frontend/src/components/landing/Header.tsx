@@ -45,7 +45,7 @@ export default function Header() {
 
             {/* Menu Button */}
              <Link
-            to="/register"  >
+            to="/login"  >
             <button
   className="
     bg-[#2B2A33] text-white
@@ -57,7 +57,7 @@ export default function Header() {
   "
 >
 
-  Get Started
+  Login
 </button>
 </Link>
 
