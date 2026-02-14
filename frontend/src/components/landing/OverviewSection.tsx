@@ -1,56 +1,5 @@
 import ScrollReveal from "./ScrollReveal";
 
-/* Lightweight dashboard mock (static, GPU-safe) */
-// function DashboardGraphic() {
-//   return (
-//     <div
-//       aria-hidden
-//       className="
-//         relative rounded-xl
-//         border border-blue-500/30
-//         bg-[#0a0a0f]/90
-//         p-4
-//         shadow-[0_0_40px_rgba(59,130,246,0.15)]
-//       "
-//     >
-//       <div className="absolute inset-0 rounded-xl border border-blue-500/20 pointer-events-none" />
-
-//       <div className="text-[10px] font-medium uppercase tracking-wider text-blue-400/80 mb-3">
-//         CHIRON
-//       </div>
-
-//       <div className="grid grid-cols-2 gap-3">
-//         <div className="h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-//           <div className="flex gap-1.5 items-end">
-//             {[40, 65, 45, 80, 55].map((h, i) => (
-//               <div
-//                 key={i}
-//                 className="w-2 rounded-t bg-blue-500/70"
-//                 style={{ height: `${h}%` }}
-//               />
-//             ))}
-//           </div>
-//         </div>
-
-//         <div className="h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-//           <div className="w-12 h-12 rounded-full border-2 border-blue-500/60 flex items-center justify-center text-xs font-semibold text-blue-400">
-//             75%
-//           </div>
-//         </div>
-//       </div>
-
-//       <div className="mt-3 h-px bg-white/10" />
-
-//       <div className="mt-3 flex gap-2">
-//         <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-//           <div className="h-full w-2/3 rounded-full bg-blue-500/60" />
-//         </div>
-//         <div className="flex-1 h-1.5 rounded-full bg-blue-500/30" />
-//       </div>
-//     </div>
-//   );
-// }
-
 export default function OverviewSection() {
   return (
     <section
