@@ -58,8 +58,8 @@ export default function OverviewSection() {
     aria-labelledby="overview-heading"
     className="
       relative
-      py-28 md:py-65
-      px-40
+      py-16 md:py-28 lg:py-65
+      px-6 md:px-20 lg:px-40
       bg-black
     
       

@@ -33,7 +33,7 @@ export default function HeroSection() {
           relative z-10
           max-w-2xl mx-auto
           text-center
-          px-4 pt-24 pb-28
+          px-4 pt-4 pb-20 md:pt-24 md:pb-28
         "
       >
         {/* Logo */}
@@ -41,7 +41,7 @@ export default function HeroSection() {
           <img
             src="/logo.png"
             alt="Synapse logo"
-            className="block w-[120px]"
+            className="block w-[100px] md:w-[120px]"
             decoding="async"
             fetchPriority="high"
             style={{  marginBottom: "20px",marginTop:"35px" }}
@@ -49,12 +49,12 @@ export default function HeroSection() {
         </span>
 
         {/* Heading */}
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-5">
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white mb-5">
           Synapse
         </h1>
 
         {/* Subheading */}
-        <p className="text-lg sm:text-xl text-white/90 mb-10 max-w-lg mx-auto leading-relaxed">
+        <p className="text-base sm:text-xl text-white/90 mb-10 max-w-lg mx-auto leading-relaxed">
           A real-time interaction system for communities
           <br />
           and live activities..
@@ -66,6 +66,7 @@ export default function HeroSection() {
             to="/register"
             className="
               inline-flex items-center justify-center
+              w-full sm:w-auto
               px-8 py-4 rounded-md
               font-semibold text-white
               bg-gradient-to-b from-blue-500 to-blue-600
@@ -94,6 +95,7 @@ export default function HeroSection() {
   }}
   className="
     inline-flex items-center justify-center
+    w-full sm:w-auto
     px-8 py-4 rounded-md
     font-semibold
     text-white/90

@@ -16,7 +16,7 @@ export function Sidebar() {
     const location = useLocation();
 
     return (
-        <aside className="w-[260px] flex-shrink-0 bg-[var(--synapse-bg)] border-r border-[var(--synapse-border)] flex flex-col h-screen fixed left-0 top-0 z-50">
+        <aside className="hidden md:flex w-[260px] flex-shrink-0 bg-[var(--synapse-bg)] border-r border-[var(--synapse-border)] flex-col h-screen fixed left-0 top-0 z-50">
             {/* Brand Header */}
             <div className="h-16 flex items-center px-6 py-12  border-b border-[var(--synapse-border)]">
                 <div className="flex items-center ">
