@@ -256,6 +256,4 @@ State synchronization handling
 
 System-level thinking
 
-It is not perfect.
 
-But it is intentional.....
