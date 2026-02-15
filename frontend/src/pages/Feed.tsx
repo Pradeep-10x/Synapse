@@ -537,17 +537,17 @@ export default function FeedPage() {
   return (
     <div className="animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="mb-8 pt-2">
+      <div className="mb-4 sm:mb-8 pt-2">
         <h1 className="text-sm font-medium text-[var(--synapse-text-muted)] tracking-widest uppercase mb-1">
           Live Status: <span className="text-green-500 font-semibold">Active</span> • Real-time Feed
         </h1>
       </div>
 
       {/* Main Content - Activity Card + Live Presence side by side */}
-      <div className="flex gap-6 items-stretch">
+      <div className="flex gap-4 sm:gap-6 items-stretch">
         {/* Main Activity Card */}
         <div className="flex-1 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
-          <div className="px-6 py-5 border-b border-[var(--synapse-border)] bg-[rgba(255,255,255,0.02)] flex justify-between items-center">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--synapse-border)] bg-[rgba(255,255,255,0.02)] flex justify-between items-center">
             <h2 className="font-semibold text-xl text-[var(--synapse-text)]">Activity Stream</h2>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -555,7 +555,7 @@ export default function FeedPage() {
             </div>
           </div>
 
-          <div className="py-2 px-6 pb-10 space-y-2">
+          <div className="py-2 px-4 sm:px-6 pb-10 space-y-2">
             {loading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--synapse-text-muted)]" />

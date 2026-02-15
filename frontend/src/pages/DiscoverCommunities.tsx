@@ -242,7 +242,7 @@ export default function DiscoverCommunities() {
         {!selectedCommunity ? (
           <>
             {/* Header Section matching Community.tsx */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-[var(--synapse-border)]">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-10 pb-4 sm:pb-6 border-b border-[var(--synapse-border)]">
                 <div>
                    <div className="flex items-center gap-4 mb-1">
                         <button
@@ -288,7 +288,7 @@ export default function DiscoverCommunities() {
                 <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />
               </div>
             ) : filteredCommunities.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredCommunities.map((community, index) => (
                   <motion.div
                     key={community._id}

@@ -52,7 +52,7 @@ export default function CommunityPage() {
   return (
     <div className="animate-in fade-in duration-500">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-[var(--synapse-border)]">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-10 pb-4 sm:pb-6 border-b border-[var(--synapse-border)]">
         <div>
           <h1 className="text-2xl font-bold text-[var(--synapse-text)] tracking-tight mb-2 uppercase">Communities</h1>
           <p className="text-[var(--synapse-text-muted)] text-sm">
@@ -60,7 +60,7 @@ export default function CommunityPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[var(--synapse-surface)] hover:bg-[var(--synapse-surface-hover)] border border-[var(--synapse-border)] text-[var(--synapse-text)] rounded-[var(--radius-md)] text-sm font-medium transition-all"
@@ -84,7 +84,7 @@ export default function CommunityPage() {
           <Loader2 className="w-6 h-6 animate-spin text-[var(--synapse-text-muted)]" />
         </div>
       ) : joinedCommunities.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {joinedCommunities.map((community) => (
             <CommunityDomainCard
               key={community._id}

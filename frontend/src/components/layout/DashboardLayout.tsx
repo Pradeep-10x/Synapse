@@ -2,10 +2,11 @@
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, User, Settings, LogOut, ChevronDown, Send } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { Bell, User, Settings, LogOut, ChevronDown, Send, Menu } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface DashboardLayoutProps {
     children?: React.ReactNode;
@@ -13,9 +14,11 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
+    const { isMobile, isTablet } = useMediaQuery();
     
     const { unreadCount, unreadMessagesCount } = useSocketStore();
 
@@ -35,29 +38,52 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         navigate('/login');
     };
 
+    const handleCloseDrawer = useCallback(() => setIsDrawerOpen(false), []);
+
+    // Compute main margin based on breakpoint
+    const mainMargin = isMobile ? 'ml-0' : isTablet ? 'ml-[72px]' : 'ml-[260px]';
+
     return (
         <div className="min-h-screen bg-[var(--synapse-bg)] text-[var(--synapse-text)] flex">
-            {/* Left Sidebar - Desktop */}
-            <Sidebar />
+            {/* Sidebar */}
+            <Sidebar isDrawerOpen={isDrawerOpen} onClose={handleCloseDrawer} />
 
             {/* Main Content Area */}
-            <main className="flex-1 ml-0 md:ml-[260px] min-h-screen flex flex-col mb-16 md:mb-0">
+            <main className={`flex-1 ${mainMargin} min-h-screen flex flex-col mb-16 xl:mb-0`}>
                 {/* Top Navbar */}
-                <header className="h-16 md:h-20 flex items-center justify-between md:justify-end gap-6 px-4 md:px-10 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40">
+                <header className="h-16 xl:h-20 flex items-center justify-between xl:justify-end gap-4 xl:gap-6 px-4 xl:px-10 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40">
                     
-                    {/* Mobile Logo (Visible only on mobile) */}
-                    <div className="md:hidden flex items-center">
-                         <img
-                            src="/logo.png"
-                            alt="Synapse Logo"
-                            className="w-8 shrink-0 mr-2"
-                        />
-                        <span className="text-[var(--synapse-text)] text-xl font-semibold tracking-wide">
-                            SYNAPSE
-                        </span>
-                    </div>
+                    {/* Mobile: Hamburger + Logo */}
+                    {isMobile && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsDrawerOpen(true)}
+                                className="p-2 rounded-lg hover:bg-[var(--synapse-surface)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors"
+                                aria-label="Open menu"
+                            >
+                                <Menu className="w-6 h-6" />
+                            </button>
+                            <img
+                                src="/logo.png"
+                                alt="Synapse Logo"
+                                className="w-7 shrink-0"
+                            />
+                            <span className="text-[var(--synapse-text)] text-lg font-semibold tracking-wide">
+                                SYNAPSE
+                            </span>
+                        </div>
+                    )}
 
-                    <div className="flex items-center gap-4 md:gap-6">
+                    {/* Tablet: just logo (sidebar is mini) */}
+                    {isTablet && (
+                        <div className="flex items-center">
+                            <span className="text-[var(--synapse-text)] text-lg font-semibold tracking-wide">
+                                SYNAPSE
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-4 xl:gap-6">
                         {/* Notification Icon */}
                         <button
                             onClick={() => {
@@ -90,16 +116,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         <div className="relative ml-2" ref={profileRef}>
                             <button
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-2 md:gap-3 p-1.5 rounded-md hover:bg-[var(--synapse-surface)] transition-colors border border-transparent hover:border-[var(--synapse-border)]"
+                                className="flex items-center gap-2 xl:gap-3 p-1.5 rounded-md hover:bg-[var(--synapse-surface)] transition-colors border border-transparent hover:border-[var(--synapse-border)]"
                             >
-                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-[var(--synapse-border)]">
+                                <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-full overflow-hidden border-2 border-[var(--synapse-border)]">
                                     <img
                                         src={user?.avatar || "/default-avatar.jpg"}
                                         alt="Profile"
                                         className="w-full h-full object-cover scale-125"
                                     />
                                 </div>
-                                <div className="hidden md:block text-left mr-1">
+                                <div className="hidden xl:block text-left mr-1">
                                     <p className="text-lg font-semibold text-[var(--synapse-text)] leading-none tracking-tight">{user?.fullName}</p>
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-[var(--synapse-text-muted)] transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -150,14 +176,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </header>
 
                 {/* Page Content */}
-                <div className="flex-1 p-4 md:p-6 lg:px-30">
+                <div className="flex-1 p-4 xl:p-6 xl:px-30">
                     <div className="max-w-8xl w-full mx-auto">
                         {children || <Outlet />}
                     </div>
                 </div>
             </main>
 
-            {/* Mobile Bottom Nav */}
+            {/* Mobile Bottom Nav — visible below xl */}
             <MobileNav />
         </div>
     );
