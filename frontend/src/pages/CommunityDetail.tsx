@@ -483,7 +483,7 @@ export default function CommunityDetail() {
             </div>
 
             {/* Community Avatar and Name */}
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--synapse-border)' }}>
+            <div className="px-4 sm:px-6 py-4 border-b" style={{ borderColor: 'var(--synapse-border)' }}>
                 <div className="flex items-center gap-4">
                     <div className="relative -mt-12">
                         <img
@@ -506,7 +506,7 @@ export default function CommunityDetail() {
 
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 py-5">
-                <div className="flex gap-6">
+                <div className="flex gap-4 sm:gap-6">
                     {/* Left Content */}
                     <div className="flex-1 min-w-0">
                         <div className="space-y-6">

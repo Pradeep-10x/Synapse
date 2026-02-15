@@ -259,7 +259,7 @@ export default function PersonalPage() {
   return (
     <div className="animate-in fade-in duration-300 h-full overflow-hidden flex flex-col">
       {/* Search - sharp, modern */}
-      <div className="mb-8 relative z-50">
+      <div className="mb-4 sm:mb-8 relative z-50">
         <div className="relative max-w-xl">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--synapse-text-muted)]" />
           <input
@@ -347,9 +347,9 @@ export default function PersonalPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_390px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_390px] gap-4 sm:gap-6">
         {/* Posts - left panel */}
-        <div className={`bg-[var(--synapse-surface)] h-[80vh] border border-[var(--synapse-border)] rounded-md overflow-hidden flex flex-col shadow-sm ${activeTab === 'connections' ? 'hidden lg:flex' : ''}`}>
+        <div className={`bg-[var(--synapse-surface)] h-[80vh] border border-[var(--synapse-border)] rounded-md overflow-hidden flex flex-col shadow-sm order-2 lg:order-1 ${activeTab === 'connections' ? 'hidden lg:flex' : ''}`}>
           <div className="px-5 py-4 border-b border-[var(--synapse-border)] bg-[var(--synapse-surface-hover)]/40">
             <h2 className="text-md font-semibold tracking-wide text-[var(--synapse-text)]">
               Your Posts  {posts.length}
@@ -468,8 +468,8 @@ export default function PersonalPage() {
         </div>
 
         {/* Profile Card - right side */}
-        <div className={`${activeTab === 'posts' ? 'hidden lg:block' : ''}`}>
-          <div className="relative bg-[var(--synapse-surface)]/80 backdrop-blur-sm border border-[var(--synapse-border)] rounded-md p-6 h-fit sticky top-4">
+        <div className={`order-1 lg:order-2 ${activeTab === 'posts' ? 'hidden lg:block' : ''}`}>
+          <div className="relative bg-[var(--synapse-surface)]/80 backdrop-blur-sm border border-[var(--synapse-border)] rounded-md p-4 sm:p-6 h-fit sticky top-4">
             {/* Edit Profile Link - Top Right */}
             <Link 
               to="/settings" 
@@ -501,7 +501,7 @@ export default function PersonalPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-3 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
               <button
                 onClick={() => setModalType('followers')}
                 className="text-center p-3 rounded-lg bg-[var(--synapse-surface-hover)]/50 hover:bg-[var(--synapse-surface-hover)] transition-colors cursor-pointer"

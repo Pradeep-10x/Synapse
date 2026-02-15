@@ -1,10 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { messageAPI, communityAPI, communityChatAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useSocketStore } from '@/store/socketStore';
 import { useWebRTC } from '@/hooks/useWebRTC';
-import { Send, Phone, Video, Loader2, Users, MessageCircle, X, PhoneOff, Crown, Shield, Search, Paperclip, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Send, Phone, Video, Loader2, Users, MessageCircle, X, PhoneOff, Crown, Shield, Search, Paperclip, MoreHorizontal, Trash2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -60,6 +61,8 @@ export default function MessagesPage() {
   const { user } = useAuthStore();
   const { socket, onlineUsers, clearMessagesCount } = useSocketStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isMobile, isTablet } = useMediaQuery();
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
   const communityId = searchParams.get('communityId');
   const {
@@ -387,10 +390,11 @@ export default function MessagesPage() {
     return conversation.participants.find((p) => p._id !== user?._id);
   };
 
-  const handleSelectConversation = (conversation: Conversation) => {
+  const handleSelectConversation = useCallback((conversation: Conversation) => {
     setSelectedConversation(conversation);
     setSelectedCommunityChat(null);
-  };
+    if (isMobile) setMobileView('chat');
+  }, [isMobile]);
 
   const fetchCommunityMessages = async (communityId: string) => {
     try {
@@ -416,14 +420,14 @@ export default function MessagesPage() {
     }
   };
 
-  const handleSelectCommunityChat = (chat: CommunityChat) => {
+  const handleSelectCommunityChat = useCallback((chat: CommunityChat) => {
     setSelectedCommunityChat(chat);
     setSelectedConversation(null);
     setActiveTab('community');
-    // Update URL to include communityId
     setSearchParams({ communityId: chat._id });
     fetchCommunityMessages(chat._id);
-  };
+    if (isMobile) setMobileView('chat');
+  }, [isMobile, setSearchParams]);
 
   const handleShowMembers = async () => {
     if (!selectedCommunityChat) return;
@@ -458,10 +462,20 @@ export default function MessagesPage() {
     );
   }
 
+  const handleMobileBack = useCallback(() => {
+    setMobileView('list');
+    setSelectedConversation(null);
+    setSelectedCommunityChat(null);
+  }, []);
+
+  // Determine which panels to show
+  const showList = isMobile ? mobileView === 'list' : true;
+  const showChat = isMobile ? mobileView === 'chat' : true;
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[var(--synapse-bg)] animate-in fade-in duration-500">
       {/* Page Header - Glass panel with subtle gradient */}
-      <div className="px-6 py-5 relative">
+      <div className="px-4 sm:px-6 py-4 sm:py-5 relative">
         <div className="absolute inset-0  border border-gray-500/30
     bg-gradient-to-r
     from-[var(--synapse-surface)]/40
@@ -470,18 +484,17 @@ export default function MessagesPage() {
     shadow-[0_0_16px_rgba(0,0,0,0.35)]" />
         <div className="relative flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-[var(--synapse-text)] tracking-tight">Messages</h1>
-            <p className="text-sm text-[var(--synapse-text-muted)] mt-0.5">Your conversations, synced in real-time</p>
+            <h1 className="text-lg sm:text-xl font-bold text-[var(--synapse-text)] tracking-tight">Messages</h1>
+            <p className="text-xs sm:text-sm text-[var(--synapse-text-muted)] mt-0.5">Your conversations, synced in real-time</p>
           </div>
 
         </div>
-        {/* Bottom gradient border */}
-        {/* <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--synapse-border)] to-transparent" /> */}
       </div>
 
-      <div className="flex-1 flex overflow-hidden p-4 gap-4">
+      <div className="flex-1 flex overflow-hidden p-2 sm:p-4 gap-2 sm:gap-4">
         {/* Conversation list - left card */}
-        <div className="w-full md:w-[420px] h-[70vh] flex-shrink-0 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col">
+        {showList && (
+        <div className={`${isMobile ? 'w-full' : isTablet ? 'w-[30%]' : 'w-[420px]'} h-[70vh] flex-shrink-0 rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg overflow-hidden flex flex-col`}>
           <div className="p-4 bg-gradient-to-b from-[var(--synapse-surface-hover)]/40 to-transparent">
             <div className="flex gap-4 mb-4">
               <button
@@ -615,14 +628,21 @@ export default function MessagesPage() {
             )}
           </div>
         </div>
+        )}
 
         {/* Chat Window - right card */}
-        <div className="flex-1 h-[70vh] flex flex-col rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden">
+        {showChat && (
+        <div className={`${isMobile ? 'w-full' : 'flex-1'} h-[70vh] flex flex-col rounded-md border border-[var(--synapse-border)] bg-[var(--synapse-surface)] shadow-lg min-w-0 overflow-hidden`}>
           {selectedConversation ? (
             <>
               {/* Chat Header - Direct */}
-              <div className="px-5 py-4 bg-gradient-to-b from-[var(--synapse-surface)] to-[var(--synapse-surface)]/80 backdrop-blur-sm flex items-center justify-between relative border-b border-[var(--synapse-border)]/50">
-                <div className="flex items-center gap-4">
+              <div className="px-3 sm:px-5 py-3 sm:py-4 bg-gradient-to-b from-[var(--synapse-surface)] to-[var(--synapse-surface)]/80 backdrop-blur-sm flex items-center justify-between relative border-b border-[var(--synapse-border)]/50">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {isMobile && (
+                    <button onClick={handleMobileBack} className="p-2 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors" aria-label="Back to conversations">
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                  )}
                   <div className="relative">
                     <img
                       src={getOtherParticipant(selectedConversation)?.avatar || '/default-avatar.jpg'}
@@ -729,8 +749,13 @@ export default function MessagesPage() {
           ) : selectedCommunityChat ? (
             <>
               {/* Chat Header - Community */}
-              <div className="p-4 bg-[var(--synapse-surface)]/80 backdrop-blur-sm flex items-center justify-between relative">
-                <div className="flex items-center gap-3">
+              <div className="p-3 sm:p-4 bg-[var(--synapse-surface)]/80 backdrop-blur-sm flex items-center justify-between relative">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {isMobile && (
+                    <button onClick={handleMobileBack} className="p-2 rounded-lg hover:bg-[var(--synapse-surface-hover)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors" aria-label="Back to conversations">
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                  )}
                   {selectedCommunityChat.avatar ? (
                     <img src={selectedCommunityChat.avatar} alt="" className="w-11 h-11 rounded-full object-cover border-2 border-[var(--synapse-border)]" />
                   ) : (
@@ -825,6 +850,7 @@ export default function MessagesPage() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Call UI */}

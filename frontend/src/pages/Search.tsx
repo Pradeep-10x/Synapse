@@ -151,7 +151,7 @@ export default function SearchPage() {
         </div>
 
         {/* Search Type Tabs */}
-        <div className="flex gap-2 mb-6 p-1 glass-card rounded-lg w-fit">
+        <div className="flex gap-2 mb-6 p-1 glass-card rounded-lg w-fit overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setSearchType('users')}
             className={`py-2 px-4 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${searchType === 'users'

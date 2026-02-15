@@ -98,16 +98,16 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray text-zinc-200">
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Header */}
         <header className="flex items-center gap-3 mb-5">
           <Settings className="w-6 h-6 text-white-500" />
           <h1 className="text-3xl font-semibold">Account Settings</h1>
         </header>
 
-        <div className="grid grid-cols-[240px,1fr] gap-10">
-          {/* Sidebar */}
-          <aside className="bg-[#17171A] rounded-md p-2 h-fit border border-zinc-800">
+        <div className="grid grid-cols-1 sm:grid-cols-[240px,1fr] gap-6 sm:gap-10">
+          {/* Sidebar — horizontal scroll on mobile */}
+          <aside className="bg-[#17171A] rounded-md p-2 h-fit border border-zinc-800 flex sm:flex-col gap-1 overflow-x-auto scrollbar-hide">
             {[
               { id: 'profile', label: 'My Profile', icon: User },
               { id: 'security', label: 'Security', icon: Shield },
@@ -116,7 +116,7 @@ export default function SettingsPage() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id as Tab)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-md font-medium transition
+                className={`flex items-center gap-3 px-4 py-3 rounded-md text-md font-medium transition whitespace-nowrap
                   ${
                     activeTab === id
                       ? 'bg-gray-700/50 text-white'
@@ -140,7 +140,7 @@ export default function SettingsPage() {
             {activeTab === 'profile' && (
               <>
                 {/* Profile header */}
-                <div className="flex items-center gap-5 mb-8">
+                <div className="flex items-center gap-4 sm:gap-5 mb-6 sm:mb-8">
                   <div className="relative">
                     <img
                       src={avatarPreview || '/default-avatar.jpg'}
@@ -169,10 +169,10 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Personal Info */}
-                <section className="bg-[#17171A]/50 rounded-md p-6 mb-6">
+                <section className="bg-[#17171A]/50 rounded-md p-4 sm:p-6 mb-6">
                   <h3 className="font-medium mb-4">Personal Information</h3>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <Field label="Full Name" value={user?.fullName}  />
                     <Field label="Username" value={user?.username}  />
                   </div>
@@ -202,10 +202,10 @@ export default function SettingsPage() {
 
             {/* --------------------------- SECURITY --------------------------- */}
             {activeTab === 'security' && (
-              <section className="bg-[#17171A]/50 rounded-md p-6">
+              <section className="bg-[#17171A]/50 rounded-md p-4 sm:p-6">
                 <h3 className="font-semibold mb-6">Change Password</h3>
 
-                <div className="grid grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                   <PasswordField
                     label="Current"
                     value={passwords.current}
