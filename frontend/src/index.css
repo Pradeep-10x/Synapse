@@ -105,7 +105,7 @@
 
 /* Touch optimisation — only below desktop */
 @media (max-width: 1023px) {
-  button,
+  button:not(.dot-btn),
   a,
   [role="button"],
   input[type="submit"],

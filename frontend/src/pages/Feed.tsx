@@ -4,7 +4,7 @@ import { LivePresence } from '@/components/layout/LivePresence';
 import { feedAPI, notificationAPI, communityPostAPI } from '@/lib/api';
 import { useSocketStore } from '@/store/socketStore';
 import { useAuthStore } from '@/store/authStore';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -546,7 +546,7 @@ export default function FeedPage() {
       {/* Main Content - Activity Card + Live Presence side by side */}
       <div className="flex gap-4 sm:gap-6 items-stretch">
         {/* Main Activity Card */}
-        <div className="flex-1 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
+        <div className="flex-1 min-w-0 bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[var(--synapse-border)] bg-[rgba(255,255,255,0.02)] flex justify-between items-center">
             <h2 className="font-semibold text-xl text-[var(--synapse-text)]">Activity Stream</h2>
             <div className="flex items-center gap-2">
@@ -581,7 +581,7 @@ export default function FeedPage() {
                           <button
                             key={idx}
                             onClick={() => setRealtimeSlideIndex(idx)}
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                            className={`dot-btn w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                               realtimeSlideIndex === idx
                                 ? 'bg-red-500 w-3'
                                 : 'bg-[var(--synapse-text-muted)] opacity-40 hover:opacity-70'
@@ -628,7 +628,7 @@ export default function FeedPage() {
                           <button
                             key={idx}
                             onClick={() => setRecentSlideIndex(idx)}
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                            className={`dot-btn w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                               recentSlideIndex === idx
                                 ? 'bg-emerald-500 w-3'
                                 : 'bg-[var(--synapse-text-muted)] opacity-40 hover:opacity-70'
@@ -673,7 +673,7 @@ export default function FeedPage() {
                           <button
                             key={idx}
                             onClick={() => setPostSlideIndex(idx)}
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                            className={`dot-btn w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                               postSlideIndex === idx
                                 ? 'bg-blue-500 w-3'
                                 : 'bg-[var(--synapse-text-muted)] opacity-40 hover:opacity-70'
@@ -688,45 +688,31 @@ export default function FeedPage() {
                       </div>
                     )}
                   </div>
-                  <div className="min-h-[80px]">
+                  <div className="min-h-[80px] overflow-hidden">
                     {postsActivities.length > 0 ? (
-                      <div className="flex items-center gap-2">
-                        {/* Left Arrow */}
-                        <button
-                          onClick={() => setPostSlideIndex(prev => prev > 0 ? prev - 1 : totalPostSlides - 1)}
-                          className={`p-2 rounded-full bg-[var(--synapse-surface-hover)] hover:bg-[var(--synapse-border)] transition-colors flex-shrink-0 ${
-                            totalPostSlides <= 1 ? 'opacity-30 cursor-not-allowed' : ''
-                          }`}
-                          disabled={totalPostSlides <= 1}
-                        >
-                          <ChevronLeft className="w-5 h-5 text-[var(--synapse-text-muted)]" />
-                        </button>
-                        
-                        {/* Post Content - Shifted right */}
-                        <div className="flex-1 ml-2">
-                          <AnimatePresence mode="wait">
-                            <motion.div
-                              key={postSlideIndex}
-                              initial={{ opacity: 0, x: 30 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -30 }}
-                              transition={{ duration: 0.25 }}
-                            >
-                              <ActivityItem {...postsActivities[postSlideIndex]} />
-                            </motion.div>
-                          </AnimatePresence>
-                        </div>
-                        
-                        {/* Right Arrow */}
-                        <button
-                          onClick={() => setPostSlideIndex(prev => (prev + 1) % totalPostSlides)}
-                          className={`p-2 rounded-full bg-[var(--synapse-surface-hover)] hover:bg-[var(--synapse-border)] transition-colors flex-shrink-0 ${
-                            totalPostSlides <= 1 ? 'opacity-30 cursor-not-allowed' : ''
-                          }`}
-                          disabled={totalPostSlides <= 1}
-                        >
-                          <ChevronRight className="w-5 h-5 text-[var(--synapse-text-muted)]" />
-                        </button>
+                      <div className="relative cursor-grab active:cursor-grabbing select-none">
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.div
+                            key={postSlideIndex}
+                            initial={{ opacity: 0, x: 80 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -80 }}
+                            transition={{ duration: 0.25, ease: 'easeInOut' }}
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={0.15}
+                            onDragEnd={(_e, info) => {
+                              const threshold = 50;
+                              if (info.offset.x < -threshold && totalPostSlides > 1) {
+                                setPostSlideIndex(prev => (prev + 1) % totalPostSlides);
+                              } else if (info.offset.x > threshold && totalPostSlides > 1) {
+                                setPostSlideIndex(prev => prev > 0 ? prev - 1 : totalPostSlides - 1);
+                              }
+                            }}
+                          >
+                            <ActivityItem {...postsActivities[postSlideIndex]} />
+                          </motion.div>
+                        </AnimatePresence>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center h-[80px] text-[var(--synapse-text-muted)] italic text-sm">
@@ -745,8 +731,8 @@ export default function FeedPage() {
           </div>
         </div>
 
-        {/* Live Presence Card */}
-        <div className="w-[420px] flex-shrink-0 hidden lg:block">
+        {/* Live Presence Card — shrinks from 420→220px between 1920→1710px viewport, then Activity card shrinks */}
+        <div className="hidden lg:block flex-shrink-0" style={{ width: 'clamp(300px, calc(95vw - 1404px), 420px)' }}>
           <LivePresence />
         </div>
       </div>

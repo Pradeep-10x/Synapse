@@ -1,8 +1,7 @@
 
 import { Sidebar } from './Sidebar';
-import { MobileNav } from './MobileNav';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Bell, User, Settings, LogOut, ChevronDown, Send, Menu } from 'lucide-react';
+import { Bell, User, Settings, LogOut, ChevronDown, Send } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useSocketStore } from '@/store/socketStore';
@@ -18,7 +17,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const profileRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
-    const { isMobile, isTablet } = useMediaQuery();
+    const { isMobile, isTablet, isMidrange } = useMediaQuery();
     
     const { unreadCount, unreadMessagesCount } = useSocketStore();
 
@@ -41,7 +40,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     const handleCloseDrawer = useCallback(() => setIsDrawerOpen(false), []);
 
     // Compute main margin based on breakpoint
-    const mainMargin = isMobile ? 'ml-0' : isTablet ? 'ml-[72px]' : 'ml-[260px]';
+    // mobile: no sidebar (bottom bar), midrange: no sidebar at all, tablet: mini 72px, desktop: 260px
+    const mainMargin = isMobile ? 'ml-0' : (isTablet || isMidrange) ? 'ml-[72px]' : 'ml-[260px]';
+
+    // Bottom padding for bottom nav: mobile has bottom sidebar bar, tablet+midrange have MobileNav
+    const bottomPadding = (isMobile || isTablet || isMidrange) ? 'mb-16' : 'mb-0';
 
     return (
         <div className="min-h-screen bg-[var(--synapse-bg)] text-[var(--synapse-text)] flex">
@@ -49,20 +52,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Sidebar isDrawerOpen={isDrawerOpen} onClose={handleCloseDrawer} />
 
             {/* Main Content Area */}
-            <main className={`flex-1 ${mainMargin} min-h-screen flex flex-col mb-16 xl:mb-0`}>
+            <main className={`flex-1 ${mainMargin} min-h-screen flex flex-col ${bottomPadding}`}>
                 {/* Top Navbar */}
                 <header className="h-16 xl:h-20 flex items-center justify-between xl:justify-end gap-4 xl:gap-6 px-4 xl:px-10 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40">
                     
-                    {/* Mobile: Hamburger + Logo */}
+                    {/* Mobile (<640px): just logo, no hamburger, no SYNAPSE text */}
                     {isMobile && (
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsDrawerOpen(true)}
-                                className="p-2 rounded-lg hover:bg-[var(--synapse-surface)] text-[var(--synapse-text-muted)] hover:text-[var(--synapse-text)] transition-colors"
-                                aria-label="Open menu"
-                            >
-                                <Menu className="w-6 h-6" />
-                            </button>
                             <img
                                 src="/logo.png"
                                 alt="Synapse Logo"
@@ -74,12 +70,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </div>
                     )}
 
-                    {/* Tablet: just logo (sidebar is mini) */}
+                    {/* Tablet (640–1019px): show SYNAPSE text */}
                     {isTablet && (
                         <div className="flex items-center">
                             <span className="text-[var(--synapse-text)] text-lg font-semibold tracking-wide">
                                 SYNAPSE
                             </span>
+                        </div>
+                    )}
+
+                    {/* Midrange (1020–1279px): no SYNAPSE text, no sidebar — just show logo */}
+                    {isMidrange && (
+                        <div className="flex items-center gap-2">
+                            <img
+                                src="/logo.png"
+                                alt="Synapse Logo"
+                                className="w-7 shrink-0"
+                            />
                         </div>
                     )}
 
@@ -183,8 +190,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </div>
             </main>
 
-            {/* Mobile Bottom Nav — visible below xl */}
-            <MobileNav />
         </div>
     );
 }
