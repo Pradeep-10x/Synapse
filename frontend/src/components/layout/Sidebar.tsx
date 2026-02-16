@@ -68,7 +68,7 @@ export const Sidebar = memo(function Sidebar({ isDrawerOpen = false, onClose }: 
     /* ─── Tablet + Midrange (640–1279px): mini collapsed sidebar ─── */
     if (isTablet || isMidrange) {
         return (
-            <aside className="group/sidebar w-[72px] hover:w-[260px] flex-shrink-0 bg-[var(--synapse-bg)] border-r border-[var(--synapse-border)] flex flex-col h-screen fixed left-0 top-0 z-50 transition-[width] duration-200 overflow-hidden">
+            <aside className="group/sidebar w-[72px] flex-shrink-0 bg-[var(--synapse-bg)] border-r border-[var(--synapse-border)] flex flex-col h-screen fixed left-0 top-0 z-50 overflow-hidden">
                 {/* Brand Header */}
                 <div className="h-16 flex items-center px-5 py-12 border-b border-[var(--synapse-border)]">
                     <div className="flex items-center">
@@ -78,7 +78,7 @@ export const Sidebar = memo(function Sidebar({ isDrawerOpen = false, onClose }: 
                             className="w-8 shrink-0"
                             style={{ marginLeft: '2px' }}
                         />
-                        <span className="text-[var(--synapse-text)] text-2xl font-semibold tracking-wide ml-3 mt-0.5 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span className="sr-only">
                             SYNAPSE
                         </span>
                     </div>
@@ -99,7 +99,7 @@ export const Sidebar = memo(function Sidebar({ isDrawerOpen = false, onClose }: 
                                     }`}
                             >
                                 <item.icon className={`w-6 h-6 flex-shrink-0 ${isActive ? 'text-[var(--synapse-text)]' : 'text-current'}`} />
-                                <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                                <span className="sr-only">
                                     {item.label}
                                 </span>
                             </button>
@@ -111,7 +111,7 @@ export const Sidebar = memo(function Sidebar({ isDrawerOpen = false, onClose }: 
                 <div className="p-4 border-t border-[var(--synapse-border)]">
                     <div className="flex items-center gap-2 text-sm text-[var(--synapse-text-muted)]">
                         <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse flex-shrink-0" />
-                        <span className="opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                        <span className="sr-only">
                             System Operational
                         </span>
                     </div>

@@ -43,8 +43,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     // mobile: no sidebar (bottom bar), midrange: no sidebar at all, tablet: mini 72px, desktop: 260px
     const mainMargin = isMobile ? 'ml-0' : (isTablet || isMidrange) ? 'ml-[72px]' : 'ml-[260px]';
 
-    // Bottom padding for bottom nav: mobile has bottom sidebar bar, tablet+midrange have MobileNav
-    const bottomPadding = (isMobile || isTablet || isMidrange) ? 'mb-16' : 'mb-0';
+    // Bottom padding for bottom nav: mobile has bottom sidebar bar, others have side nav
+    const bottomPadding = isMobile ? 'mb-16' : 'mb-0';
 
     return (
         <div className="min-h-screen bg-[var(--synapse-bg)] text-[var(--synapse-text)] flex">
@@ -54,33 +54,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Main Content Area */}
             <main className={`flex-1 ${mainMargin} min-h-screen flex flex-col ${bottomPadding}`}>
                 {/* Top Navbar */}
-                <header className="h-16 xl:h-20 flex items-center justify-between xl:justify-end gap-4 xl:gap-6 px-4 xl:px-10 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40">
-                    
-                    {/* Mobile (<640px): just logo, no hamburger, no SYNAPSE text */}
+                <header className={`h-16 xl:h-20 flex items-center ${isMobile ? 'justify-between' : 'justify-end'} gap-4 xl:gap-6 px-4 xl:px-10 border-b border-[var(--synapse-border)] bg-[var(--synapse-bg)] sticky top-0 z-40`}>
+                    {/* Brand in navbar — only on mobile where there's no sidebar */}
                     {isMobile && (
-                        <div className="flex items-center gap-2">
-                            <img
-                                src="/logo.png"
-                                alt="Synapse Logo"
-                                className="w-7 shrink-0"
-                            />
-                            <span className="text-[var(--synapse-text)] text-lg font-semibold tracking-wide">
-                                SYNAPSE
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Tablet (640–1019px): show SYNAPSE text */}
-                    {isTablet && (
-                        <div className="flex items-center">
-                            <span className="text-[var(--synapse-text)] text-lg font-semibold tracking-wide">
-                                SYNAPSE
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Midrange (1020–1279px): no SYNAPSE text, no sidebar — just show logo */}
-                    {isMidrange && (
                         <div className="flex items-center gap-2">
                             <img
                                 src="/logo.png"
@@ -106,18 +82,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             )}
                         </button>
 
-                        {/* Message Icon */}
-                        <button
-                            onClick={() => navigate('/messages')}
-                            className="relative p-2 rounded-xl hover:bg-[var(--synapse-surface)] transition-colors group"
-                        >
-                            <Send className="w-6 h-6 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)] transition-colors" />
-                            {unreadMessagesCount > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#7c3aed] rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
-                                    {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
-                                </span>
-                            )}
-                        </button>
+                        {/* Message Icon — hidden on mobile, bottom bar has Messages */}
+                        {!isMobile && (
+                            <button
+                                onClick={() => navigate('/messages')}
+                                className="relative p-2 rounded-xl hover:bg-[var(--synapse-surface)] transition-colors group"
+                            >
+                                <Send className="w-6 h-6 text-[var(--synapse-text-muted)] group-hover:text-[var(--synapse-text)] transition-colors" />
+                                {unreadMessagesCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-[#7c3aed] rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
+                                        {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                                    </span>
+                                )}
+                            </button>
+                        )}
 
                         {/* Profile Dropdown */}
                         <div className="relative ml-2" ref={profileRef}>

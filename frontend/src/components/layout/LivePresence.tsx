@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSocketStore, RecentlyActiveUser } from '@/store/socketStore';
 import { useAuthStore } from '@/store/authStore';
 import { userAPI } from '@/lib/api';
@@ -7,7 +8,11 @@ import { formatDistanceToNow } from 'date-fns';
 
 
 
-export function LivePresence() {
+interface LivePresenceProps {
+    compact?: boolean;
+}
+
+export function LivePresence({ compact = false }: LivePresenceProps) {
     const { onlineUsers, recentlyActive, setRecentlyActive } = useSocketStore();
     const { user: currentUser } = useAuthStore();
     const [, setTick] = useState(0); // Force re-render for time updates
@@ -89,6 +94,43 @@ export function LivePresence() {
         .sort((a: RecentlyActiveUser, b: RecentlyActiveUser) => new Date(b.lastActive || 0).getTime() - new Date(a.lastActive || 0).getTime())
         .slice(0, 5);
 
+    if (compact) {
+        return (
+            <div className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-md p-3 shadow-sm mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  
+                    <span className="text-sm font-semibold text-[var(--synapse-text)] tracking-tight">Live Now</span>
+                    <span className="hidden sm:inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/20">
+                        {onlineCount} Online
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <div className="flex -space-x-4">
+                        {onlineUsersList.map((user) => (
+                            <Link to={`/profile/${user.username}`} key={user.username} className="relative group">
+                                <img
+                                    src={user.avatar || "/default-avatar.jpg"}
+                                    alt={user.username}
+                                    className="w-10 h-10 rounded-full border-2 border-[var(--synapse-surface)] object-cover ring-2 ring-[var(--synapse-bg)] hover:scale-110 hover:z-10 transition-transform duration-200"
+                                    title={user.username}
+                                />
+                            </Link>
+                        ))}
+                        {onlineCount > 5 && (
+                            <div className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] bg-[var(--synapse-surface-hover)] flex items-center justify-center text-xs font-bold text-[var(--synapse-text-muted)] ring-2 ring-[var(--synapse-bg)]">
+                                +{onlineCount - 5}
+                            </div>
+                        )}
+                        {onlineUsersList.length === 0 && (
+                            <span className="text-xs text-[var(--synapse-text-muted)] italic">No active users</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-[var(--synapse-surface)] border border-[var(--synapse-border)] rounded-lg overflow-hidden shadow-sm h-full flex flex-col">
             {/* Header */}
@@ -103,22 +145,22 @@ export function LivePresence() {
                         <>
                             <div className="flex flex-wrap gap-4">
                                 {onlineUsersList.map((user) => (
-                                    <div key={user.id} className="relative group flex flex-col items-center">
+                                    <Link to={`/profile/${user.username}`} key={user.username} className="relative group flex flex-col items-center">
                                         <div className="relative">
                                             <img
                                                 src={user.avatar || "/default-avatar.jpg"}
                                                 alt={user.username}
-                                                className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] object-cover"
+                                                className="w-12 h-12 rounded-full border-2 border-[var(--synapse-surface)] object-cover hover:scale-105 transition-transform"
                                                 title={user.username}
                                             />
                                             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-black rounded-full flex items-center justify-center z-10">
                                                 <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
                                             </div>
                                         </div>
-                                        <span className="mt-1.5 text-md font-bold text-[var(--synapse-text-muted)] max-w-[60px] truncate text-center">
+                                        <span className="mt-1.5 text-md font-bold text-[var(--synapse-text-muted)] max-w-[60px] truncate text-center group-hover:text-[var(--synapse-text)] transition-colors">
                                             {user.username}
                                         </span>
-                                    </div>
+                                    </Link>
                                 ))}
                                 {onlineCount > 5 && (
                                     <div className="flex flex-col items-center">
@@ -152,8 +194,11 @@ export function LivePresence() {
                         <div className="space-y-4">
                             <AnimatePresence>
                                 {recentlyActiveList.map((user) => (
+                                    <Link to={`/profile/${user.username}`}
+                                        key={user.username}
+                                        className="block"
+                                    >
                                     <motion.div
-                                        key={user._id}
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -10 }}
@@ -174,6 +219,7 @@ export function LivePresence() {
                                             </span>
                                         </div>
                                     </motion.div>
+                                    </Link>
                                 ))}
                             </AnimatePresence>
                         </div>
