@@ -535,12 +535,17 @@ export default function FeedPage() {
   }, [totalPostSlides]);
 
   return (
-    <div className="animate-in fade-in duration-500">
+    <div className="animate-in fade-in duration-500 lg:px-24 xl:px-0">
       {/* Page Header */}
       <div className="mb-4 sm:mb-8 pt-2">
         <h1 className="text-sm font-medium text-[var(--synapse-text-muted)] tracking-widest uppercase mb-1">
           Live Status: <span className="text-green-500 font-semibold">Active</span> • Real-time Feed
         </h1>
+      </div>
+
+      {/* Live Presence — horizontal strip above Activity on small screens (<1024px) */}
+      <div className="lg:hidden">
+        <LivePresence compact />
       </div>
 
       {/* Main Content - Activity Card + Live Presence side by side */}
