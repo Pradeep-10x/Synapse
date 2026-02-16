@@ -26,7 +26,7 @@ export function ActivityItem({ type, user, timestamp, content, postId, community
     const activityContent = (
         <div className="flex flex-col gap-3">
             {/* Header Line */}
-            <div className="flex items-center gap-4 text-base">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-base">
                 <span className="font-mono text-sm text-[var(--synapse-text-muted)]">{timestamp}</span>
 
                 {user && (

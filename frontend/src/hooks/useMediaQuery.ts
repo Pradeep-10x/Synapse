@@ -3,8 +3,9 @@ import { useSyncExternalStore } from 'react';
 function subscribe(callback: () => void) {
   const mql = [
     window.matchMedia('(max-width: 639px)'),
-    window.matchMedia('(min-width: 640px) and (max-width: 1023px)'),
-    window.matchMedia('(min-width: 1024px)'),
+    window.matchMedia('(min-width: 640px) and (max-width: 1019px)'),
+    window.matchMedia('(min-width: 1020px) and (max-width: 1279px)'),
+    window.matchMedia('(min-width: 1280px)'),
   ];
   mql.forEach((m) => m.addEventListener('change', callback));
   return () => mql.forEach((m) => m.removeEventListener('change', callback));
@@ -12,7 +13,7 @@ function subscribe(callback: () => void) {
 
 function getSnapshot() {
   const w = window.innerWidth;
-  return w < 640 ? 'mobile' : w < 1024 ? 'tablet' : 'desktop';
+  return w < 640 ? 'mobile' : w < 1020 ? 'tablet' : w < 1280 ? 'midrange' : 'desktop';
 }
 
 function getServerSnapshot() {
@@ -24,6 +25,7 @@ export function useMediaQuery() {
   return {
     isMobile: breakpoint === 'mobile',
     isTablet: breakpoint === 'tablet',
+    isMidrange: breakpoint === 'midrange',
     isDesktop: breakpoint === 'desktop',
     breakpoint,
   };

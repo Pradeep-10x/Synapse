@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Activity, Users, Send, User, PlusSquare } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { memo } from 'react';
 
 const MOBILE_MENU_ITEMS = [
@@ -13,9 +14,14 @@ const MOBILE_MENU_ITEMS = [
 export const MobileNav = memo(function MobileNav() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { isTablet, isMidrange } = useMediaQuery();
+
+    // Only show for tablet (640–1019px) and midrange (1020–1279px)
+    // Hidden on mobile (<640px — bottom sidebar handles it) and desktop (≥1280px — full sidebar)
+    if (!isTablet && !isMidrange) return null;
 
     return (
-        <nav className="xl:hidden fixed bottom-0 left-0 right-0 h-16 bg-[var(--synapse-surface)] border-t border-[var(--synapse-border)] z-50 flex items-center justify-around px-2 pb-safe">
+        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[var(--synapse-surface)] border-t border-[var(--synapse-border)] z-50 flex items-center justify-around px-2 pb-safe">
             {MOBILE_MENU_ITEMS.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
