@@ -48,8 +48,12 @@ app.use(express.static(path.resolve("./public")));
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
-app.get("/ip" ,(req,res) => {
-  res.send(req.ip)
+app.get('/ip', (req, res) => {
+  res.json({
+    ip: req.ip,
+    forwarded: req.headers['x-forwarded-for'],
+    real: req.headers['x-real-ip']
+  })
 })
 
 app.use("/api/v1/user", userRouter);
