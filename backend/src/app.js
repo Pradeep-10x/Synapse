@@ -48,6 +48,9 @@ app.use(express.static(path.resolve("./public")));
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
+app.get("/ip" ,(req,res) => {
+  res.send(req.ip)
+})
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/post", postRouter);
