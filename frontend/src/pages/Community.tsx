@@ -41,6 +41,10 @@ export default function CommunityPage() {
       const response = await communityAPI.getJoined();
       const joined = response.data.data || [];
       setJoinedCommunities(joined);
+      // setLoading(true);
+      // const response = await communityAPI.getJoined();
+      // const joined = response.data.data || [];
+      // setJoinedCommunities(joined);
     } catch (error) {
       console.error('Failed to fetch joined communities:', error);
       toast.error('Failed to load your domains');
