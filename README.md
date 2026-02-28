@@ -256,5 +256,5 @@ State synchronization handling
 
 System-level thinking
 
-..
+
 
