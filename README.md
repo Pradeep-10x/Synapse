@@ -1,5 +1,6 @@
 Synapse..
 
+\
 Real-time community infrastructure built from scratch.
 Not a clone. Not a template. A system.
 
