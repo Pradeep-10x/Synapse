@@ -21,7 +21,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/community-post/feed/joined:
+ * /community-post/feed/joined:
  *   get:
  *     summary: Get feed of posts from all joined communities
  *     tags: [CommunityPosts]
@@ -36,7 +36,7 @@ const router = express.Router();
 router.get("/feed/joined", verifyJWT, getJoinedCommunitiesFeed);
 /**
  * @swagger
- * /api/v1/community-post/public/{communityId}:
+ * /community-post/public/{communityId}:
  *   get:
  *     summary: Get public posts for a community
  *     tags: [CommunityPosts]
@@ -56,7 +56,7 @@ router.get("/feed/joined", verifyJWT, getJoinedCommunitiesFeed);
 router.get("/public/:communityId", getPublicCommunityPosts); // Public posts (no auth required for viewing)
 /**
  * @swagger
- * /api/v1/community-post/{communityId}:
+ * /community-post/{communityId}:
  *   post:
  *     summary: Create a post in a community
  *     tags: [CommunityPosts]
@@ -100,7 +100,7 @@ router.post(
 
 /**
  * @swagger
- * /api/v1/community-post/{communityId}:
+ * /community-post/{communityId}:
  *   get:
  *     summary: Get feed for a specific community
  *     tags: [CommunityPosts]
@@ -125,7 +125,7 @@ router.get("/:communityId", verifyJWT, getCommunityFeed);
 
 /**
  * @swagger
- * /api/v1/community-post/like/{postId}:
+ * /community-post/like/{postId}:
  *   post:
  *     summary: Like or unlike a community post
  *     tags: [CommunityPosts]
@@ -150,7 +150,7 @@ router.post("/like/:postId", verifyJWT, likeCommunityPost);
 
 /**
  * @swagger
- * /api/v1/community-post/{postId}:
+ * /community-post/{postId}:
  *   delete:
  *     summary: Delete a community post
  *     tags: [CommunityPosts]

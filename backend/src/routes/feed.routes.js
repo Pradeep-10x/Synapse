@@ -15,7 +15,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/feed:
+ * /feed:
  *   get:
  *     summary: Get home feed for authenticated user
  *     tags: [Feed]

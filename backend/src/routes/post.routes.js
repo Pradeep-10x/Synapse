@@ -15,7 +15,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/post/search:
+ * /post/search:
  *   get:
  *     summary: Search posts
  *     tags: [Posts]
@@ -36,7 +36,7 @@ const router = express.Router();
 router.route("/search").get(verifyJWT, searchPosts);
 /**
  * @swagger
- * /api/v1/post/create:
+ * /post/create:
  *   post:
  *     summary: Create a new post
  *     tags: [Posts]
@@ -74,7 +74,7 @@ router.route("/search").get(verifyJWT, searchPosts);
 router.route("/create").post(verifyJWT, upload.single("media"), createPost);
 /**
  * @swagger
- * /api/v1/post/user/{userId}:
+ * /post/user/{userId}:
  *   get:
  *     summary: Get all posts from a specific user
  *     tags: [Posts]
@@ -95,7 +95,7 @@ router.route("/user/:userId").get(getUserPosts);
 
 /**
  * @swagger
- * /api/v1/post/{postId}:
+ * /post/{postId}:
  *   get:
  *     summary: Get a single post by ID
  *     tags: [Posts]
@@ -116,7 +116,7 @@ router.route("/:postId").get(getSinglePost);
 
 /**
  * @swagger
- * /api/v1/post/{postId}:
+ * /post/{postId}:
  *   delete:
  *     summary: Delete a post
  *     tags: [Posts]
@@ -143,7 +143,7 @@ router.route("/:postId").delete(verifyJWT, deletePost);
 
 /**
  * @swagger
- * /api/v1/post/{postId}/caption:
+ * /post/{postId}/caption:
  *   patch:
  *     summary: Update a post's caption
  *     tags: [Posts]

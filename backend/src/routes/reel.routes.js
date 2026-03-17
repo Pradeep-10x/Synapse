@@ -15,7 +15,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/reel/feed:
+ * /reel/feed:
  *   get:
  *     summary: Get reel feed
  *     tags: [Reels]
@@ -30,7 +30,7 @@ const router = express.Router();
 router.route("/feed").get(verifyJWT, getReelFeed);
 /**
  * @swagger
- * /api/v1/reel/create:
+ * /reel/create:
  *   post:
  *     summary: Create a new reel
  *     tags: [Reels]
@@ -61,7 +61,7 @@ router.route("/feed").get(verifyJWT, getReelFeed);
 router.route("/create").post(verifyJWT, upload.single("video"), createReel);
 /**
  * @swagger
- * /api/v1/reel/{userId}:
+ * /reel/{userId}:
  *   get:
  *     summary: Get all reels from a specific user
  *     tags: [Reels]
@@ -82,7 +82,7 @@ router.route("/:userId").get(getReels);
 
 /**
  * @swagger
- * /api/v1/reel/delete/{reelId}:
+ * /reel/delete/{reelId}:
  *   delete:
  *     summary: Delete a reel
  *     tags: [Reels]

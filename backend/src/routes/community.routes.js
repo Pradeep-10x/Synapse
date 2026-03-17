@@ -30,7 +30,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/community:
+ * /community:
  *   get:
  *     summary: Get all communities
  *     tags: [Communities]
@@ -45,7 +45,7 @@ const router = express.Router();
 router.get("/", verifyJWT, getAllCommunities);
 /**
  * @swagger
- * /api/v1/community/joined:
+ * /community/joined:
  *   get:
  *     summary: Get communities joined by the current user
  *     tags: [Communities]
@@ -60,7 +60,7 @@ router.get("/", verifyJWT, getAllCommunities);
 router.get("/joined", verifyJWT, getJoinedCommunities);
 /**
  * @swagger
- * /api/v1/community/user/{userId}/joined:
+ * /community/user/{userId}/joined:
  *   get:
  *     summary: Get communities joined by a specific user
  *     tags: [Communities]
@@ -83,7 +83,7 @@ router.get("/user/:userId/joined", verifyJWT, getUserJoinedCommunities);
 
 /**
  * @swagger
- * /api/v1/community/created:
+ * /community/created:
  *   get:
  *     summary: Get communities created by the current user
  *     tags: [Communities]
@@ -99,7 +99,7 @@ router.get("/created", verifyJWT, getCreatedCommunities);
 
 /**
  * @swagger
- * /api/v1/community/search:
+ * /community/search:
  *   get:
  *     summary: Search communities
  *     tags: [Communities]
@@ -120,7 +120,7 @@ router.get("/created", verifyJWT, getCreatedCommunities);
 router.get("/search", verifyJWT, searchCommunities);
 /**
  * @swagger
- * /api/v1/community:
+ * /community:
  *   post:
  *     summary: Create a new community
  *     tags: [Communities]
@@ -162,7 +162,7 @@ router.get("/search", verifyJWT, searchCommunities);
 router.post("/", verifyJWT, upload.fields([{ name: "avatar", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), createCommunity);
 /**
  * @swagger
- * /api/v1/community/{id}/join:
+ * /community/{id}/join:
  *   post:
  *     summary: Join a community
  *     tags: [Communities]
@@ -187,7 +187,7 @@ router.post("/:id/join", verifyJWT, joinCommunity);
 
 /**
  * @swagger
- * /api/v1/community/{id}/leave:
+ * /community/{id}/leave:
  *   post:
  *     summary: Leave a community
  *     tags: [Communities]
@@ -216,7 +216,7 @@ router.post("/:id/remove-user", verifyJWT, removeUser);
 
 /**
  * @swagger
- * /api/v1/community/{id}:
+ * /community/{id}:
  *   delete:
  *     summary: Delete a community
  *     tags: [Communities]
@@ -243,7 +243,7 @@ router.delete("/:id", verifyJWT, deleteCommunity);
 
 /**
  * @swagger
- * /api/v1/community/{id}:
+ * /community/{id}:
  *   get:
  *     summary: Get community details
  *     tags: [Communities]

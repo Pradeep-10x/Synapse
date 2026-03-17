@@ -17,7 +17,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/community-comments/{postId}:
+ * /community-comments/{postId}:
  *   post:
  *     summary: Add a comment to a community post
  *     tags: [CommunityComments]
@@ -57,7 +57,7 @@ const router = express.Router();
 router.post("/:postId", verifyJWT, addCommunityComment);
 /**
  * @swagger
- * /api/v1/community-comments/{postId}:
+ * /community-comments/{postId}:
  *   get:
  *     summary: Get comments for a community post
  *     tags: [CommunityComments]
@@ -83,7 +83,7 @@ router.post("/:postId", verifyJWT, addCommunityComment);
 router.get("/:postId", verifyJWT, getCommunityComments);
 /**
  * @swagger
- * /api/v1/community-comments/{commentId}:
+ * /community-comments/{commentId}:
  *   delete:
  *     summary: Delete a community comment
  *     tags: [CommunityComments]

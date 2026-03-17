@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/comment/post/{postId}:
+ * /comment/post/{postId}:
  *   post:
  *     summary: Create a comment on a post
  *     tags: [Comments]
@@ -52,7 +52,7 @@ const router = express.Router();
 router.route("/post/:postId").post(verifyJWT, createPostComment);
 /**
  * @swagger
- * /api/v1/comment/post/{postId}:
+ * /comment/post/{postId}:
  *   get:
  *     summary: Get comments for a post
  *     tags: [Comments]
@@ -73,7 +73,7 @@ router.route("/post/:postId").get(getPostComment);
 
 /**
  * @swagger
- * /api/v1/comment/reel/{reelId}:
+ * /comment/reel/{reelId}:
  *   post:
  *     summary: Create a comment on a reel
  *     tags: [Comments]
@@ -110,7 +110,7 @@ router.route("/reel/:reelId").post(verifyJWT, createReelComment);
 
 /**
  * @swagger
- * /api/v1/comment/reel/{reelId}:
+ * /comment/reel/{reelId}:
  *   get:
  *     summary: Get comments for a reel
  *     tags: [Comments]
@@ -131,7 +131,7 @@ router.route("/reel/:reelId").get(getReelComment);
 
 /**
  * @swagger
- * /api/v1/comment/{commentId}:
+ * /comment/{commentId}:
  *   delete:
  *     summary: Delete a comment
  *     tags: [Comments]

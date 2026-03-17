@@ -15,7 +15,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/story/create:
+ * /story/create:
  *   post:
  *     summary: Create a new story
  *     tags: [Stories]
@@ -44,7 +44,7 @@ const router = express.Router();
 router.route("/create").post(verifyJWT, upload.single("media"), createStory);
 /**
  * @swagger
- * /api/v1/story/feed:
+ * /story/feed:
  *   get:
  *     summary: Get stories feed from followed users
  *     tags: [Stories]
@@ -59,7 +59,7 @@ router.route("/create").post(verifyJWT, upload.single("media"), createStory);
 router.route("/feed").get(verifyJWT, getStoryFeed);
 /**
  * @swagger
- * /api/v1/story/user/{userId}:
+ * /story/user/{userId}:
  *   get:
  *     summary: Get stories of a specific user
  *     tags: [Stories]
@@ -81,7 +81,7 @@ router.route("/user/:userId").get(getStories);
 // View story route
 /**
  * @swagger
- * /api/v1/story/{storyId}:
+ * /story/{storyId}:
  *   delete:
  *     summary: Delete a story
  *     tags: [Stories]

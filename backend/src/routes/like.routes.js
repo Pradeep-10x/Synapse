@@ -14,7 +14,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/v1/like/post/{postId}:
+ * /like/post/{postId}:
  *   post:
  *     summary: Like or unlike a post
  *     tags: [Likes]
@@ -38,7 +38,7 @@ const router = Router();
 router.route('/post/:postId').post(verifyJWT, likeUnlikePost);
 /**
  * @swagger
- * /api/v1/like/post/{postId}:
+ * /like/post/{postId}:
  *   get:
  *     summary: Get likes for a post
  *     tags: [Likes]
@@ -59,7 +59,7 @@ router.route('/post/:postId').get(getPostLikes);
 
 /**
  * @swagger
- * /api/v1/like/reel/{reelId}:
+ * /like/reel/{reelId}:
  *   post:
  *     summary: Like or unlike a reel
  *     tags: [Likes]
@@ -84,7 +84,7 @@ router.route('/reel/:reelId').post(verifyJWT, likeUnlikeReel);
 
 /**
  * @swagger
- * /api/v1/like/reel/{reelId}:
+ * /like/reel/{reelId}:
  *   get:
  *     summary: Get likes for a reel
  *     tags: [Likes]
@@ -105,7 +105,7 @@ router.route('/reel/:reelId').get(getReelLikes);
 
 /**
  * @swagger
- * /api/v1/like/story/{storyId}:
+ * /like/story/{storyId}:
  *   post:
  *     summary: Like or unlike a story
  *     tags: [Likes]
@@ -129,7 +129,7 @@ router.route('/reel/:reelId').get(getReelLikes);
 router.route("/story/:storyId").post(verifyJWT, likeUnlikeStory);
 /**
  * @swagger
- * /api/v1/like/story/{storyId}:
+ * /like/story/{storyId}:
  *   get:
  *     summary: Get likes for a story
  *     tags: [Likes]

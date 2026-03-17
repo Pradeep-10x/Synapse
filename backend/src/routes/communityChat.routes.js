@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/community-chat/{communityId}:
+ * /community-chat/{communityId}:
  *   post:
  *     summary: Send a message in a community chat
  *     tags: [CommunityChat]
@@ -56,7 +56,7 @@ const router = express.Router();
 router.post("/:communityId", verifyJWT, sendCommunityMessage);
 /**
  * @swagger
- * /api/v1/community-chat/{communityId}:
+ * /community-chat/{communityId}:
  *   get:
  *     summary: Get messages for a community chat
  *     tags: [CommunityChat]

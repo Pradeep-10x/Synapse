@@ -17,7 +17,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/v1/user/register:
+ * /user/register:
  *   post:
  *     summary: Register a new user
  *     tags: [Authentication]
@@ -62,7 +62,7 @@ router.route("/register").post(limiter,
 
 /**
  * @swagger
- * /api/v1/user/login:
+ * /user/login:
  *   post:
  *     summary: Login a user
  *     tags: [Authentication]
@@ -102,7 +102,7 @@ router.route("/register").post(limiter,
 router.route("/login").post(limiter, loginUser);
 /**
  * @swagger
- * /api/v1/user/logout:
+ * /user/logout:
  *   post:
  *     summary: Logout a user
  *     tags: [Authentication]
@@ -118,7 +118,7 @@ router.route("/logout").post(verifyJWT, logoutUser);
 
 /**
  * @swagger
- * /api/v1/user/delete:
+ * /user/delete:
  *   post:
  *     summary: Delete user account
  *     tags: [Authentication]
@@ -133,7 +133,7 @@ router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/delete").post(verifyJWT, deleteUser);
 /**
  * @swagger
- * /api/v1/user/refresh-token:
+ * /user/refresh-token:
  *   post:
  *     summary: Refresh access token
  *     tags: [Authentication]
@@ -147,7 +147,7 @@ router.route("/refresh-token").post(refreshaccessToken);
 
 /**
  * @swagger
- * /api/v1/user/change-password:
+ * /user/change-password:
  *   post:
  *     summary: Change user password
  *     tags: [Authentication]
@@ -185,7 +185,7 @@ router.route("/change-password").post(verifyJWT, changePassword);
 
 /**
  * @swagger
- * /api/v1/user/me:
+ * /user/me:
  *   get:
  *     summary: Get current logged-in user details
  *     tags: [User Details]
@@ -205,7 +205,7 @@ router.route("/me").get(verifyJWT, GetCurrentUser);
 
 /**
  * @swagger
- * /api/v1/user/update-details:
+ * /user/update-details:
  *   put:
  *     summary: Update user profile details
  *     tags: [User Details]
@@ -234,7 +234,7 @@ router.route("/update-details").put(verifyJWT, updateUserDetails);
 
 /**
  * @swagger
- * /api/v1/user/update-avatar:
+ * /user/update-avatar:
  *   patch:
  *     summary: Update user avatar
  *     tags: [User Details]
@@ -270,7 +270,7 @@ router.route("/update-avatar").patch(verifyJWT, upload.single("avatar"), UpdateA
 
 /**
  * @swagger
- * /api/v1/user/{userId}/follow:
+ * /user/{userId}/follow:
  *   post:
  *     summary: Follow or unfollow a user
  *     tags: [User Interactions]
@@ -297,7 +297,7 @@ router.route("/:userId/follow").post(verifyJWT, followUnfollowUser);
 
 /**
  * @swagger
- * /api/v1/user/{userId}/followers:
+ * /user/{userId}/followers:
  *   get:
  *     summary: Get followers of a user
  *     tags: [User Interactions]
@@ -318,7 +318,7 @@ router.route("/:userId/followers").get(getFollowers);
 
 /**
  * @swagger
- * /api/v1/user/{userId}/following:
+ * /user/{userId}/following:
  *   get:
  *     summary: Get users a user is following
  *     tags: [User Interactions]
@@ -338,7 +338,7 @@ router.route("/:userId/followers").get(getFollowers);
 router.route("/:userId/following").get(getFollowing);
 /**
  * @swagger
- * /api/v1/user/search:
+ * /user/search:
  *   get:
  *     summary: Search for users
  *     tags: [User Interactions]
@@ -357,7 +357,7 @@ router.route("/search").get(searchUsers);
 
 /**
  * @swagger
- * /api/v1/user/u/{username}:
+ * /user/u/{username}:
  *   get:
  *     summary: Get user profile by username
  *     tags: [User Details]
@@ -380,7 +380,7 @@ router.route("/u/:username").get(verifyJWT, getUserProfile);
 
 /**
  * @swagger
- * /api/v1/user/privacy:
+ * /user/privacy:
  *   get:
  *     summary: Get user privacy settings
  *     tags: [User Details]
@@ -396,7 +396,7 @@ router.route("/privacy").get(verifyJWT, getPrivacy);
 
 /**
  * @swagger
- * /api/v1/user/privacy:
+ * /user/privacy:
  *   patch:
  *     summary: Update user privacy settings
  *     tags: [User Details]
@@ -428,7 +428,7 @@ router.route("/privacy").patch(verifyJWT, updatePrivacy);
 
 /**
  * @swagger
- * /api/v1/user/recently-active:
+ * /user/recently-active:
  *   get:
  *     summary: Get recently active users
  *     tags: [User Interactions]

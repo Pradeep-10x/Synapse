@@ -10,11 +10,11 @@ const options = {
     },
     servers: [
       {
-        url: 'http://localhost:8000',
+        url: 'http://localhost:5000/api/v1',
         description: 'Development Server',
       },
       {
-        url: 'https://orbit-v-backend.onrender.com', // Replace with production URL if known
+        url: 'https://synapse-u6ux.onrender.com/api/v1', 
         description: 'Production Server',
       }
     ],

@@ -18,7 +18,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/notification:
+ * /notification:
  *   get:
  *     summary: Get user's notifications
  *     tags: [Notifications]
@@ -33,7 +33,7 @@ const router = express.Router();
 router.route("/").get(verifyJWT, getNotifications);
 /**
  * @swagger
- * /api/v1/notification/delete:
+ * /notification/delete:
  *   delete:
  *     summary: Delete all notifications for the user
  *     tags: [Notifications]
@@ -48,7 +48,7 @@ router.route("/").get(verifyJWT, getNotifications);
 router.route("/delete").delete(verifyJWT, deleteNotifications);
 /**
  * @swagger
- * /api/v1/notification/read:
+ * /notification/read:
  *   put:
  *     summary: Mark all notifications as read
  *     tags: [Notifications]

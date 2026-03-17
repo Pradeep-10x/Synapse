@@ -17,7 +17,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/v1/message/send:
+ * /message/send:
  *   post:
  *     summary: Send a direct message
  *     tags: [Messages]
@@ -48,7 +48,7 @@ const router = express.Router();
 router.route("/send").post(verifyJWT, sendMessage);
 /**
  * @swagger
- * /api/v1/message/conversations:
+ * /message/conversations:
  *   get:
  *     summary: Get user's conversations
  *     tags: [Messages]
@@ -63,7 +63,7 @@ router.route("/send").post(verifyJWT, sendMessage);
 router.route("/conversations").get(verifyJWT, getConversations);
 /**
  * @swagger
- * /api/v1/message/conversation/{conversationId}/messages:
+ * /message/conversation/{conversationId}/messages:
  *   get:
  *     summary: Get messages for a specific conversation
  *     tags: [Messages]
