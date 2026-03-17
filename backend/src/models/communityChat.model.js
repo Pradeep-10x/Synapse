@@ -1,5 +1,32 @@
 import mongoose from "mongoose";
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CommunityChat:
+ *       type: object
+ *       required:
+ *         - community
+ *         - sender
+ *         - content
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The auto-generated id of the chat message
+ *         community:
+ *           type: string
+ *           description: ID of the community
+ *         sender:
+ *           type: string
+ *           description: ID of the user who sent the message
+ *         content:
+ *           type: string
+ *           description: Message content
+ *         isRead:
+ *           type: boolean
+ *           description: Whether the message is read
+ */
 const communityChatSchema = new mongoose.Schema(
   {
     community: {

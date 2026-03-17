@@ -4,6 +4,70 @@ const { Schema } = mongoose;
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - username
+ *         - email
+ *         - password
+ *         - fullName
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The auto-generated id of the user
+ *         username:
+ *           type: string
+ *           description: Unique username
+ *         email:
+ *           type: string
+ *           description: Unique email address
+ *         fullName:
+ *           type: string
+ *           description: User's full name
+ *         bio:
+ *           type: string
+ *           description: Short biography
+ *         avatar:
+ *           type: string
+ *           description: URL to avatar image
+ *         followersCount:
+ *           type: number
+ *           description: Number of followers
+ *         followingCount:
+ *           type: number
+ *           description: Number of accounts followed
+ *         isVerified:
+ *           type: boolean
+ *           description: Verification status
+ *         VerificationBadge:
+ *           type: string
+ *           enum: [Gold, Silver]
+ *           description: Badge type if verified
+ *         privacy:
+ *           type: object
+ *           properties:
+ *             privateAccount:
+ *               type: boolean
+ *             messagePolicy:
+ *               type: string
+ *               enum: [everyone, followers]
+ *             allowMentions:
+ *               type: boolean
+ *             allowTagging:
+ *               type: boolean
+ *         lastActive:
+ *           type: string
+ *           format: date-time
+ *       example:
+ *         username: johndoe
+ *         email: john@example.com
+ *         fullName: John Doe
+ *         bio: Software Developer
+ */
 const userSchema = new Schema({
     username: {
         type: String,

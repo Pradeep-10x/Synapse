@@ -4,6 +4,35 @@ import { Post } from "./post.model.js";
 import { User } from "./user.model.js";
 import { Reel } from "./reel.model.js";
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Comment:
+ *       type: object
+ *       required:
+ *         - user
+ *         - content
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The auto-generated id of the comment
+ *         post:
+ *           type: string
+ *           description: ID of the post this comment belongs to
+ *         reel:
+ *           type: string
+ *           description: ID of the reel this comment belongs to
+ *         user:
+ *           type: string
+ *           description: ID of the user who created the comment
+ *         content:
+ *           type: string
+ *           description: Comment text content
+ *         isDeleted:
+ *           type: boolean
+ *           description: Soft delete flag
+ */
 const commentSchema= new Schema({
      post : {
         type: mongoose.Schema.Types.ObjectId,

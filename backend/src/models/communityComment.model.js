@@ -1,5 +1,29 @@
 import mongoose from "mongoose";
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     CommunityComment:
+ *       type: object
+ *       required:
+ *         - post
+ *         - author
+ *         - text
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The auto-generated id of the community comment
+ *         post:
+ *           type: string
+ *           description: ID of the parent community post
+ *         author:
+ *           type: string
+ *           description: ID of the user who authored the comment
+ *         text:
+ *           type: string
+ *           description: Comment text content
+ */
 const communityCommentSchema = new mongoose.Schema(
   {
     post: {

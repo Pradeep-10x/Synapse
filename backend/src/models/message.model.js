@@ -1,5 +1,31 @@
 import mongoose from "mongoose";
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Message:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The auto-generated id of the message
+ *         conversation:
+ *           type: string
+ *           description: ID of the conversation
+ *         sender:
+ *           type: string
+ *           description: ID of the sender
+ *         receiver:
+ *           type: string
+ *           description: ID of the receiver
+ *         content:
+ *           type: string
+ *           description: Message content
+ *         isRead:
+ *           type: boolean
+ *           description: Whether the message has been read
+ */
 const messageSchema = new mongoose.Schema(
   {
     conversation: {
