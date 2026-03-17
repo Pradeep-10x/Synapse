@@ -4,9 +4,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Orbit-V API',
+      title: 'SYNAPSE-API',
       version: '1.0.0',
-      description: 'API documentation for Orbit-V backend',
+      description: 'API documentation for SYNAPSE backend',
     },
     servers: [
       {
