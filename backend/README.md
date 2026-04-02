@@ -1,6 +1,6 @@
 # Synapse Backend — Complete Documentation
 
-### 1.1 What Is Synapse?
+### 1.1 What Is Synapse??
 
 Synapse is a **full-stack social media platform** offering Instagram/Reddit-style content sharing, real-time messaging, community spaces, and video calling — all unified under a single REST + WebSocket API.
 
