@@ -3,8 +3,13 @@ import dotenv from 'dotenv';
 import cors from "cors"
 dotenv.config();
 import path from "path"
+import helmet from "helmet"
+import compression from "compression"
 import cookieParser from "cookie-parser"
 import { ApiError } from "./utils/ApiError.js"
+import { logger } from "./utils/logger.js"
+import { sanitizeRequest } from "./middlewares/sanitizeRequest.js"
+import limiter from "./middlewares/rateLimiter.js"
 import userRouter from "./routes/user.routes.js"
 import postRouter from "./routes/post.routes.js"
 import feedRouter from "./routes/feed.routes.js"
@@ -24,39 +29,53 @@ import { swaggerSpec } from './swagger.js';
 
 const app = express()
 
-// CORS configuration for cross-origin cookie support
+// Trust a single proxy hop (Render/Vercel) so req.ip and rate limiting are
+// accurate without letting clients spoof X-Forwarded-For.
+app.set("trust proxy", 1);
+
+// Explicit origin allowlist for credentialed CORS. Never reflect arbitrary
+// origins while credentials are enabled.
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    // In production, you might want to whitelist specific origins
-    // For now, allow all origins for credentials
-    callback(null, origin);
+    // Allow non-browser clients (curl, mobile, server-to-server) with no origin.
+    // For disallowed browser origins we simply withhold the CORS headers
+    // (callback(null, false)) so the browser blocks the response — no noisy
+    // 500s, which is the standard cors pattern.
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['set-cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
+// CSP is disabled because it breaks the self-hosted Swagger UI (inline
+// scripts/styles). The API itself serves JSON, so CSP adds little here; all
+// other helmet protections (HSTS, noSniff, frameguard, etc.) stay enabled.
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(sanitizeRequest);
 app.use(express.static(path.resolve("./public")));
-app.set("trust proxy", true);
+
+// Global rate limit as a baseline; stricter auth limits live on auth routes.
+app.use("/api/v1", limiter);
+
 // Health check endpoint for Render
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
-app.get('/ip', (req, res) => {
-  res.json({
-    ip: req.ip,
-    forwarded: req.headers['x-forwarded-for'],
-    real: req.headers['x-real-ip']
-  })
-})
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/post", postRouter);
@@ -75,7 +94,7 @@ app.use("/api/v1/community-chat", communityChatRoutes);
 // Swagger Documentation Route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -93,7 +112,7 @@ app.use((err, req, res, next) => {
     });
   }
 
-  console.error("Unhandled error:", err);
+  logger.error("Unhandled error:", err);
   return res.status(500).json({
     success: false,
     message: "Internal server error",
