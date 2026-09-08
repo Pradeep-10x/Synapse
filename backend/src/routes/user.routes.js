@@ -3,7 +3,14 @@ import { upload } from '../middlewares/multer.middleware.js';
 import { registerUser, loginUser, logoutUser, deleteUser, refreshaccessToken, changePassword, GetCurrentUser, updateUserDetails, UpdateAvatar, getUserProfile, searchUsers, updatePrivacy, getPrivacy, getRecentlyActiveUsers } from '../controllers/user.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 import { followUnfollowUser, getFollowers, getFollowing } from '../controllers/follow.controller.js';
-import limiter from '../middlewares/rateLimiter.js';
+import { authLimiter } from '../middlewares/rateLimiter.js';
+import {
+    validate,
+    registerUserSchema,
+    loginUserSchema,
+    changePasswordSchema,
+    updateDetailsSchema,
+} from '../middlewares/ZodValidator.js';
 
 
 const router = Router();
@@ -52,13 +59,13 @@ const router = Router();
  *       400:
  *         description: Invalid input or user already exists
  */
-router.route("/register").post(limiter,
+router.route("/register").post(authLimiter,
     upload.fields([
         {
             name: "avatar",
             maxCount: 1,
         }
-    ]), registerUser);
+    ]), validate(registerUserSchema), registerUser);
 
 /**
  * @swagger
@@ -99,7 +106,7 @@ router.route("/register").post(limiter,
  *       401:
  *         description: Invalid credentials
  */
-router.route("/login").post(limiter, loginUser);
+router.route("/login").post(authLimiter, validate(loginUserSchema), loginUser);
 /**
  * @swagger
  * /user/logout:
@@ -175,7 +182,7 @@ router.route("/refresh-token").post(refreshaccessToken);
  *       401:
  *         description: Unauthorized
  */
-router.route("/change-password").post(verifyJWT, changePassword);
+router.route("/change-password").post(verifyJWT, validate(changePasswordSchema), changePassword);
 /**
  * @swagger
  * tags:
@@ -230,7 +237,7 @@ router.route("/me").get(verifyJWT, GetCurrentUser);
  *       401:
  *         description: Unauthorized
  */
-router.route("/update-details").put(verifyJWT, updateUserDetails);
+router.route("/update-details").put(verifyJWT, validate(updateDetailsSchema), updateUserDetails);
 
 /**
  * @swagger
