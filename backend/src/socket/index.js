@@ -1,32 +1,44 @@
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 import registerCallEvents from "./call.socket.js";
 import { User } from "../models/user.model.js";
 import { Community } from "../models/community.model.js";
+import { logger } from "../utils/logger.js";
+
+// Parse a raw Cookie header into a plain object.
+const parseCookies = (cookieHeader = "") =>
+  cookieHeader.split(";").reduce((acc, part) => {
+    const idx = part.indexOf("=");
+    if (idx > -1) {
+      const key = part.slice(0, idx).trim();
+      acc[key] = decodeURIComponent(part.slice(idx + 1).trim());
+    }
+    return acc;
+  }, {});
 
 const initSocket = (server) => {
-  console.log("Initializing Socket.IO server...");
+  const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   const io = new Server(server, {
     cors: {
-      origin: "*",
-      credentials: true
+      origin: allowedOrigins,
+      credentials: true,
     },
     pingTimeout: 60000,
     pingInterval: 25000,
   });
 
   const onlineUsers = new Map();
-  // Track active users per community: Map<communityId, Set<userId>>
   const communityActiveUsers = new Map();
-  // Track events today per community: Map<communityId, number>
   const communityEventsToday = new Map();
-  // Track the date for resetting events count
   let lastEventDate = new Date().toDateString();
 
-  // Helper to get/reset events count
   const getEventsCount = (communityId) => {
     const today = new Date().toDateString();
     if (today !== lastEventDate) {
-      // New day, reset all counts
       communityEventsToday.clear();
       lastEventDate = today;
     }
@@ -44,79 +56,61 @@ const initSocket = (server) => {
     return current + 1;
   };
 
-  io.on("connection", async (socket) => {
-    console.log("DEBUG: Socket connection attempt", socket.id);
-    console.log("DEBUG: Handshake query:", socket.handshake.query);
-    // Note: I will only replace the top imports and the disconnect handler part to avoid replacing the whole file if possible, 
-    // but replace_file_content works with contiguous blocks.
-    // Since I need to add an import at the top AND change the bottom, I might need two calls or one big one.
-    // The previous view_file shows the file is small enough (86 lines). I'll replace the whole file to be safe and clean.
+  // Authenticate every socket handshake using the httpOnly access-token cookie
+  // (or an auth token for non-browser clients). Identity is derived from the
+  // verified JWT — never from client-supplied query params.
+  io.use(async (socket, next) => {
+    try {
+      const cookies = parseCookies(socket.handshake.headers?.cookie);
+      const token = cookies.accessToken || socket.handshake.auth?.token;
 
-    console.log("New socket connection:", socket.id);
-
-    // Register user from handshake query if available
-    const userId = socket.handshake.query.userId;
-    const username = socket.handshake.query.username;
-    const avatar = socket.handshake.query.avatar;
-
-    if (userId) {
-      // Store user details along with socket ID
-      onlineUsers.set(userId, { socketId: socket.id, username, avatar });
-      console.log(`User ${userId} registered with socket ${socket.id}`);
-
-      // Join user to all their community rooms
-      try {
-        console.log(`Attempting to join community rooms for user: ${userId}`);
-        const communities = await Community.find({ members: userId }).select('_id');
-        console.log(`Found ${communities.length} communities for user ${userId}`);
-        communities.forEach(community => {
-          socket.join(`community:${community._id}`);
-          console.log(`Socket ${socket.id} joined room community:${community._id}`);
-        });
-      } catch (error) {
-        console.error("Error joining community rooms:", error);
+      if (!token) {
+        return next(new Error("Unauthorized: no token"));
       }
 
-      // Notify others that user is online
-      socket.broadcast.emit("user:status", { userId, status: "online", username, avatar });
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded?._id).select("username avatar");
+      if (!user) {
+        return next(new Error("Unauthorized: user not found"));
+      }
 
-      // Send list of current online users to the new connection
-      const onlineUsersList = Array.from(onlineUsers.entries()).map(([uid, data]) => ({
-        userId: uid,
-        username: data.username,
-        avatar: data.avatar
-      }));
-      socket.emit("online:users", onlineUsersList);
+      socket.data.userId = user._id.toString();
+      socket.data.username = user.username;
+      socket.data.avatar = user.avatar;
+      next();
+    } catch {
+      next(new Error("Unauthorized: invalid token"));
+    }
+  });
+
+  io.on("connection", async (socket) => {
+    const { userId, username, avatar } = socket.data;
+    logger.debug(`Socket connected: ${socket.id} (user ${userId})`);
+
+    onlineUsers.set(userId, { socketId: socket.id, username, avatar });
+
+    // Join user to all their community rooms.
+    try {
+      const communities = await Community.find({ members: userId }).select("_id");
+      communities.forEach((community) => socket.join(`community:${community._id}`));
+    } catch (error) {
+      logger.error("Error joining community rooms:", error);
     }
 
-    socket.on("user:online", async (data) => {
-      console.log("DEBUG: user:online event received", data);
-      // Handle legacy just-ID or new object
-      const uid = typeof data === 'string' ? data : data.userId;
-      const uName = typeof data === 'string' ? username : data.username;
-      const uAvatar = typeof data === 'string' ? avatar : data.avatar;
+    // Notify others that this user is online.
+    socket.broadcast.emit("user:status", { userId, status: "online", username, avatar });
 
-      onlineUsers.set(uid, { socketId: socket.id, username: uName, avatar: uAvatar });
-      console.log(`User ${uid} explicitly registered socket ${socket.id}`);
+    // Send current online users to the new connection.
+    const onlineUsersList = Array.from(onlineUsers.entries()).map(([uid, data]) => ({
+      userId: uid,
+      username: data.username,
+      avatar: data.avatar,
+    }));
+    socket.emit("online:users", onlineUsersList);
 
-      // Join user to all their community rooms
-      try {
-        const communities = await Community.find({ members: uid }).select('_id');
-        communities.forEach(community => {
-          socket.join(`community:${community._id}`);
-          console.log(`Socket ${socket.id} joined room community:${community._id}`);
-        });
-      } catch (error) {
-        console.error("Error joining community rooms in user:online:", error);
-      }
-
-      // Re-broadcast with details if updated
-      socket.broadcast.emit("user:status", { userId: uid, status: "online", username: uName, avatar: uAvatar });
-    });
-
-    // Handle typing indicators
+    // Typing indicators.
     socket.on("typing", (data) => {
-      const { conversationId, isTyping, receiverId } = data;
+      const { conversationId, isTyping, receiverId } = data || {};
       if (receiverId) {
         const receiverData = onlineUsers.get(receiverId);
         if (receiverData?.socketId) {
@@ -125,55 +119,38 @@ const initSocket = (server) => {
       }
     });
 
-    // Handle community room join (for tracking active users)
+    // Community room join (for tracking active users).
     socket.on("community:join", (data) => {
-      console.log("DEBUG: community:join event received", data);
-      const { communityId } = data;
-      const uid = socket.handshake.query.userId;
-      
-      if (communityId && uid) {
+      const { communityId } = data || {};
+      if (communityId) {
         socket.join(`community:${communityId}`);
-        
-        // Track active user in this community
         if (!communityActiveUsers.has(communityId)) {
           communityActiveUsers.set(communityId, new Set());
         }
-        communityActiveUsers.get(communityId).add(uid);
-        
-        // Broadcast updated count to all users viewing communities
+        communityActiveUsers.get(communityId).add(userId);
         const activeCount = communityActiveUsers.get(communityId).size;
         io.emit("community:activeCount", { communityId, activeCount });
-        
-        console.log(`User ${uid} joined community room ${communityId}, active: ${activeCount}`);
       }
     });
 
-    // Handle community room leave
+    // Community room leave.
     socket.on("community:leave", (data) => {
-      const { communityId } = data;
-      const uid = socket.handshake.query.userId;
-      
-      if (communityId && uid) {
+      const { communityId } = data || {};
+      if (communityId && communityActiveUsers.has(communityId)) {
         socket.leave(`community:${communityId}`);
-        
-        // Remove user from tracking
-        if (communityActiveUsers.has(communityId)) {
-          communityActiveUsers.get(communityId).delete(uid);
-          const activeCount = communityActiveUsers.get(communityId).size;
-          io.emit("community:activeCount", { communityId, activeCount });
-          
-          console.log(`User ${uid} left community room ${communityId}, active: ${activeCount}`);
-        }
+        communityActiveUsers.get(communityId).delete(userId);
+        const activeCount = communityActiveUsers.get(communityId).size;
+        io.emit("community:activeCount", { communityId, activeCount });
       }
     });
 
-    // Request active counts for multiple communities
+    // Request active counts for multiple communities.
     socket.on("community:getActiveCounts", (data) => {
-      const { communityIds } = data;
+      const { communityIds } = data || {};
       if (Array.isArray(communityIds)) {
         const activeCounts = {};
         const eventsCounts = {};
-        communityIds.forEach(id => {
+        communityIds.forEach((id) => {
           activeCounts[id] = communityActiveUsers.has(id) ? communityActiveUsers.get(id).size : 0;
           eventsCounts[id] = getEventsCount(id);
         });
@@ -182,9 +159,9 @@ const initSocket = (server) => {
       }
     });
 
-    // Track community events (posts, comments, etc.)
+    // Track community events (posts, comments, etc.).
     socket.on("community:newEvent", (data) => {
-      const { communityId } = data;
+      const { communityId } = data || {};
       if (communityId) {
         const eventsCount = incrementEventsCount(communityId);
         io.emit("community:eventsCount", { communityId, eventsCount });
@@ -192,34 +169,25 @@ const initSocket = (server) => {
     });
 
     socket.on("disconnect", async () => {
-      let disconnectedUser = null;
-      for (let [key, value] of onlineUsers.entries()) {
-        if (value.socketId === socket.id) {
-          onlineUsers.delete(key);
-          disconnectedUser = key;
-          break;
-        }
-      }
-      if (disconnectedUser) {
-        console.log(`User ${disconnectedUser} disconnected (socket ${socket.id})`);
+      // A user may have multiple tabs; only mark offline when the last socket goes.
+      const current = onlineUsers.get(userId);
+      if (current?.socketId === socket.id) {
+        onlineUsers.delete(userId);
 
-        // Update lastActive timestamp
         try {
-          await User.findByIdAndUpdate(disconnectedUser, { lastActive: new Date() });
+          await User.findByIdAndUpdate(userId, { lastActive: new Date() });
         } catch (error) {
-          console.error("Error updating lastActive for user:", disconnectedUser, error);
+          logger.error("Error updating lastActive for user:", userId, error);
         }
 
-        // Remove user from all community tracking and broadcast updates
         for (const [communityId, users] of communityActiveUsers.entries()) {
-          if (users.has(disconnectedUser)) {
-            users.delete(disconnectedUser);
-            const activeCount = users.size;
-            io.emit("community:activeCount", { communityId, activeCount });
+          if (users.has(userId)) {
+            users.delete(userId);
+            io.emit("community:activeCount", { communityId, activeCount: users.size });
           }
         }
 
-        socket.broadcast.emit("user:status", { userId: disconnectedUser, status: "offline" });
+        socket.broadcast.emit("user:status", { userId, status: "offline" });
       }
     });
   });

@@ -1,7 +1,7 @@
 function registerCallEvents(io, onlineUsers) {
   io.on("connection", (socket) => {
-    // Get userId from socket
-    const userId = socket.handshake.query.userId;
+    // Identity is set by the authenticated handshake (see socket/index.js).
+    const userId = socket.data.userId;
 
     socket.on("call:start", ({ to, offer, type = 'video' }) => {
       // 'to' should be userId, not socket.id
