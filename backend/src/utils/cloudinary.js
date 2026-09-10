@@ -2,7 +2,7 @@ import {v2 as cloudinary} from "cloudinary"
 import dotenv from "dotenv"
 dotenv.config()
 import fs from "fs"
-import {upload} from "../middlewares/multer.middleware.js"
+import { logger } from "./logger.js"
 
 
 cloudinary.config({
@@ -12,10 +12,10 @@ api_secret:process.env.CLOUDINARY_API_SECRET,
 }) ;
 
 
-const uploadonCloudinary=async(localFilePath, resourceType) =>{
+const uploadonCloudinary=async(localFilePath, resourceType = "auto") =>{
     try{
         if(!localFilePath){
-            console.log("No local file path provided");
+            logger.warn("uploadonCloudinary called with no local file path");
             return null;
         }
         const response = await cloudinary.uploader.upload(localFilePath,{
@@ -25,8 +25,8 @@ const uploadonCloudinary=async(localFilePath, resourceType) =>{
         return response;
     }
     catch(err){
-        console.log("Cloudinary upload error:", err);
-      
+        logger.error("Cloudinary upload error:", err);
+
         if (fs.existsSync(localFilePath)) {
             fs.unlinkSync(localFilePath);
         }
@@ -35,4 +35,21 @@ const uploadonCloudinary=async(localFilePath, resourceType) =>{
     }
 }
 
-export {uploadonCloudinary};
+/**
+ * Deletes an asset from Cloudinary given its secure URL.
+ * Extracts the public id from the URL (handles an optional version segment).
+ */
+const deleteFromCloudinary = async (url, resourceType = "image") => {
+    try {
+        if (!url) return;
+        const parts = url.split("/");
+        const fileWithExt = parts.pop();
+        const publicId = fileWithExt.split(".")[0];
+        if (!publicId) return;
+        await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+    } catch (err) {
+        logger.error("Cloudinary delete error:", err);
+    }
+};
+
+export {uploadonCloudinary, deleteFromCloudinary};
