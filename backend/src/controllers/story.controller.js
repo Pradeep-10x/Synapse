@@ -2,11 +2,9 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { Follow } from "../models/follow.model.js";
-import { User } from '../models/user.model.js';
 import { Notification } from "../models/notification.model.js";
 import { emitToUser } from '../utils/socketEmitters.js';
 import { uploadonCloudinary } from '../utils/cloudinary.js';
-import { v2 as cloudinary } from 'cloudinary';
 import { Story } from '../models/story.model.js';
 
 const createStory = asyncHandler(async (req, res) => {
@@ -123,8 +121,10 @@ const getStoryFeed = asyncHandler(async (req, res) => {
   const following = await Follow.find({ follower: req.user._id }).select("following");
   const followingIds = following.map(f => f.following);
 
-  // 2. Find valid stories from these users
-  // We group by user to make it easier for the frontend to render "circles" per user
+  // 2. Find valid stories from these users, grouped per user so the frontend
+  // can render one "circle" per user. Note we deliberately push only the safe
+  // story fields and project only safe user fields — never $$ROOT or the full
+  // user document, which would leak password hashes and refresh tokens.
   const stories = await Story.aggregate([
     {
       $match: {
@@ -132,28 +132,31 @@ const getStoryFeed = asyncHandler(async (req, res) => {
         $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }]
       }
     },
-    {
-      $lookup: {
-        from: "users",
-        localField: "user",
-        foreignField: "_id",
-        as: "user"
-      }
-    },
-    {
-      $unwind: "$user"
-    },
+    { $sort: { createdAt: -1 } },
     {
       $group: {
-        _id: "$user._id",
-        user: { $first: "$user" },
-        stories: { $push: "$$ROOT" },
+        _id: "$user",
+        stories: {
+          $push: {
+            _id: "$_id",
+            mediaUrl: "$mediaUrl",
+            mediaType: "$mediaType",
+            createdAt: "$createdAt"
+          }
+        },
         latestStoryDate: { $max: "$createdAt" }
       }
     },
     {
-      $sort: { latestStoryDate: -1 }
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "user"
+      }
     },
+    { $unwind: "$user" },
+    { $sort: { latestStoryDate: -1 } },
     {
       $project: {
         _id: 1,
