@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 const { Schema} = mongoose;
-import { Post } from "./post.model.js";
-import { User } from "./user.model.js";
-import { Reel } from "./reel.model.js";
 
 /**
  * @swagger
@@ -57,5 +54,20 @@ const likeSchema= new Schema({
         required: true,
      },
     }, { timestamps: true });
+
+// Prevent duplicate likes (and the resulting count drift) at the DB level.
+// Partial indexes so the "unused" target fields (which are null) don't collide.
+likeSchema.index(
+  { post: 1, user: 1 },
+  { unique: true, partialFilterExpression: { post: { $type: "objectId" } } }
+);
+likeSchema.index(
+  { reel: 1, user: 1 },
+  { unique: true, partialFilterExpression: { reel: { $type: "objectId" } } }
+);
+likeSchema.index(
+  { story: 1, user: 1 },
+  { unique: true, partialFilterExpression: { story: { $type: "objectId" } } }
+);
 
 export const Like = mongoose.model("Like", likeSchema);

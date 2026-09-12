@@ -1,8 +1,5 @@
 import mongoose from "mongoose";
 const { Schema} = mongoose;
-import { Post } from "./post.model.js";
-import { User } from "./user.model.js";
-import { Reel } from "./reel.model.js";
 
 /**
  * @swagger
