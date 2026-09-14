@@ -3,12 +3,11 @@ import { uploadonCloudinary } from '../utils/cloudinary.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
-import { containsEmoji } from "../utils/noEmoji.js";
-import { v2 as cloudinary } from 'cloudinary';
-import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-dotenv.config();
-import { registerUserSchema, loginUserSchema } from '../middlewares/ZodValidator.js';
+import { escapeRegex } from '../utils/sanitize.js';
+import { deleteFromCloudinary } from '../utils/cloudinary.js';
+import { deleteUserCascade } from '../utils/cascade.js';
+import { Follow } from '../models/follow.model.js';
 
 
 const generateAccessAndRefereshTokens = async (userId) => {
@@ -23,7 +22,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
         return { accessToken, refreshToken }
 
 
-    } catch (error) {
+    } catch {
         throw new ApiError(500, "Something went wrong while generating referesh and access token")
     }
 }
@@ -42,12 +41,8 @@ const getCookieOptions = (maxAge = 7 * 24 * 60 * 60 * 1000) => {
 
 
 const registerUser = asyncHandler(async (req, res) => {
+    // req.body is already validated & normalized by the Zod `validate` middleware.
     const { fullName, email, password, username, bio } = req.body;
-    // const {data,errors}=registerUserSchema.safeParse(req.body);
-    // if(errors){
-    //     throw new ApiError(400, errors.message);
-    // }
-    // const {fullName,email,password,username,bio}=data;
 
     const existingUser = await User.findOne({
         $or: [{ email }, { username }]
@@ -80,19 +75,14 @@ const registerUser = asyncHandler(async (req, res) => {
 })
 
 const loginUser = asyncHandler(async (req, res) => {
+    // req.body is already validated & normalized by the Zod `validate` middleware.
     const { email, username, password } = req.body;
-    // const {data,errors}=loginUserSchema.safeParse(req.body);
-    // if(errors){
-    //     throw new ApiError(400, errors.message);
-    // }
-    // const {email,username,password}=data;
-    if (!(email || username) || !password) {
-        throw new ApiError(400, "Email/username and password are required");
-    }
-    const user = await User.findOne({
-        $or: [{ email }, { username: username?.toLowerCase() }]
 
-    })
+    const orConditions = [];
+    if (email) orConditions.push({ email });
+    if (username) orConditions.push({ username: username.toLowerCase() });
+
+    const user = await User.findOne({ $or: orConditions })
     if (!user) {
         throw new ApiError(401, "Invalid credentials");
     }
@@ -104,7 +94,6 @@ const loginUser = asyncHandler(async (req, res) => {
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
     const options = getCookieOptions();
-    console.log('Login - Setting cookies with options:', options, 'NODE_ENV:', process.env.NODE_ENV);
 
     return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", refreshToken, options).json(new ApiResponse(200, loggedInUser, "User logged in successfully"));
 
@@ -122,8 +111,19 @@ const logoutUser = asyncHandler(async (req, res) => {
 }
 )
 const deleteUser = asyncHandler(async (req, res) => {
+    // Remove all related content/relationships before deleting the account.
+    await deleteUserCascade(req.user._id);
+    if (req.user.avatar) {
+        await deleteFromCloudinary(req.user.avatar, "image");
+    }
     await User.findByIdAndDelete(req.user._id);
-    return res.status(200).json(new ApiResponse(200, null, "User deleted successfully"))
+
+    const options = getCookieOptions(0);
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, null, "User deleted successfully"));
 }
 )
 
@@ -145,7 +145,7 @@ const refreshaccessToken = asyncHandler(async (req, res) => {
         return res.status(200).cookie("accessToken", accessToken, options).cookie("refreshToken", newrefreshToken, options).json(new ApiResponse(200, {
             accessToken, refreshToken: newrefreshToken
         }, "Access token refreshed successfully"));
-    } catch (err) {
+    } catch {
         throw new ApiError(401, "Invalid refresh token")
     }
 
@@ -216,14 +216,7 @@ const UpdateAvatar = asyncHandler(async (req, res) => {
     }
     const existingUser = await User.findById(req.user._id);
     if (existingUser?.avatar) {
-        const publicId = existingUser.avatar
-            .split("/")
-            .pop()
-            .split(".")[0];
-
-        await cloudinary.uploader.destroy(publicId, {
-            resource_type: "image"
-        });
+        await deleteFromCloudinary(existingUser.avatar, "image");
     }
 
     const user = await User.findByIdAndUpdate(req.user._id, {
@@ -244,9 +237,9 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 
     // Check if current user is following this user
+    const isSelf = req.user && req.user._id.toString() === user._id.toString();
     let isFollowing = false;
-    if (req.user && req.user._id.toString() !== user._id.toString()) {
-        const { Follow } = await import('../models/follow.model.js');
+    if (req.user && !isSelf) {
         const follow = await Follow.findOne({
             follower: req.user._id,
             following: user._id
@@ -256,19 +249,22 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
     const userData = user.toObject();
     userData.isFollowing = isFollowing;
+    // Private accounts only expose their posts to the owner and approved followers.
+    userData.canViewPosts = Boolean(isSelf || isFollowing || !user.privacy?.privateAccount);
 
     return res.status(200).json(new ApiResponse(200, userData, "User profile fetched successfully"));
 });
 
 const searchUsers = asyncHandler(async (req, res) => {
     const { query } = req.query;
-    if (!query) {
-        throw new ApiError(400, "Search query is required");
+    if (!query || query.trim().length < 2) {
+        throw new ApiError(400, "Search query must be at least 2 characters");
     }
+    const safeQuery = escapeRegex(query.trim());
     const users = await User.find({
         $or: [
-            { username: { $regex: query, $options: "i" } },
-            { fullName: { $regex: query, $options: "i" } }
+            { username: { $regex: safeQuery, $options: "i" } },
+            { fullName: { $regex: safeQuery, $options: "i" } }
         ]
     }).select("username fullName avatar isVerified").limit(10);
 
@@ -330,7 +326,6 @@ const getPrivacy = asyncHandler(async (req, res) => {
 
 const getRecentlyActiveUsers = asyncHandler(async (req, res) => {
     // 1. Get list of users the current user follows
-    const { Follow } = await import('../models/follow.model.js');
     const following = await Follow.find({ follower: req.user._id }).select('following');
     
     // Extract user IDs
