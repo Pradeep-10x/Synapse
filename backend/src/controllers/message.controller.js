@@ -5,13 +5,21 @@ import { Conversation } from "../models/conversation.model.js";
 import { Message } from "../models/message.model.js";
 import { emitToUser } from '../utils/socketEmitters.js';
 import { User } from "../models/user.model.js";
+import { Follow } from "../models/follow.model.js";
 import mongoose from 'mongoose';
 
+const MAX_MESSAGE_LENGTH = 2000;
+
  const sendMessage = asyncHandler(async (req, res) => {
-  const { receiverId, content } = req.body;
+  const { receiverId } = req.body;
+  const content = typeof req.body.content === "string" ? req.body.content.trim() : "";
 
   if (!receiverId || !content) {
     throw new ApiError(400, "Receiver ID and content are required");
+  }
+
+  if (content.length > MAX_MESSAGE_LENGTH) {
+    throw new ApiError(400, `Message must be at most ${MAX_MESSAGE_LENGTH} characters`);
   }
 
   if (!mongoose.Types.ObjectId.isValid(receiverId)) {
@@ -25,6 +33,18 @@ import mongoose from 'mongoose';
   const receiver = await User.findById(receiverId);
   if (!receiver) {
     throw new ApiError(404, "Receiver not found");
+  }
+
+  // Enforce the receiver's message policy. When set to "followers", only users
+  // the receiver follows back may start/continue a conversation.
+  if (receiver.privacy?.messagePolicy === "followers") {
+    const receiverFollowsSender = await Follow.exists({
+      follower: receiver._id,
+      following: req.user._id,
+    });
+    if (!receiverFollowsSender) {
+      throw new ApiError(403, "This user only accepts messages from people they follow");
+    }
   }
 
   let conversation = await Conversation.findOne({
