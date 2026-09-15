@@ -3,12 +3,10 @@ import { Post } from '../models/post.model.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
-import { User } from '../models/user.model.js';
 import { Notification } from '../models/notification.model.js';
 import { emitToUser } from '../utils/socketEmitters.js';
 import mongoose from 'mongoose';
 import { Reel } from '../models/reel.model.js';
-import { Follow } from '../models/follow.model.js';
 
 
 const createPostComment = asyncHandler(async (req, res) => {

@@ -1,15 +1,12 @@
 import { Post } from "../models/post.model.js";
-import {User} from '../models/user.model.js';
 import { Notification } from "../models/notification.model.js";
 import { emitToUser } from '../utils/socketEmitters.js';
 import { Follow } from "../models/follow.model.js";
-import {uploadonCloudinary} from '../utils/cloudinary.js';
-import {v2 as cloudinary} from 'cloudinary';
+import {uploadonCloudinary, deleteFromCloudinary} from '../utils/cloudinary.js';
 import {asyncHandler} from '../utils/asyncHandler.js';
 import {ApiError} from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
-import dotenv from 'dotenv';
-dotenv.config();
+import { escapeRegex } from '../utils/sanitize.js';
 
 
  const createPost = asyncHandler(async (req, res) => {
@@ -144,14 +141,7 @@ const deletePost = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not allowed to delete this post");
   }
 
-  const publicId = post.mediaUrl
-    .split("/")
-    .pop()
-    .split(".")[0];
-
-  await cloudinary.uploader.destroy(publicId, {
-    resource_type: post.mediaType === "video" ? "video" : "image"
-  });
+  await deleteFromCloudinary(post.mediaUrl, post.mediaType === "video" ? "video" : "image");
 
   post.isDeleted = true;
   await post.save();
@@ -190,12 +180,13 @@ const searchPosts = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Search query must be at least 2 characters");
   }
 
+  const safeQuery = escapeRegex(query.trim());
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
   const posts = await Post.find({
-    caption: { $regex: query.trim(), $options: 'i' },
+    caption: { $regex: safeQuery, $options: 'i' },
     isDeleted: false
   })
     .sort({ createdAt: -1 })
@@ -204,7 +195,7 @@ const searchPosts = asyncHandler(async (req, res) => {
     .populate("user", "username avatar isVerified");
 
   const totalCount = await Post.countDocuments({
-    caption: { $regex: query.trim(), $options: 'i' },
+    caption: { $regex: safeQuery, $options: 'i' },
     isDeleted: false
   });
 

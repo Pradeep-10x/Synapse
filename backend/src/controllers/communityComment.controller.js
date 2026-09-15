@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { emitCommunityEvent, emitToUser } from "../utils/socketEmitters.js";
+import { logger } from "../utils/logger.js";
 
 export const addCommunityComment = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -88,7 +89,7 @@ export const addCommunityComment = asyncHandler(async (req, res) => {
         .populate('fromUser', 'username avatar');
       emitToUser(req, post.author, "notification:new", populatedNotif);
     } catch (err) {
-      console.error("Error creating community comment notification:", err);
+      logger.error("Error creating community comment notification:", err);
     }
   }
 

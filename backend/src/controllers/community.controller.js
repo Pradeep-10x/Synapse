@@ -1,9 +1,13 @@
 import { Community } from "../models/community.model.js";
-import { uploadonCloudinary } from "../utils/cloudinary.js";
+import { CommunityPost } from "../models/communityPost.model.js";
+import { CommunityComment } from "../models/communityComment.model.js";
+import { CommunityChat } from "../models/communityChat.model.js";
+import { uploadonCloudinary, deleteFromCloudinary } from "../utils/cloudinary.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { emitToCommunity, emitToFollowers } from "../utils/socketEmitters.js";
+import { escapeRegex } from "../utils/sanitize.js";
 
 export const createCommunity = asyncHandler(async (req, res) => {
   const { name, description, isPublic, rules } = req.body;
@@ -415,8 +419,9 @@ export const searchCommunities = asyncHandler(async (req, res) => {
   const limit = Number(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
+  const safeQuery = escapeRegex(query.trim());
   const communities = await Community.find({
-    name: { $regex: query.trim(), $options: 'i' }
+    name: { $regex: safeQuery, $options: 'i' }
   })
     .populate("creator", "username avatar")
     .sort({ membersCount: -1, createdAt: -1 })
@@ -424,7 +429,7 @@ export const searchCommunities = asyncHandler(async (req, res) => {
     .limit(limit);
 
   const totalCount = await Community.countDocuments({
-    name: { $regex: query.trim(), $options: 'i' }
+    name: { $regex: safeQuery, $options: 'i' }
   });
 
   const totalPages = Math.ceil(totalCount / limit);
@@ -591,23 +596,28 @@ export const deleteCommunity = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Only the creator can delete the community");
   }
 
-  // Delete all related posts and comments
-  const { CommunityPost } = await import("../models/communityPost.model.js");
-  const { CommunityComment } = await import("../models/communityComment.model.js");
-
-  // Delete all posts in this community
-  const posts = await CommunityPost.find({ community: id });
+  // Delete all posts in this community and their comments/media.
+  const posts = await CommunityPost.find({ community: id }).select("_id mediaUrl");
   const postIds = posts.map(post => post._id);
 
-  // Delete all comments on these posts
   if (postIds.length > 0) {
     await CommunityComment.deleteMany({ post: { $in: postIds } });
+    await Promise.allSettled(
+      posts.filter(p => p.mediaUrl).map(p => deleteFromCloudinary(p.mediaUrl))
+    );
   }
 
-  // Delete all posts
-  await CommunityPost.deleteMany({ community: id });
+  await Promise.all([
+    CommunityPost.deleteMany({ community: id }),
+    CommunityChat.deleteMany({ community: id }),
+  ]);
 
-  // Delete the community
+  // Clean up community images.
+  await Promise.allSettled([
+    community.coverImage ? deleteFromCloudinary(community.coverImage) : Promise.resolve(),
+    community.avatar ? deleteFromCloudinary(community.avatar) : Promise.resolve(),
+  ]);
+
   await Community.findByIdAndDelete(id);
 
   return res.status(200).json(new ApiResponse(200, null, "Community deleted successfully"));

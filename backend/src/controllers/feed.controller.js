@@ -1,5 +1,4 @@
 import {asyncHandler} from '../utils/asyncHandler.js';
-import {ApiError} from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { Follow } from "../models/follow.model.js";
 import { Post } from "../models/post.model.js";

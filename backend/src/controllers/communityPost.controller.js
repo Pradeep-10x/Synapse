@@ -6,6 +6,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { emitToCommunity, emitCommunityEvent, emitToUser } from "../utils/socketEmitters.js";
+import { deleteCommunityPostCascade } from "../utils/cascade.js";
+import { logger } from "../utils/logger.js";
 
 export const createCommunityPost = asyncHandler(async (req, res) => {
   const { text, caption } = req.body;
@@ -103,7 +105,7 @@ export const createCommunityPost = asyncHandler(async (req, res) => {
       emitToUser(req, memberId, "notification:new", populatedNotif);
     }
   } catch (err) {
-    console.error("Error creating community post notifications:", err);
+    logger.error("Error creating community post notifications:", err);
   }
 
   return res.status(201).json(new ApiResponse(201, transformedPost, "Post created successfully"));
@@ -235,7 +237,7 @@ export const likeCommunityPost = asyncHandler(async (req, res) => {
         .populate('fromUser', 'username avatar');
       emitToUser(req, post.author._id, "notification:new", populatedNotif);
     } catch (err) {
-      console.error("Error creating community like notification:", err);
+      logger.error("Error creating community like notification:", err);
     }
   }
 
@@ -267,7 +269,8 @@ export const deleteCommunityPost = asyncHandler(async (req, res) => {
     throw new ApiError(403, "Not authorized to delete this post");
   }
 
-  // Permanently delete the post
+  // Remove associated comments and media, then delete the post.
+  await deleteCommunityPostCascade(post);
   await CommunityPost.findByIdAndDelete(postId);
   return res.status(200).json(new ApiResponse(200, null, "Post deleted successfully"));
 });
