@@ -2,6 +2,11 @@ import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
+if (!import.meta.env.VITE_API_URL && import.meta.env.PROD) {
+    // Fail loud in production builds where the API URL wasn't configured.
+    console.error("VITE_API_URL is not set — falling back to localhost. Set it in your environment.");
+}
+
 export const api = axios.create({
     baseURL,
     withCredentials: true,
@@ -10,80 +15,63 @@ export const api = axios.create({
     },
 });
 
-// Track if refresh is in progress to prevent infinite loops
+// Auth uses httpOnly cookies, so the access token is never handled in JS.
+// The interceptor only transparently refreshes the session on a 401 and
+// replays the original request. Concurrent 401s wait on a single refresh.
 let isRefreshing = false;
 let failedQueue: Array<{
-    resolve: (value?: any) => void;
-    reject: (error?: any) => void;
+    resolve: () => void;
+    reject: (error?: unknown) => void;
 }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown) => {
     failedQueue.forEach((prom) => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve(token);
-        }
+        if (error) prom.reject(error);
+        else prom.resolve();
     });
     failedQueue = [];
 };
+
+const AUTH_ENDPOINTS = ["/user/login", "/user/register", "/user/refresh-token"];
 
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
-        // Don't intercept auth endpoints (login, register, refresh-token)
-        const authEndpoints = ['/user/login', '/user/register', '/user/refresh-token'];
-        const isAuthEndpoint = authEndpoints.some(endpoint => 
-            originalRequest.url?.includes(endpoint)
+        // Never try to refresh for the auth endpoints themselves.
+        const isAuthEndpoint = AUTH_ENDPOINTS.some((endpoint) =>
+            originalRequest?.url?.includes(endpoint)
         );
 
-        if (isAuthEndpoint) {
+        if (
+            error.response?.status !== 401 ||
+            isAuthEndpoint ||
+            originalRequest?._retry
+        ) {
             return Promise.reject(error);
         }
 
-        // Handle 401 errors for protected routes only
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            if (isRefreshing) {
-                // If already refreshing, queue this request
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject });
-                })
-                    .then((token) => {
-                        originalRequest.headers.Authorization = `Bearer ${token}`;
-                        return api(originalRequest);
-                    })
-                    .catch((err) => {
-                        return Promise.reject(err);
-                    });
-            }
-
-            originalRequest._retry = true;
-            isRefreshing = true;
-
-            try {
-                const response = await api.post("/user/refresh-token");
-                const { accessToken } = response.data.data || {};
-                
-                if (accessToken) {
-                    processQueue(null, accessToken);
-                    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-                    isRefreshing = false;
-                    return api(originalRequest);
-                } else {
-                    throw new Error('No access token received');
-                }
-            } catch (refreshError) {
-                processQueue(refreshError, null);
-                isRefreshing = false;
-                // Clear auth state on refresh failure
-                localStorage.removeItem('token');
-                return Promise.reject(refreshError);
-            }
+        if (isRefreshing) {
+            // Queue until the in-flight refresh resolves, then replay.
+            return new Promise<void>((resolve, reject) => {
+                failedQueue.push({ resolve, reject });
+            }).then(() => api(originalRequest));
         }
 
-        return Promise.reject(error);
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+            await api.post("/user/refresh-token");
+            processQueue(null);
+            return api(originalRequest);
+        } catch (refreshError) {
+            processQueue(refreshError);
+            localStorage.removeItem("token");
+            return Promise.reject(refreshError);
+        } finally {
+            isRefreshing = false;
+        }
     }
 );
-

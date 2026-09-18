@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '@/lib/axios';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@/lib/getErrorMessage';
 
 export interface User {
     _id: string;
@@ -47,9 +48,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             localStorage.setItem('token', 'authenticated');
             set({ user: userData, isAuthenticated: true, isLoading: false, isAuthChecked: true });
             toast.success('Logged in successfully');
-        } catch (error: any) {
+        } catch (error) {
             set({ isLoading: false });
-            const errorMessage = error.response?.data?.message || 'Login failed';
+            const errorMessage = getErrorMessage(error, 'Login failed');
             toast.error(errorMessage);
             throw new Error(errorMessage);
         }
@@ -62,9 +63,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             set({ isLoading: false });
             toast.success('Registration successful! Please login.');
             // Don't set authenticated - user needs to login after registration
-        } catch (error: any) {
+        } catch (error) {
             set({ isLoading: false });
-            const errorMessage = error.response?.data?.message || 'Registration failed';
+            const errorMessage = getErrorMessage(error, 'Registration failed');
             toast.error(errorMessage);
             throw new Error(errorMessage);
         }
@@ -108,8 +109,8 @@ export const useAuthStore = create<AuthState>((set) => ({
             clearTimeout(timeoutId);
             
             set({ user: data.data, isAuthenticated: true, isCheckingAuth: false, isAuthChecked: true });
-        } catch (error: any) {
-            console.error('Auth check failed:', error?.message || error);
+        } catch (error) {
+            console.error('Auth check failed:', getErrorMessage(error));
             localStorage.removeItem('token');
             set({ user: null, isAuthenticated: false, isCheckingAuth: false, isAuthChecked: true });
         } finally {

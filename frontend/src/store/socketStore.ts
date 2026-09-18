@@ -67,30 +67,18 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   communityActiveCounts: new Map(),
   communityEventsCounts: new Map(),
 
-  connect: (user) => {
-    console.log("DEBUG: socketStore.connect called for user", user);
+  connect: (_user) => {
     const { socket: existingSocket } = get();
 
-    // Don't create duplicate connections
-    if (existingSocket) {
-      if (existingSocket.connected) {
-        console.log("DEBUG: Socket already connected");
-        return;
-      }
-      console.log("DEBUG: Socket instance exists but not connected yet. detailed check might be needed but avoiding overwriting for now.");
-      // If it's existing but not connected, it might be connecting. 
-      // Rely on auto-reconnect from socket.io, don't create new instance which would kill the previous one.
-      return;
-    }
+    // Don't create duplicate connections. If one exists (connected or
+    // mid-connect), rely on socket.io's auto-reconnect rather than replacing it.
+    if (existingSocket) return;
 
     const socketUrl = getSocketUrl();
-    console.log("DEBUG: Connecting to socket URL:", socketUrl);
+    // Identity is derived server-side from the httpOnly auth cookie, so we must
+    // send credentials on the handshake. No user data is passed via query.
     const socket = io(socketUrl, {
-      query: {
-        userId: user._id,
-        username: user.username,
-        avatar: user.avatar
-      },
+      withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -98,30 +86,20 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     socket.on('connect', () => {
-      console.log('Socket connected:', socket.id);
       set({ isConnected: true });
-
-      // Register user as online
-      socket.emit('user:online', {
-        userId: user._id,
-        username: user.username,
-        avatar: user.avatar
-      });
     });
 
     socket.on('disconnect', () => {
-      console.log('Socket disconnected');
       set({ isConnected: false });
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('Socket connection error:', error.message);
       set({ isConnected: false });
     });
 
     // Handle real-time notifications
     socket.on('notification:new', (notification: Notification) => {
-      console.log('New notification received:', notification);
       const { notifications } = get();
       set({
         notifications: [notification, ...notifications],
