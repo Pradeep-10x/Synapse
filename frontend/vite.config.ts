@@ -19,5 +19,18 @@ export default defineConfig({
   optimizeDeps: {
     include: ['simple-peer'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split large, stable vendor libraries into their own long-cached chunks.
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'motion-vendor': ['framer-motion'],
+          'realtime-vendor': ['socket.io-client', 'simple-peer'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 700,
+  },
 })
 

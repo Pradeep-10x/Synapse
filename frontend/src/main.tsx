@@ -1,29 +1,53 @@
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { Toaster } from 'react-hot-toast'
+import { Loader2 } from 'lucide-react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Landing from './pages/Landing';
-import AuthPage from './pages/Auth';
-import FeedPage from './pages/Feed';
-import PersonalPage from './pages/Personal';
-import CreatePage from './pages/Create';
-import CommunityPage from './pages/Community';
-import CommunityDetail from './pages/CommunityDetail';
-import DiscoverCommunities from './pages/DiscoverCommunities';
-import SearchPage from './pages/Search';
-import ProfilePage from './pages/Profile';
-import MessagesPage from './pages/Messages';
-import NotificationsPage from './pages/Notifications';
-import SettingsPage from './pages/Settings';
-import EditProfilePage from './pages/EditProfile';
-import PostDetail from './pages/PostDetail';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
 
+// Landing & Auth are eager (first paint / public). Everything behind auth is
+// lazy-loaded so the initial bundle stays small and each page is its own chunk.
+import Landing from './pages/Landing';
+import AuthPage from './pages/Auth';
+
+const FeedPage = lazy(() => import('./pages/Feed'));
+const PersonalPage = lazy(() => import('./pages/Personal'));
+const CreatePage = lazy(() => import('./pages/Create'));
+const CommunityPage = lazy(() => import('./pages/Community'));
+const CommunityDetail = lazy(() => import('./pages/CommunityDetail'));
+const DiscoverCommunities = lazy(() => import('./pages/DiscoverCommunities'));
+const SearchPage = lazy(() => import('./pages/Search'));
+const ProfilePage = lazy(() => import('./pages/Profile'));
+const MessagesPage = lazy(() => import('./pages/Messages'));
+const NotificationsPage = lazy(() => import('./pages/Notifications'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
+const EditProfilePage = lazy(() => import('./pages/EditProfile'));
+const PostDetail = lazy(() => import('./pages/PostDetail'));
+
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-[#0a0a12]">
+    <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 function App() {
   return (
+    <QueryClientProvider client={queryClient}>
     <Router>
+      <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<AuthPage />} />
@@ -49,6 +73,7 @@ function App() {
           </Route>
         </Route>
       </Routes>
+      </Suspense>
       <Toaster
         position="bottom-center"
         toastOptions={{
@@ -68,6 +93,7 @@ function App() {
         }}
       />
     </Router>
+    </QueryClientProvider>
   );
 }
 //root
