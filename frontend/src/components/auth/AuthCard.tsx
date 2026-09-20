@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoginForm from './LoginForm';
@@ -73,20 +73,11 @@ export const AppInput = (props: AppInputProps) => {
 export default function AuthCard() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>(
-    location.pathname === '/register' ? 'register' : 'login'
-  );
-
-  useEffect(() => {
-    if (location.pathname === '/register') {
-      setActiveTab('register');
-    } else {
-      setActiveTab('login');
-    }
-  }, [location.pathname]);
+  // Derived directly from the URL — no state/effect needed, so no cascading render.
+  const activeTab: 'login' | 'register' =
+    location.pathname === '/register' ? 'register' : 'login';
 
   const handleTabChange = (tab: 'login' | 'register') => {
-    setActiveTab(tab);
     navigate(tab === 'login' ? '/login' : '/register', { replace: true });
   };
 

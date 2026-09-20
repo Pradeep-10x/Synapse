@@ -29,6 +29,9 @@ export const useWebRTC = (): UseWebRTCReturn => {
   const incomingOfferRef = useRef<any>(null);
 
   const peerRef = useRef<SimplePeer.Instance | null>(null);
+  // Always points at the latest endCall so socket handlers (whose effect only
+  // depends on `socket`) never call a stale closure.
+  const endCallRef = useRef<() => void>(() => {});
 
 
   useEffect(() => {
@@ -62,11 +65,11 @@ export const useWebRTC = (): UseWebRTCReturn => {
     };
 
     const handleCallEnd = () => {
-      endCall();
+      endCallRef.current();
     };
 
     const handleCallRejected = () => {
-      endCall();
+      endCallRef.current();
     };
 
     socket.on('call:incoming', handleIncomingCall);
@@ -204,6 +207,11 @@ export const useWebRTC = (): UseWebRTCReturn => {
     setCalleeId(null);
     incomingOfferRef.current = null;
   };
+
+  // Keep the ref current so socket handlers always invoke the latest endCall.
+  useEffect(() => {
+    endCallRef.current = endCall;
+  });
 
   const rejectCall = () => {
     if (callerId && socket) {

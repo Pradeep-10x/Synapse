@@ -37,8 +37,6 @@ export default function RightPanel() {
 
   const isCommunityPage = location.pathname === '/community' || location.pathname.startsWith('/community/') || location.pathname === '/discover-communities';
 
-  if (!user) return null;
-
   // Fetch community suggestions when on community page
   useEffect(() => {
     if (isCommunityPage) {
@@ -91,9 +89,9 @@ export default function RightPanel() {
         const { data } = await userAPI.searchUsers(query);
         const users = Array.isArray(data.data) ? data.data : [];
         // Filter out current user from results
-        const filteredUsers = users.filter((u: SearchUser) => u._id !== user._id);
+        const filteredUsers = users.filter((u: SearchUser) => u._id !== user?._id);
         setSearchResults(filteredUsers);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Search failed:', error);
         setSearchResults([]);
       } finally {
@@ -106,7 +104,7 @@ export default function RightPanel() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [friendQuery, user._id]);
+  }, [friendQuery, user?._id]);
 
   // Close results when clicking outside
   useEffect(() => {
@@ -133,6 +131,8 @@ export default function RightPanel() {
     setShowResults(false);
   };
 
+  // Guard placed after all hooks so hook order stays stable across renders.
+  if (!user) return null;
 
   return (
     <aside className="hidden xl:block w-80 fixed right-0 top-0 h-full border-l border-[rgba(168,85,247,0.15)] glass-panel z-30">

@@ -77,8 +77,7 @@ export default function CreatePage() {
       formData.append('caption', caption);
 
       // Simulate progress (since axios doesn't support upload progress easily)
-      let progressInterval: NodeJS.Timeout;
-      progressInterval = setInterval(() => {
+      const progressInterval: NodeJS.Timeout = setInterval(() => {
         setUploadProgress((prev) => {
           if (prev >= 90) {
             if (progressInterval) clearInterval(progressInterval);
