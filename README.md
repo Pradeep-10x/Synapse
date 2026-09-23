@@ -1,259 +1,224 @@
-Synapse
+<div align="center">
 
-Real-time community infrastructure built from scratch.
-Not a clone. Not a template. A system.
+# 🌌 Synapse
 
-What is Synapse?
+### A real-time, community-first social platform — built as a system, not a clone.
 
-Synapse is a real-time communication and community platform focused on:
+Posts, reels, stories, communities, direct messaging, live presence and **peer-to-peer WebRTC calls**, all wired together over an event-driven Socket.IO layer.
 
-Direct messaging
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-realtime-010101?logo=socket.io&logoColor=white)](https://socket.io/)
+[![Tests](https://img.shields.io/badge/tests-Vitest%20%2B%20Supertest-6E9F18?logo=vitest&logoColor=white)](#-testing--quality)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](#-license)
+
+[**Live App**](https://synapse-app.vercel.app) · [**API**](https://orbit-v-backend.onrender.com/health) · [**API Docs (Swagger)**](https://orbit-v-backend.onrender.com/api-docs)
+
+</div>
 
-Community chat
+> **Replace the Live App link** above with your deployed Vercel URL.
 
-Live presence
+---
 
-WebRTC audio/video calls
+## ✨ Overview
+
+**Synapse** is a full-stack MERN + TypeScript platform where creators, communities and conversations move around you in real time. It goes well beyond CRUD + JWT: think optimistic UI, live typing indicators, presence tracking, role-based communities, and browser-to-browser audio/video calls — backed by a hardened, tested API.
 
-Event-driven architecture
-
-Role-based community management
-
-Modern, system-oriented UI
-
-It is not designed to be “another social media app”.
-
-It is built as a real-time system architecture project.
-
-Why I Built This
-
-Most beginner projects stop at:
-
-CRUD
-
-JWT login
-
-Simple posts
-
-Static UI
-
-Synapse was built to go beyond that.
-
-The goal was to implement:
-
-WebSockets at scale
-
-Optimistic UI updates
-
-Real-time typing indicators
-
-WebRTC peer-to-peer calls
-
-Community role management (Owner/Admin/Member)
-
-Modular backend architecture
-
-Clean UI hierarchy without generic templates
-
-This project is about systems thinking, not UI cloning.
-
-Core Features
-Real-Time Messaging
-
-Direct conversations
-
-Community chat channels
-
-Typing indicators
-
-Online presence tracking
-
-Optimistic message rendering
-
-Socket event synchronization
-
-WebRTC Audio & Video Calls
-
-Peer-to-peer calls
-
-Live stream handling
-
-Call accept/reject lifecycle
-
-Remote & local stream management
-
-Clean teardown logic
-
-Community System
-
-Create / join communities
-
-Owner & admin roles
-
-Member listing
-
-Community-specific messaging
-
-Role-based UI differentiation
-
-Live Presence System
-
-Online user tracking
-
-Real-time updates via WebSockets
-
-Context-aware UI indicators
-
-Structured Settings
-
-Account management
-
-Security controls
-
-Controlled Danger Zone actions
-
-Tech Stack
-Frontend
-
-React
-
-TypeScript
-
-Tailwind CSS
-
-Framer Motion
-
-Zustand (state management)
-
-WebRTC API
-
-Socket.io client
-
-Backend
-
-Node.js
-
-Express
-
-MongoDB
-
-Mongoose
-
-Socket.io
-
-JWT authentication
-
-Cloudinary (media uploads)
-
-Architecture Philosophy
-
-Synapse follows:
-
-Separation of concerns
-
-Real-time event-driven communication
-
-Clean API boundaries
-
-Scalable conversation model
-
-Stateless auth (JWT)
-
-Socket layer abstraction
-
-No copy-paste boilerplate architecture.
-
-Everything is modular and extendable.
-
-What Makes This Different
-
-This is not:
-
-An Instagram clone
-
-A MERN tutorial project
-
-A UI-heavy showcase with shallow logic
-
-This is:
-
-A real-time system implementation
-
-A community-based architecture experiment
-
-A WebRTC integration project
-
-A practical backend scaling exercise
-
-System Design Highlights
-
-Conversations modeled independently from users
-
-Community chat decoupled from direct chat
-
-Socket events namespaced
-
-Optimistic updates with backend reconciliation
-
-Role hierarchy logic in community membership
-
-Separate API layers for direct vs community messaging
-
-Modular hook-based WebRTC integration
-
-What I Learned
-
-Real-time systems are state synchronization problems
-
-WebRTC is fragile without proper lifecycle handling
-
-UI hierarchy matters more than UI aesthetics
-
-Socket events must be predictable and idempotent
-
-Community permissions require careful backend validation
-
-Presence systems must be optimized to avoid unnecessary re-renders
-
-What’s Next
-
-Message threading
-
-Message reactions
-
-Rate limiting via Redis
-
-Read receipts
-
-Advanced community permissions
-
-File sharing in chat
-
-Notification center
-
-Installation
-git clone https://github.com/yourusername/synapse.git
-cd synapse
+<div align="center">
+
+<!-- Add real screenshots here -->
+<img src="docs/screenshots/feed.png" alt="Feed" width="80%" />
+
+<sub>Add screenshots/GIFs under <code>docs/screenshots/</code> and reference them here.</sub>
+
+</div>
+
+---
+
+## 🚀 Features
+
+### 📸 Content
+- **Posts** — image & video uploads (Cloudinary), captions, likes, threaded comments
+- **Reels** — short-form video feed
+- **Stories** — 24-hour ephemeral media with auto-expiry (MongoDB TTL)
+- **Home feed** — followed users + your own posts, paginated with like-state hydration
+
+### 👥 Social graph
+- **Follow / unfollow** with follower & following lists
+- **Profiles** with avatars, bios, verification badges
+- **Search** across users, posts and communities (regex-injection safe)
+- **Privacy controls** — private accounts, message policy, mentions & tagging toggles
+
+### 🏘️ Communities
+- Create **public or private** communities with cover art & rules
+- **Role hierarchy** — Owner → Admin → Member, with promote/remove flows
+- **Join requests & approvals** for private communities
+- Community **posts, comments and real-time chat channels**
+- Live **active-member counts** and **daily activity** per community
+
+### 💬 Real-time (Socket.IO)
+- **Direct messaging** with conversation model & message-policy enforcement
+- **Typing indicators** and **online presence** tracking
+- **Live notifications** for likes, comments, follows, community activity
+- Namespaced, **JWT-authenticated** socket handshake (identity derived server-side)
+
+### 📞 WebRTC calls
+- **Peer-to-peer audio & video** calls with a clean lifecycle
+- Offer / answer / ICE signaling over sockets
+- Ring, accept, reject, and reliable teardown of local/remote streams
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technologies |
+|-------|--------------|
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Zustand, **TanStack Query**, Framer Motion, socket.io-client, WebRTC |
+| **Backend** | Node.js, Express 5, MongoDB + Mongoose, Socket.IO, JWT (httpOnly cookies), Zod, Cloudinary |
+| **Security** | Helmet, CORS allow-list, tiered rate limiting, request sanitization, bcrypt |
+| **Quality** | Vitest, Supertest, mongodb-memory-server, ESLint, GitHub Actions CI |
+| **Docs** | Swagger / OpenAPI (`swagger-jsdoc` + `swagger-ui-express`) |
+
+---
+
+## 🧠 Architecture Highlights
+
+- **Event-driven real-time layer** — a dedicated socket module with authenticated handshakes, presence maps, and room-based community broadcasting.
+- **Stateless auth** — short-lived access + long-lived refresh JWTs in httpOnly cookies, with transparent silent refresh on the client.
+- **Defense in depth** — Zod validation, Mongo operator sanitization, regex escaping on search, Helmet headers, and a strict credentialed CORS allow-list.
+- **Data integrity** — unique indexes to prevent double-likes, and cascade-delete helpers so removing an account or community leaves no orphaned documents or media.
+- **Optimistic UX** — TanStack Query mutations update the UI instantly and reconcile with the server (with rollback on error).
+- **Performance** — route-based code-splitting and vendor chunking keep the initial bundle lean.
+
+```
+Synapse/
+├── backend/                 # Express 5 API + Socket.IO
+│   ├── src/
+│   │   ├── controllers/     # Route handlers (users, posts, communities, chat…)
+│   │   ├── models/          # Mongoose schemas
+│   │   ├── routes/          # REST route definitions (+ Swagger docs)
+│   │   ├── middlewares/     # auth, validation, rate limiting, sanitization
+│   │   ├── socket/          # authenticated real-time layer + WebRTC signaling
+│   │   ├── utils/           # logger, cloudinary, cascade, sanitize, emitters
+│   │   └── app.js / index.js
+│   └── tests/               # Vitest unit + Supertest integration
+├── frontend/                # React 19 + Vite + TS
+│   └── src/
+│       ├── pages/           # Feed, Communities, Messages, Reels, Profile…
+│       ├── components/      # feature-grouped UI
+│       ├── hooks/queries/   # typed TanStack Query hooks
+│       ├── store/           # Zustand stores (auth, socket, community)
+│       ├── lib/ · types/    # axios client, typed API layer
+│       └── main.tsx
+└── .github/workflows/ci.yml # lint + test + build on every push/PR
+```
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+- Node.js **20+**
+- A MongoDB connection string (local or Atlas)
+- A [Cloudinary](https://cloudinary.com/) account (for media uploads)
+
+### 1. Clone
+```bash
+git clone https://github.com/Pradeep-10x/Synapse.git
+cd Synapse
+```
+
+### 2. Backend
+```bash
+cd backend
 npm install
-npm run dev
+cp .env.example .env      # then fill in the values
+npm run dev               # starts API + Socket.IO on http://localhost:5000
+```
 
+<details>
+<summary><b>Backend environment variables</b> (see <code>backend/.env.example</code>)</summary>
 
-Backend:
+```env
+PORT=5000
+NODE_ENV=development
+MONGO_URI=your-mongodb-uri
+JWT_SECRET=long-random-secret
+REFRESH_TOKEN_SECRET=another-long-random-secret
+CORS_ORIGIN=http://localhost:5173
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
+</details>
 
-cd server
+### 3. Frontend
+```bash
+cd ../frontend
 npm install
-npm run dev
+npm run dev               # http://localhost:5173
+```
 
-Final Note
+The frontend reads `VITE_API_URL` and `VITE_SOCKET_URL` from `.env.development` (already pointed at `localhost:5000`).
 
-Synapse was built to demonstrate:
+---
 
-Backend depth
+## 🧪 Testing & Quality
 
-Real-time architecture understanding
+The backend ships with a real test suite that runs against an **in-memory MongoDB** — no external services required.
 
-State synchronization handling
+```bash
+cd backend
+npm test          # 25 unit + integration tests (Vitest + Supertest)
+npm run lint      # ESLint
+```
 
-System-level thinking
+```bash
+cd frontend
+npm run lint      # ESLint
+npm run build     # type-check + production build
+```
 
+Every push and pull request runs lint, tests and builds for **both** apps via [GitHub Actions](.github/workflows/ci.yml).
 
+---
+
+## 📚 API Documentation
+
+Interactive Swagger UI is served by the backend:
+
+- **Local:** http://localhost:5000/api-docs
+- **Live:** https://orbit-v-backend.onrender.com/api-docs
+
+All routes live under `/api/v1` — `user`, `post`, `feed`, `comment`, `like`, `notification`, `message`, `reel`, `story`, `community`, `community-post`, `community-comments`, `community-chat`.
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Message reactions & read receipts
+- [ ] Message threading and file sharing in chat
+- [ ] Group video calls
+- [ ] Redis-backed presence & rate limiting for horizontal scaling
+- [ ] Full-text search via MongoDB text indexes
+- [ ] Push notifications
+
+---
+
+## 👤 Author
+
+**Pradeep**
+[GitHub](https://github.com/Pradeep-10x)
+
+---
+
+## 📄 License
+
+Released under the **MIT License**.
+
+<div align="center">
+<sub>Built with a focus on real-time systems, clean architecture, and production-grade fundamentals.</sub>
+</div>
